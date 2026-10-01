@@ -1,0 +1,485 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "id": "calibration-block",
+      "title": "One metre calibration block",
+      "creator": "Project Alabama contributors",
+      "origin": "Original geometry generated in this repository",
+      "originalUrl": null,
+      "createdOn": "2026-09-30",
+      "license": "CC0-1.0",
+      "licenseEvidence": "source-art/LICENSE.md",
+      "generator": "tools/blender/export_calibration.py",
+      "modifications": [
+        "One metre cube with ground-level origin",
+        "Explicit FBX export with -Z forward and Y up"
+      ],
+      "files": [
+        {
+          "path": "source-art/calibration/calibration.blend",
+          "sha256": "6002470822327461a8b71ee6fae8ec20870190fe3d2ddf3d8d44524982089a11"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Calibration/calibration.fbx",
+          "sha256": "271dd4c830f8f7386436b88c28361eca2c49d5cd8b323e3d0000f3adf54a9cc8"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Calibration/CalibrationMaterial.mat",
+          "sha256": "9008862a174ecf1117ed41dbbea74ecd342f9084010e20318b7f8b560d0d7f68"
+        }
+      ],
+      "purpose": "Import scale, pivot and collision fixture",
+      "redistribution": "Source and export are included under CC0-1.0",
+      "updatedOn": "2026-10-01",
+      "tools": [
+        "Blender 4.4.0",
+        "Unity 6000.3.25f1"
+      ],
+      "materialGenerator": "unity/Assets/Alabama/Editor/ProjectFoundation.cs"
+    },
+    {
+      "id": "e46-race-study",
+      "title": "E46 race study",
+      "creator": "BlenderCentral; adaptation by Project Alabama contributors",
+      "originalUrl": "https://blendswap.com/blend/10588",
+      "license": "CC-BY-SA-3.0",
+      "licenseEvidence": "source-art/third-party/blendswap/e46/BLENDSWAP_LICENSE.txt",
+      "modifications": [
+        "Selective mesh reduction",
+        "Race details and widened arches",
+        "Replacement materials and generated texture maps",
+        "Metre scale and four wheel pivots"
+      ],
+      "generator": "tools/blender/build_e46.py",
+      "updatedOn": "2026-10-01",
+      "sourceArchiveSha256": "8bfff8febbb2ba3afe8be684e686df8f4848ec03df8af4c8f9623d6f6ffa23b5",
+      "sourceArchiveRedistributed": false,
+      "files": [
+        {
+          "path": "source-art/vehicles/e46/E46_Race.blend",
+          "sha256": "3b7f95e85a0f0ceb5ca2a3a593bb2f7c167431233a9cd7b6028a3050b66d4f51"
+        },
+        {
+          "path": "source-art/vehicles/e46/E46_Race.report.json",
+          "sha256": "08f3ceb406eaa2fa91173ec1262db92bc03b36e0247823d9ae83f7841444425c"
+        },
+        {
+          "path": "source-art/vehicles/e46/LICENSE.md",
+          "sha256": "0b4dce9b3f41d8dea523c1c743f5d7d95fec76c0d1d29c83124110f8ba424de8"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Alloy.mat",
+          "sha256": "80fa370b8e2e7e2ee1d78d249dc99a13518018ca3ce084d4bbed581b0ca033ad"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Amber.mat",
+          "sha256": "af76bcb576c70a8939824667fe5291eaa411c789ec54b4f0083f6d97f1e8bbea"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Blue.mat",
+          "sha256": "41caec3836f44b5bab2d85821e72cf99eefa0ebc5128debc897b5ee349ae3c18"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Brake.mat",
+          "sha256": "dfb9f726acafdbd98400929c3f8fac41c964a6da4a105c894f3fe98a203e5df0"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Caliper.mat",
+          "sha256": "acc4a8f1bfaaa03b41cc1c204c5429d40a8c971e3e6fb1276476e01d4ddae700"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Drive.prefab",
+          "sha256": "cfbf823934ea5bd4d80c34974e7cb537039fa4313fd48591b47945f046e6453c"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Glass.mat",
+          "sha256": "e9deb2bef9f4476c0cf29f3c339a9dae162552242861abf550f07c5904c5464c"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Lens.mat",
+          "sha256": "f53f0c3fa1a9196bfe63fc2f7e51b8472c96483551dd7d2b3a6ad628dd225a4e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Materials.json",
+          "sha256": "305c360588d28e989f621fe865e05e0f1dfd7ebe88dc1e80d123262fc5c89b54"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Paint.mat",
+          "sha256": "a07cbc6f3567909ccb79d0a9ef315b084d9d0aed2062670c556bb28ff416f3e6"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Paint.png",
+          "sha256": "d4f561599d20fd7d2ec9313e5da1177ec0ffd2a4b25aed6b9785959ac4a712c5"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Race.fbx",
+          "sha256": "7473282e7f244d3177bd52da4c8c7a988524df9c2dcb2d01479b3c10b7a30ca3"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Race.prefab",
+          "sha256": "28e6f0bfb812255cc87a9c8d6b267d8308dfffb525e675bac48bd235b91c5f3c"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_RedLight.mat",
+          "sha256": "5e309f22f69791400340914a8d58c22b765684ff65711ea7237d37cc528d1953"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Rubber.mat",
+          "sha256": "f9c3cae5f6278f48a903b06f8d2c97d3e3d2d10987035aa926ddc8450587b21e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Silver.mat",
+          "sha256": "7f2b5b708e40759e2970da7fbb944880144399020f3caf5480d6b9cb6a6e5328"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_TailLens.mat",
+          "sha256": "9e30d835de189853c949f4947940834d1bc392bee8f99f0e0fff43403dd01ec9"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_TailLens.png",
+          "sha256": "8e7590c096469fb0d35dd395d97229e5da0e0bb4af75c7a7d75f93f9f11fe120"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Trim.mat",
+          "sha256": "939f6d4d812f57f74964d10d92a0dd28a3e47f420daf4271240f6ae636b9f3e5"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_WhiteLight.mat",
+          "sha256": "135cf9585091dae84ed18d1ab474ea90463a6e9dea579108200e8342485c44a5"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/LICENSE.md",
+          "sha256": "0b4dce9b3f41d8dea523c1c743f5d7d95fec76c0d1d29c83124110f8ba424de8"
+        }
+      ],
+      "triangles": 60311,
+      "sourceEvaluatedTriangles": 816368,
+      "purpose": "Static visual review; detailed GTR match and driving remain pending"
+    },
+    {
+      "id": "polyhaven-vehicle-review",
+      "license": "CC0-1.0",
+      "title": "Asphalt 04 and Industrial Sunset Pure Sky",
+      "creator": "Jenelle van Heerden, Sergej Majboroda, Jarod Guest",
+      "originalUrls": [
+        "https://polyhaven.com/a/asphalt_04",
+        "https://polyhaven.com/a/industrial_sunset_puresky"
+      ],
+      "licenseEvidence": "source-art/third-party/polyhaven/LICENSE.md",
+      "generator": "tools/fetch-environment.ps1",
+      "updatedOn": "2026-10-01",
+      "files": [
+        {
+          "path": "source-art/third-party/polyhaven/asphalt_04/asphalt_04_diff_1k.jpg",
+          "sha256": "837a78bb1e94864c221f847c85480484e953a9ee958772481dd2c501e18def2e"
+        },
+        {
+          "path": "source-art/third-party/polyhaven/asphalt_04/asphalt_04_nor_gl_1k.png",
+          "sha256": "46f822e538de9fa5327617cf7e43dfb00b437e2b3cff6a100bf837375a500380"
+        },
+        {
+          "path": "source-art/third-party/polyhaven/asphalt_04/asphalt_04_rough_1k.jpg",
+          "sha256": "0e91a8117a8ec8c89e210dcd680186e66058b92028e89a858cc2fbde4bbfe6da"
+        },
+        {
+          "path": "source-art/third-party/polyhaven/industrial_sunset_puresky/industrial_sunset_puresky_2k.hdr",
+          "sha256": "799e6fa9a58dfbec1426d62486aa87fa097a85cf16bb121c79f9ee1125a54288"
+        },
+        {
+          "path": "source-art/third-party/polyhaven/LICENSE.md",
+          "sha256": "357d3d2796e08fab2253c35faeb674c25185573cacf9af236cfc558617c25437"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/PolyHaven/asphalt_04_diff_1k.jpg",
+          "sha256": "837a78bb1e94864c221f847c85480484e953a9ee958772481dd2c501e18def2e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/PolyHaven/asphalt_04_nor_gl_1k.png",
+          "sha256": "46f822e538de9fa5327617cf7e43dfb00b437e2b3cff6a100bf837375a500380"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/PolyHaven/industrial_sunset_puresky_2k.hdr",
+          "sha256": "799e6fa9a58dfbec1426d62486aa87fa097a85cf16bb121c79f9ee1125a54288"
+        }
+      ]
+    },
+    {
+      "id": "industrial-street-kit",
+      "title": "Original industrial street kit",
+      "creator": "Project Alabama contributors",
+      "origin": "Original seeded geometry created in this repository",
+      "license": "CC0-1.0",
+      "licenseEvidence": "source-art/environment/industrial-kit/LICENSE.md",
+      "generator": "tools/blender/build_industrial_kit.py",
+      "updatedOn": "2026-10-01",
+      "modules": 13,
+      "libraryTriangles": 17536,
+      "files": [
+        {
+          "path": "source-art/environment/industrial-kit/IndustrialKit.blend",
+          "sha256": "81baeb2c2bad153ac1b24bf7013dc6c2d117c58c8066b9bc3664f88f60d58243"
+        },
+        {
+          "path": "source-art/environment/industrial-kit/IndustrialKit.report.json",
+          "sha256": "21c4320ccf761efb9ad7bf68c6661984598070b0e6b90b8dc7ad9f7564303030"
+        },
+        {
+          "path": "source-art/environment/industrial-kit/LICENSE.md",
+          "sha256": "fc6222a31b48daeeea9f9ae85bb550d54bd52e6638cb1b97e9248d5148ae716d"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/AutumnTreeA.fbx",
+          "sha256": "e55ad65f4f24f78c5c5839dec428cd58f79f842f02c8f66f2afc6327a2da2dbf"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/AutumnTreeA.prefab",
+          "sha256": "f5cf2404abb29dfd92d2d87f213fa8999e59be1e8cf6a5cd4aa3276659967af4"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/AutumnTreeB.fbx",
+          "sha256": "a8a25c77f65647970fae9aada1176c919c49f2d3f913e695e937f7d86fb9bef3"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/AutumnTreeB.prefab",
+          "sha256": "4660cdfa048314fc06a7ebd83eb24b500fbf3a9c2f560bc647d3d964d7225582"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/AutumnTreeC.fbx",
+          "sha256": "3597aaa13c3421a12b29bbc2b93cf30ac08f8f02eb475f308c0e4bc8990dbdf6"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/AutumnTreeC.prefab",
+          "sha256": "a41495bae97f58b360e954e31f04b12aa37fbde617cc13beaa99c7a0e1cb428f"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Billboard.fbx",
+          "sha256": "483a17c1dccc98a32015acf93a875ceab8670d6119092626e366d2846f2d9600"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Billboard.prefab",
+          "sha256": "ca6dea61772aec74d9915be89ac454643eecbfe0b37b6657044425d44a460d9d"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/BridgeColumn.fbx",
+          "sha256": "8381dad360ee5098a974d367220dabd362f971ac186b7dc651f1f9d17ae9b126"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/BridgeColumn.prefab",
+          "sha256": "b335ba76707d2a7978accfa8be2498b642351d0a8f21616aa3d4eeecedb28ac1"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/BridgeDeck.fbx",
+          "sha256": "751992bcf405b139a54c03dfd4243fe2acdf5eb244520243f37b7ace74e3eda4"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/BridgeDeck.prefab",
+          "sha256": "03888ec43d2c8f0dcd8f2c384850802ba4bbd6bb1a0c305c5b07fe0dd7585030"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/ChevronPanel.fbx",
+          "sha256": "dadf3802c7202a852699ed0ef4ebcaf0a5dfe5fe2cac3ecc9198c86b7d0f11cf"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/ChevronPanel.prefab",
+          "sha256": "9824f9b9ed18c75895d6f377e2ce95f2d7b5a626ce741deab7a1f58e97ba8860"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/FencePanel.fbx",
+          "sha256": "365326eaaacb2b9891a4ac2b268a7557f3ac8b252728217d0cae0ca781e70c42"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/FencePanel.prefab",
+          "sha256": "94b48e0eb66e2b55133af1d217d79c799f3dc373da8b3b2b1d5d877632102be6"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/IndustrialKit.json",
+          "sha256": "21c4320ccf761efb9ad7bf68c6661984598070b0e6b90b8dc7ad9f7564303030"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Bark.mat",
+          "sha256": "031b5394f5799085d32dc2a526466e7cb9041f323be5903cba59fdb733bbfebc"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Black.mat",
+          "sha256": "a2851809aca5d04a7a5e778e1d11eac639c38c15eb82a60f094503b792f4f992"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Brick.mat",
+          "sha256": "83d88d483df45b2bfdc84ad4802ed6f19c8d4612b392c6f46876329986eefa31"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_BrickDark.mat",
+          "sha256": "a286d3b373971e736dd005ee59a531d1af1147c4953fb017eaef8ca993f454ec"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Concrete.mat",
+          "sha256": "5e4b0458640f3f90caba8cb33597cfa0677f7ccf0d19fc36c67f5520cedfdc8b"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Lamp.mat",
+          "sha256": "a2db4586a3c99bceb7673edeaa323c50a42414f5aad972de6b33f0071d8709b3"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_LeafOchre.mat",
+          "sha256": "1bf6e4b1565f18c1ef63b24d920a2573a482485e46cc9d3f94ae48d8560b14e3"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_LeafOlive.mat",
+          "sha256": "cc04219e35f3c6ff109a40ca4ad03fd0b52fc55a5752b483a2b076d94138c26b"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_LeafOrange.mat",
+          "sha256": "5b44e2dc45ee3e314675751a976dca9c4dc748092a796eee3c44b765c9c07995"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Marking.mat",
+          "sha256": "6e317708b0bb77a47f8515bf773f139480cb0062c3cf7848e23d5756b6280f5a"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Roof.mat",
+          "sha256": "19e7dfbe4d3c08563b22e20fd87fd3540e0a3cfadd04ae1f406e29880a5b908e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Rust.mat",
+          "sha256": "0e792da7aa4de9e986e53aaf78618540292dc5e12fc53398946d93cce139e30e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_SignGreen.mat",
+          "sha256": "e070d410c136bbb395a222ba568e8981576915ad72b126045fcec6c51a9a333d"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Steel.mat",
+          "sha256": "136c20c2b4fb9e054e1b18d05c745a049fab09e40dfeb06b58a0984ec2a5ac20"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/Kit_Window.mat",
+          "sha256": "7ea1c43e6cc183931b8cc5b1689c690990436f9c3d38ab1f4a39927b83f23bb0"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/PortCrane.fbx",
+          "sha256": "da80467cb64216e86b5a31807303a888e7f4909db70d2017be89044440d58eb0"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/PortCrane.prefab",
+          "sha256": "8ed94dd2e1ff84cb26f320d509a973b67a977f4c48202b52325880fbb87699cb"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/RoadBarrier.fbx",
+          "sha256": "3179ea9b62734f6912e5eb6d398be3e7c1504a8ae7ac4d9ecbfcf65d6d903de4"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/RoadBarrier.prefab",
+          "sha256": "327b6901cb1a6b035c390aca1c529a47d5cc73c3cc17d2b965383646f99eb150"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/SignGantry.fbx",
+          "sha256": "bf9ccc025944867e5dcf149eed6f6f8678ba8bdfc536106c7c2562e5cdbae52e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/SignGantry.prefab",
+          "sha256": "2e1f0984cc82e6cd5ed2ab2278355aa1729b6d01cb6b48b21d31a6c66bd0385a"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/StreetLamp.fbx",
+          "sha256": "bd0c8a850ece748058a9dada6907b5206afe9a17518c84921041c5e03ef21c94"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/StreetLamp.prefab",
+          "sha256": "cc64a425072f4a6904759a0b27fff153274efcc2287cb6e000d762546356863d"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/WarehouseBay.fbx",
+          "sha256": "2c6110a18210a285d510066b7725f328caf5557256343ae0282ad2cbabe1bc95"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Environment/IndustrialKit/WarehouseBay.prefab",
+          "sha256": "9fb8ad7bd276cb9a80e7f809604c4c3ea45134b68b02ffe0829b9c7a3c632700"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/AgedYellow.mat",
+          "sha256": "065ee51c5df5fdd1672786a2dc2cd68b3aa5da9bac26456c70bce5bcaf83c43e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/DarkFacade.mat",
+          "sha256": "8b55cb9129478d28e2f7bfaec47a66c544318ad7133c1be31023821d78547697"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/DOWNTOWNLettering.asset",
+          "sha256": "29a3583196941612da822e8ea300cfc00d009e751a11ea17b5a67532f183a12f"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/RIVERSIDELettering.asset",
+          "sha256": "9975d25b1378422dd75188dc8529719ab65ede5c1d28333040c76d8c16e6df4d"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/ShoulderConcrete.mat",
+          "sha256": "efd799df7ad31af24471fa9be83280ba4d1079954eb512b630ce3b809d07be84"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/StreetGrade.asset",
+          "sha256": "00446c123fa2acabcb68574d1e050f0892891605929893f02e71132c152284ac"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/IndustrialStreet/WeatheredWhite.mat",
+          "sha256": "f865b309b38844940c4992f410a96bbd9db0c70de66060366dad0e58fa980ff2"
+        },
+        {
+          "path": "unity/Assets/Alabama/Scenes/IndustrialStreet.unity",
+          "sha256": "94a936645ea8ad0baf56d18b9db08d7b4dc74a8cacf0c6b1665f714f6e2aed40"
+        }
+      ],
+      "purpose": "Single-street visual review in the pre-alpha demo"
+    },
+    {
+      "id": "district-loop-road",
+      "title": "Closed district road and marking meshes",
+      "creator": "Project Alabama contributors",
+      "origin": "Original geometry generated in Unity",
+      "license": "CC0-1.0",
+      "licenseEvidence": "source-art/district-loop/LICENSE.md",
+      "generator": "unity/Assets/Alabama/Editor/DistrictLoopScene.cs",
+      "updatedOn": "2026-10-01",
+      "files": [
+        {
+          "path": "source-art/district-loop/LICENSE.md",
+          "sha256": "223f3848afd23faaabaa721ce2130690bb6959ad4749084a8f7bed5729143043"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/CentreStripeLeft.asset",
+          "sha256": "dc3714ea4a1e75b63821a721a47b6005e875a67405f5668abb6c89f3798af875"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/CentreStripeRight.asset",
+          "sha256": "aaa218375f5e26b17c8c5fe2eb0b88950ea409c022b418e3ff22f1f0cd9989b9"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/LaneStripeLeft.asset",
+          "sha256": "9de51e17a5bf2ff22c4dc5c923a11b76be877dee2bb9bf4368df94728b9123e8"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/LaneStripeRight.asset",
+          "sha256": "a4a9fac66077163344a4226f2a4f950e9225e6ea87fff0b18de53cb3a94965c7"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/LeftShoulder.asset",
+          "sha256": "ffddbce6ceb413b15596388a2490c59906e140745292eba90e7d377a355cd7be"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/LoopAsphalt.mat",
+          "sha256": "21c514227fa0d2a060e6e640196c17375a941283455a1ae075ec44cea7048525"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/RightShoulder.asset",
+          "sha256": "4163d4dbab996c31450ae83afd71b4395aabd6ac456e13a0cf8ea688a7f735a9"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/DistrictLoop/RoadMesh.asset",
+          "sha256": "80f574d565c9fa438a48bb0a4f536e6125898a9a47f7b9fa0cc748e175ae57c4"
+        }
+      ],
+      "compositeScenePath": "unity/Assets/Alabama/Scenes/DistrictLoop.unity",
+      "purpose": "Continuous physics road and markings for the 917 metre playable route"
+    }
+  ]
+}

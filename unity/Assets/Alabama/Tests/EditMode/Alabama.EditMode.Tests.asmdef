@@ -1,0 +1,7 @@
+{
+  "name": "Alabama.EditMode.Tests",
+  "references": ["Alabama.Runtime", "Alabama.Editor"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

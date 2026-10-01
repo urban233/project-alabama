@@ -1,0 +1,6 @@
+{
+  "name": "Alabama.PlayMode.Tests",
+  "references": ["Alabama.Runtime"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

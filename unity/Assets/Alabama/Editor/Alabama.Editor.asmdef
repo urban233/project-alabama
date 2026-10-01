@@ -1,0 +1,11 @@
+{
+  "name": "Alabama.Editor",
+  "rootNamespace": "Alabama.Editor",
+  "references": [
+    "Alabama.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Core.Runtime"
+  ],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

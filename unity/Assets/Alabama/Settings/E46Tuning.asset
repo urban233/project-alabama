@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28da0b3919a6a9a48a580dee0fbad763, type: 3}
+  m_Name: E46Tuning
+  m_EditorClassIdentifier: Alabama.Runtime::Alabama.Driving.VehicleTuning
+  mass: 1450
+  centreOfMass: {x: 0, y: 0.38, z: 0}
+  aerodynamicDownforce: 0.45
+  wheelRadius: 0.33
+  suspensionDistance: 0.18
+  spring: 35000
+  damper: 4500
+  forwardGrip: 1.65
+  lateralGrip: 1.65
+  handbrakeRearGrip: 0.58
+  lowSpeedSteerDegrees: 33
+  highSpeedSteerDegrees: 10
+  highSpeedSteerAtMetresPerSecond: 50
+  driveTorque: 1550
+  reverseTorque: 550
+  serviceBrakeTorque: 3300
+  handbrakeTorque: 2200
+  maximumSpeedMetresPerSecond: 62

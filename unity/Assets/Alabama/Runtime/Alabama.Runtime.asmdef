@@ -1,0 +1,6 @@
+{
+  "name": "Alabama.Runtime",
+  "rootNamespace": "Alabama",
+  "references": ["Unity.InputSystem"],
+  "autoReferenced": true
+}
