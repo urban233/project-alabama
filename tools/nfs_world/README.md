@@ -16,7 +16,10 @@ python tools/nfs_world/inspect_map.py --root .
 
 Sources, exported assets, generated scenes, metadata, and source-specific reports
 stay local under Git-ignored paths. This map is excluded from the project's
-shareable asset pack. No asset redistribution rights are established by conversion.
+original shareable asset pack. A separately pinned private `nfs-world` ZIP now
+supports two-developer handoff; see [asset versioning](../../docs/asset-versioning.md)
+and [the developer plan](../../docs/two-developer-plan.md). No asset redistribution
+rights are established by conversion.
 
 ## Reproduce the local import
 

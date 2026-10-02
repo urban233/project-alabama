@@ -1,6 +1,6 @@
 # Project Alabama
 
-An open-source arcade racing game built with Unity, developed at solo indie scope while learning professional game development. The first delivery is a BMW in a compact industrial city area, inspired by the atmosphere of Need for Speed: Most Wanted (2005).
+An open-source arcade racing game built with Unity, developed by two contributors while learning professional game development. The first delivery is a BMW in a compact industrial city area, inspired by the atmosphere of Need for Speed: Most Wanted (2005).
 
 ## Restore the separate assets first
 
@@ -36,6 +36,30 @@ python ./tools/asset_pack.py export --output artifacts/share/project-alabama-ass
 ```
 
 Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer without requiring Unity or artwork. The public remote contains only the code-only `main` history; any asset-inclusive baseline branch kept by the owner is local and must not be pushed.
+
+### Versioned asset handoffs and the NFS prototype
+
+The original ZIP commands above remain compatible. Named asset releases add
+checked-in version locks, status/verification, safe upgrades and rollback. The
+reviewed original pack is pinned as `base` **1.0.0**. The separate private
+`nfs-world` **0.1.0** pack includes Downtown's generated assets and editable sources;
+it is excluded from the original shared pack and must not be published.
+
+With Unity and Blender closed, restore both packs from their privately supplied ZIPs:
+
+```powershell
+python ./tools/asset_pack.py import 'C:/Users/you/Downloads/project-alabama-assets.zip' --lock docs/asset-packs/base.lock.json
+python ./tools/asset_pack.py import 'C:/Users/you/Downloads/project-alabama-nfs-world-0.1.0.zip' --lock docs/asset-packs/nfs-world.lock.json
+python ./tools/asset_pack.py verify --lock docs/asset-packs/nfs-world.lock.json
+./tools/nfs-world.ps1 -Action ArtVerify
+```
+
+Use the filename/version pinned by the current lock. Import preserves GUIDs,
+rejects local edits and backs up replaced/removed assets during upgrades. Assets,
+ZIPs, full map manifests and installed receipts remain ignored; Git records only
+the profiles, small locks and tooling. See [asset versioning](docs/asset-versioning.md)
+for publishing/rollback commands and [the two-developer plan](docs/two-developer-plan.md)
+for ownership, district expansion, Downtown improvement and acceptance checks.
 
 ## Toolchain
 

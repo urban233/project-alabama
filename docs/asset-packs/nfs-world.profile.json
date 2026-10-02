@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "name": "nfs-world",
+  "purpose": "Private local-prototype handoff of editable NFS map sources and generated Unity assets",
+  "include": [
+    "unity/Assets/Alabama/Art/Maps/NfsWorld",
+    "source-art/maps/nfs-world/blender",
+    "source-art/maps/nfs-world/art-textures",
+    "source-art/maps/nfs-world/textures",
+    "source-art/maps/nfs-world/original",
+    "source-art/maps/nfs-world/neighbor-roads"
+  ],
+  "exclude": ["**/*.blend1", "**/*.blend2"],
+  "dependencies": ["docs/asset-packs/base.lock.json"]
+}
