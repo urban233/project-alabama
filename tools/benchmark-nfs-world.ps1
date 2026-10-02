@@ -1,18 +1,19 @@
 [CmdletBinding()]
-param([switch]$Visible, [switch]$Style, [switch]$Art, [switch]$Driving, [ValidateRange(0,240)][int]$FrameRateCap = 0,
+param([switch]$Visible, [switch]$Style, [switch]$Art, [switch]$Runtime, [switch]$Driving, [ValidateRange(0,240)][int]$FrameRateCap = 0,
       [switch]$DiagnosticNoShadows, [switch]$DiagnosticHardShadows,
       [ValidateRange(0,1)][float]$DiagnosticRenderScale = 0,
       [ValidateSet('Default','D3D11','D3D12')][string]$GraphicsApi = 'Default')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
-if ($Art -and $Style) { throw 'Choose either the art or style variant.' }
-if ($Driving -and -not $Art) { throw 'The high-speed corridors are qualified against the local art scene.' }
+if (@($Art, $Style, $Runtime | Where-Object { $_ }).Count -gt 1) { throw 'Choose one art, style or additive-runtime variant.' }
+if ($Runtime -and ($DiagnosticNoShadows -or $DiagnosticHardShadows -or $DiagnosticRenderScale -gt 0)) { throw 'Runtime comparisons preserve the approved rendering settings.' }
+if ($Driving -and -not ($Art -or $Runtime)) { throw 'The high-speed corridors require the art or additive-runtime scene.' }
 if ($GraphicsApi -ne 'Default' -and $DiagnosticRenderScale -eq 0) { throw 'Select an explicit diagnostic render scale for graphics-API comparisons.' }
-$taskPlayer = Join-Path $taskRoot $(if ($Art) { 'builds/nfs-world-art/Alabama.exe' } elseif ($Style) { 'builds/nfs-world-style/Alabama.exe' } else { 'builds/nfs-world/Alabama.exe' })
+$taskPlayer = Join-Path $taskRoot $(if ($Runtime) { 'builds/nfs-world-runtime/Alabama.exe' } elseif ($Art) { 'builds/nfs-world-art/Alabama.exe' } elseif ($Style) { 'builds/nfs-world-style/Alabama.exe' } else { 'builds/nfs-world/Alabama.exe' })
 $taskOutput = Join-Path $taskRoot 'artifacts/NfsWorld'
 if (-not (Test-Path -LiteralPath $taskPlayer)) { throw 'Build the local NFS World player first.' }
-$taskName = if ($Art) { 'player-art-benchmark' } elseif ($Style) { 'player-style-benchmark' } else { 'player-view-benchmark' }
+$taskName = if ($Runtime) { 'player-runtime-benchmark' } elseif ($Art) { 'player-art-benchmark' } elseif ($Style) { 'player-style-benchmark' } else { 'player-view-benchmark' }
 if ($DiagnosticNoShadows -or $DiagnosticHardShadows -or $DiagnosticRenderScale -gt 0) { $taskName = 'player-art-diagnostic-benchmark' }
 if ($Driving) { $taskName += '-driving' }
 if ($FrameRateCap -gt 0) { $taskName += "-cap$FrameRateCap" }

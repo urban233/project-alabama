@@ -54,6 +54,11 @@ namespace Alabama.Driving
 
         public void SetCommand(VehicleCommand value) => command = value;
 
+        // District lifetime may change the safe reset destination, without changing
+        // the vehicle/input instance or moving a driving vehicle.
+        public void SetRecoveryPose(Vector3 position, Quaternion rotation)
+        { spawnPosition = position; spawnRotation = rotation; }
+
         private void FixedUpdate()
         {
             float signedSpeed = SignedForwardSpeed;
@@ -92,8 +97,11 @@ namespace Alabama.Driving
         {
             body.position = spawnPosition;
             body.rotation = spawnRotation;
-            body.linearVelocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
+            if (!body.isKinematic)
+            {
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
             command = default;
             IsReversing = false;
             body.WakeUp();
