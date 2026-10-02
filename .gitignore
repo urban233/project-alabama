@@ -4,6 +4,9 @@ artifacts/
 builds/
 local-toolchain.json
 
+# Supplied NFS World source archive stays local.
+/asw-nfs-world.7z
+
 # Artwork is distributed separately; restore it with tools/asset_pack.py.
 /source-art/
 /unity/Assets/Alabama/Art/
