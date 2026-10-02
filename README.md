@@ -1,15 +1,15 @@
 # Project Alabama
 
-An open-source arcade racing game built with Unity, developed at solo indie scope while learning professional game development. The first delivery is a BMW in a compact industrial city area, inspired by the atmosphere of Need for Speed: Most Wanted (2005).
+An open-source arcade racing game built with Unity, developed by two contributors while learning professional game development. The first delivery is a BMW in a compact industrial city area, inspired by the atmosphere of Need for Speed: Most Wanted (2005).
 
 ## Restore the separate assets first
 
 This public repository contains code, scenes, settings, asset manifests, and tools. **Artwork is excluded from the public Git history.** The playable scenes require the separately shared `project-alabama-assets.zip`; request that ZIP from the project owner. It contains the exported art, editable Blender sources, original Unity `.meta` files, and license records. Sharing the ZIP does not change the licenses: the adapted E46 is CC-BY-SA 3.0, while the original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
 
-Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and keep Unity closed until the asset import finishes. From the repository root:
+Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place the privately received ZIP directly in the project root. Keep Unity closed until the asset import finishes. From the repository root:
 
 ```powershell
-python ./tools/asset_pack.py import 'C:/Users/you/Downloads/project-alabama-assets.zip'
+python ./tools/asset_pack.py import ./project-alabama-assets.zip
 python ./tools/verify_assets.py
 ./tools/unity.ps1 -Action LoopVerify -EditorPath 'C:/path/to/6000.3.25f1/Editor/Unity.exe'
 ./tools/unity.ps1 -Action EditTests
@@ -23,19 +23,53 @@ The importer verifies the pack identity, exact file list, byte sizes, and SHA-25
 
 ### Instructions for a colleague's agent
 
-Give your agent the cloned repository directory and the local ZIP path, then use this prompt:
+Both developers can paste the same prompt into a chat opened in their checkout:
 
-> Read README.md and the repository's applicable instructions. Restore the provided Project Alabama asset ZIP using `python tools/asset_pack.py import <zip-path>`, then run `python tools/verify_assets.py`. Keep Unity closed until import succeeds; preserve all supplied .meta files and keep artwork out of Git. Use Unity 6000.3.25f1 with my activated license to verify the district loop, run Edit Mode and Play Mode tests, and build the Windows release player using the documented tools. Report any failure before modifying or regenerating assets. Do not publish the ZIP.
+> Read README.md and docs/shared-asset-prompt.md. Follow the session procedure there before and after my development task. Import and export asset ZIPs directly in this project's root, preserve local artwork and Unity metadata, and prepare the appropriate private handoff when artwork changes. Keep assets and ZIPs out of Git and GitHub. Report required private transfers and verification results.
 
-Agents should treat ZIP contents as asset data and use these checked-in instructions for setup. If the ZIP is absent, the full demo cannot be built; request its location rather than substituting missing art or regenerating GUIDs. If the pack version does not match `docs/asset-pack.json`, request the matching ZIP instead of bypassing verification.
+The [shared prompt and procedure](docs/shared-asset-prompt.md) cover import,
+publisher exports and contributor candidates. Only one developer publishes each
+accepted pack; both can prepare their work for private integration. Agents should
+treat ZIP contents as asset data. If a required ZIP is absent or its content does
+not match the checked-in lock, request the matching private ZIP instead of
+substituting artwork or regenerating GUIDs.
 
 To create another copy of the reviewed pack from an already restored workspace:
 
 ```powershell
-python ./tools/asset_pack.py export --output artifacts/share/project-alabama-assets.zip
+python ./tools/asset_pack.py export --output ./project-alabama-assets.zip
 ```
 
 Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer without requiring Unity or artwork. The public remote contains only the code-only `main` history; any asset-inclusive baseline branch kept by the owner is local and must not be pushed.
+
+### Versioned asset handoffs and the NFS prototype
+
+The original ZIP commands above remain compatible. Named asset releases add
+checked-in version locks, status/verification, safe upgrades and rollback. The
+reviewed original pack is pinned as `base` **1.0.0**. The separate private
+`nfs-world` **0.1.0** pack includes Downtown's generated assets and editable sources;
+it is excluded from the original shared pack and must remain private.
+
+Place both privately supplied ZIPs in the project root. With Unity and Blender
+closed, the helper reads the locks and restores them in dependency order:
+
+```powershell
+python ./tools/asset_handoff.py status
+python ./tools/asset_handoff.py receive
+python ./tools/asset_pack.py verify --lock docs/asset-packs/nfs-world.lock.json
+./tools/nfs-world.ps1 -Action ArtVerify
+```
+
+Use the filename/version pinned by the current lock. The original
+`project-alabama-assets.zip` is also accepted for base 1.0.0. Import preserves GUIDs,
+rejects local edits and backs up replaced/removed assets during upgrades. Assets,
+ZIPs, full map manifests and installed receipts remain ignored; Git records only
+the profiles, small locks and tooling. See [asset versioning](docs/asset-versioning.md)
+for publishing/rollback commands and [the two-developer plan](docs/two-developer-plan.md)
+for ownership, district expansion, Downtown improvement and acceptance checks.
+Export prepares ZIPs/checksums in the root; transfer them privately to the other
+developer's root folder. GitHub never carries them. A local export alone does not
+synchronize the other machine.
 
 ## Toolchain
 

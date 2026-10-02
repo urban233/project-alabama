@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import shutil
+import sys
 import tempfile
 import zipfile
 
@@ -104,6 +105,12 @@ def import_pack(source):
 
 
 def main():
+    # Preserve the original reviewed ZIP and commands. Named releases use the
+    # same entry point with an explicit lock, or one of these lifecycle commands.
+    if "--lock" in sys.argv[1:] or (len(sys.argv) > 1 and sys.argv[1] in ("pin", "snapshot", "status", "verify")):
+        from asset_versions import main as versioned_main
+        versioned_main()
+        return
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
     sub.add_parser("export").add_argument("--output", type=Path, required=True)
