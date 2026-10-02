@@ -95,6 +95,8 @@ the synthetic lifetime fixtures are private assets; public Git contains their
 recipes and tests. See the [district integration contract](docs/district-integration-contract.md)
 before generating a neighbouring district. Synthetic fixture recovery is not a
 verified real district connection.
+The [B qualification record](docs/developer-b-runtime-status.md) records player
+timings, transition hitches, tests and the private contributor handoff.
 
 ## Toolchain
 
