@@ -1,6 +1,6 @@
 {
   "name": "Alabama.Runtime",
   "rootNamespace": "Alabama",
-  "references": ["Unity.InputSystem", "Unity.RenderPipelines.Universal.Runtime"],
+  "references": ["Unity.InputSystem", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
   "autoReferenced": true
 }

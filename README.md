@@ -71,6 +71,33 @@ Export prepares ZIPs/checksums in the root; transfer them privately to the other
 developer's root folder. GitHub never carries them. A local export alone does not
 synchronize the other machine.
 
+## Developer B additive district runtime
+
+The first B milestone derives a persistent gameplay scene and additive Downtown
+content from the accepted standalone art scene. Restore the pinned private packs
+first, keep Unity/Blender closed for generation, and use:
+
+```powershell
+./tools/nfs-world.ps1 -Action RuntimeSetup
+./tools/nfs-world.ps1 -Action RuntimeOcclusion
+./tools/nfs-world.ps1 -Action RuntimeTest
+./tools/nfs-world.ps1 -Action RuntimeBuild
+./tools/qualify-district-lifetime.ps1 -Visible
+./tools/benchmark-nfs-world.ps1 -Runtime -Driving -Visible -FrameRateCap 30
+```
+
+Open `Assets/Alabama/Art/Maps/NfsWorld/Runtime/DistrictRuntime.unity` to play
+Downtown through the additive loader, or run `builds/nfs-world-runtime/Alabama.exe`.
+The controls and approved autumn rendering are unchanged: 1920×1080 output,
+1440×810 internal through FSR1, with a map-local 30 FPS cap. The existing standalone
+scenes and generation commands remain available. Derived scenes/occlusion and
+the synthetic lifetime fixtures are private assets; public Git contains their
+recipes and tests. See the [district integration contract](docs/district-integration-contract.md)
+before generating a neighbouring district. Synthetic fixture recovery is not a
+verified real district connection.
+The [B qualification record](docs/developer-b-runtime-status.md) records player
+timings, transition hitches, tests and the private contributor handoff.
+
 ## Toolchain
 
 - Unity 6.3 LTS, pinned to **6000.3.25f1**. Open the `unity/` folder as the project.

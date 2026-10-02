@@ -11,8 +11,20 @@ namespace Alabama.Driving
         private Bounds[] cachedBounds;
         private bool[] hidden;
 
+        public int TargetCount => renderers == null ? 0 : System.Array.FindAll(renderers, r => r != null).Length;
+
+        public bool TargetsBelongTo(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (renderers == null || distances == null || renderers.Length != distances.Length) return false;
+            for (int i = 0; i < renderers.Length; i++)
+                if (renderers[i] == null || renderers[i].gameObject.scene != scene ||
+                    !float.IsFinite(distances[i]) || distances[i] <= 0) return false;
+            return true;
+        }
+
         public void Configure(Renderer[] targets, float[] limits)
         {
+            ShowAll();
             renderers = targets;
             distances = limits;
             cachedBounds = null;
@@ -20,6 +32,7 @@ namespace Alabama.Driving
 
         public void AddTargets(Renderer[] targets, float limit)
         {
+            ShowAll();
             var retained = new System.Collections.Generic.List<Renderer>();
             var limits = new System.Collections.Generic.List<float>();
             var incoming = new System.Collections.Generic.HashSet<Renderer>(targets);

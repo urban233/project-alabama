@@ -11,7 +11,13 @@ namespace Alabama.Driving
 
         private void FixedUpdate()
         {
-            if (controller != null && controller.Body.position.y < minimumHeight) controller.ResetToSpawn();
+            if (controller == null) return;
+            var runtime = Alabama.Districts.DistrictRuntime.Instance;
+            if (runtime != null && runtime.Player == controller)
+            {
+                if (controller.Body.position.y < runtime.MinimumRecoveryHeight) runtime.Recover();
+            }
+            else if (controller.Body.position.y < minimumHeight) controller.ResetToSpawn();
         }
     }
 }

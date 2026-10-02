@@ -63,6 +63,13 @@ namespace Alabama.Driving
         private IEnumerator Start()
         {
             if (Application.isEditor || !Environment.GetCommandLineArgs().Contains("-nfs-benchmark")) yield break;
+            var runtime = Alabama.Districts.DistrictRuntime.Instance;
+            if (runtime != null)
+                while (!runtime.Ready)
+                {
+                    if (runtime.LastFailure != null) throw new InvalidOperationException(runtime.LastFailure);
+                    yield return null;
+                }
             var arguments = Environment.GetCommandLineArgs();
             bool driving = arguments.Contains("-nfs-driving-benchmark");
             bool diagnosticNoShadows = arguments.Contains("-nfs-diagnostic-no-shadows");
@@ -206,6 +213,7 @@ namespace Alabama.Driving
             string filename = arguments.Contains("-nfs-art-benchmark") ? "player-art-benchmark.json" :
                 arguments.Contains("-nfs-style-benchmark") ? "player-style-benchmark.json" : "player-view-benchmark.json";
             if (diagnosticNoShadows || diagnosticHardShadows || scaleArgument >= 0) filename = "player-art-diagnostic-benchmark.json";
+            if (runtime != null) filename = "player-runtime-benchmark.json";
             if (driving) filename = filename.Replace(".json", "-driving.json");
             if (Application.targetFrameRate > 0) filename = filename.Replace(".json", "-cap" + Application.targetFrameRate + ".json");
             File.WriteAllText(Path.Combine(directory, filename), JsonUtility.ToJson(report, true));
