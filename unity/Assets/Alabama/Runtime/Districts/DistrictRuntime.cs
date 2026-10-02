@@ -120,7 +120,10 @@ namespace Alabama.Districts
             if (busy) { LastFailure = "Another district operation is in progress."; yield break; }
             if (!districts.TryGetValue(id, out var content)) { LastFailure = "District is not loaded: " + id; yield break; }
             if (districts.Count <= 1) { LastFailure = "The last supporting district must remain loaded."; yield break; }
-            bool near = content.Bounds.Contains(player.Body.position) || player.GetComponentsInChildren<WheelCollider>()
+            // An airborne car can still depend on the road beneath it. Use the
+            // horizontal footprint as well as current wheel contacts.
+            var projected = player.Body.position; projected.y = content.Bounds.center.y;
+            bool near = content.Bounds.Contains(projected) || player.GetComponentsInChildren<WheelCollider>()
                 .Any(w => w.GetGroundHit(out var h) && h.collider.gameObject.scene == content.gameObject.scene);
             DistrictContent destination = null;
             if (recoverIntoDistrict != null && (!districts.TryGetValue(recoverIntoDistrict, out destination) || destination == content))

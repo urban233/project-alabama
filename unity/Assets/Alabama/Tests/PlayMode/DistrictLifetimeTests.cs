@@ -144,6 +144,16 @@ namespace Alabama.Tests
         }
 
         [UnityTest]
+        public IEnumerator AirborneVehicleStillProtectsItsSupportingDistrict()
+        {
+            yield return runtime.LoadDistrict(Root + "FixtureB.unity");
+            car.Body.position = new Vector3(-10000, 30, 0); Physics.SyncTransforms();
+            yield return runtime.UnloadDistrict("fixture-a");
+            Assert.That(runtime.LastFailure, Does.Contain("Supporting"));
+            Assert.That(runtime.DistrictCount, Is.EqualTo(2)); AssertOwners();
+        }
+
+        [UnityTest]
         public IEnumerator RetainedRecoveryMustStillHaveCollisionAtUnloadTime()
         {
             yield return runtime.LoadDistrict(Root + "FixtureB.unity");

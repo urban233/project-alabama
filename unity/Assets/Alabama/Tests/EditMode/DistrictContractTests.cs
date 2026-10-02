@@ -35,17 +35,31 @@ namespace Alabama.Tests
             var data = new GameObject("District").AddComponent<DistrictContent>();
             var pose = new DistrictRecoveryPose { id = "spawn", position = Vector3.up * .24f };
             data.Configure("test", new Bounds(Vector3.zero, Vector3.one * 100), new[] { pose });
-            var other = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
-            var road = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(road, other);
-            road.transform.position = Vector3.down * .2f; road.transform.localScale = new Vector3(20, .4f, 20);
-            Assert.That(data.Supports(pose), Is.False);
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(road, scene);
-            Assert.That(data.Supports(pose), Is.True);
-            road.transform.position += Vector3.up * 5;
-            Assert.That(data.Supports(pose), Is.False);
-            Object.DestroyImmediate(data.gameObject); Object.DestroyImmediate(road);
-            EditorSceneManager.CloseScene(other, true);
+            const string directory = "Assets/Alabama/Art/Maps/NfsWorld/Runtime";
+            System.IO.Directory.CreateDirectory(directory);
+            string scratch = directory + "/RecoveryTest-" + System.Guid.NewGuid().ToString("N") + ".unity";
+            // The Editor requires the first scene to be saved before an additive
+            // scene is created. This unique, ignored fixture is deleted in finally.
+            EditorSceneManager.SaveScene(scene, scratch);
+            try
+            {
+                var other = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                var road = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(road, other);
+                road.transform.position = Vector3.down * .2f; road.transform.localScale = new Vector3(20, .4f, 20);
+                Assert.That(data.Supports(pose), Is.False);
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(road, scene);
+                Assert.That(data.Supports(pose), Is.True);
+                road.transform.position += Vector3.up * 5;
+                Assert.That(data.Supports(pose), Is.False);
+                Object.DestroyImmediate(data.gameObject); Object.DestroyImmediate(road);
+                EditorSceneManager.CloseScene(other, true);
+            }
+            finally
+            {
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                UnityEditor.AssetDatabase.DeleteAsset(scratch);
+            }
         }
     }
 }

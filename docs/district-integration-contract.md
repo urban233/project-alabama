@@ -73,7 +73,8 @@ validation occurs after Unity activates the scene, so it is not an isolation bou
 for arbitrary scripts in an unreviewed scene.
 
 `yield return runtime.UnloadDistrict(id)` rejects the last district and content
-whose bounds contain the car or whose collider supports a wheel. To deliberately
+whose horizontal bounds contain the car (including an airborne car) or whose
+collider supports a wheel. To deliberately
 remove supporting content, specify `UnloadDistrict(id, retainedDistrictId)`.
 The loader verifies the retained pose, holds physics, moves the existing car and
 snaps the existing camera before removing source support. It preserves input,
@@ -101,6 +102,11 @@ Restore the pinned ZIPs with the editors closed, then:
 ./tools/unity.ps1 -Action EditTests
 ./tools/unity.ps1 -Action PlayTests
 ./tools/nfs-world.ps1 -Action RuntimeBuild
+./tools/qualify-district-lifetime.ps1 -Visible
+./tools/benchmark-nfs-world.ps1 -Art -Driving -Visible
+./tools/benchmark-nfs-world.ps1 -Runtime -Driving -Visible
+./tools/benchmark-nfs-world.ps1 -Art -Driving -Visible -FrameRateCap 30
+./tools/benchmark-nfs-world.ps1 -Runtime -Driving -Visible -FrameRateCap 30
 ```
 
 RuntimeSetup reads the accepted standalone art scene and saves derived scenes

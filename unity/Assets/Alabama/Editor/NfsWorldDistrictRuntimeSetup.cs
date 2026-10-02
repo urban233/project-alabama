@@ -149,6 +149,7 @@ namespace Alabama.Editor
 
         public static void Build()
         {
+            NfsWorldValidation.RuntimeContent();
             Verify(); PlayerSettings.enableFrameTimingStats = true;
             string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../builds/nfs-world-runtime/Alabama.exe"));
             Directory.CreateDirectory(Path.GetDirectoryName(output));
