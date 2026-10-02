@@ -190,8 +190,10 @@ namespace Alabama.Editor
             else EditorUtility.CopySerialized(pipeline, batchedPipeline);
             batchedPipeline.useSRPBatcher = true;
             ConfigureAntialiasing(batchedPipeline);
+            if (art) NfsWorldRenderOptimization.Configure(batchedPipeline, DirectoryPath);
             EditorUtility.SetDirty(batchedPipeline);
             new GameObject("Local map render settings").AddComponent<NfsWorldRenderSettings>().Configure(batchedPipeline);
+            if (art) NfsWorldExitClosures.Apply();
             AssetDatabase.SaveAssets();
             EditorSceneManager.SaveScene(scene, art ? NfsWorldArtPass.ScenePath : NfsWorldStylePreview.ScenePath);
             File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/" + (art ? "art-batching.json" : "visual-batching.json"))),

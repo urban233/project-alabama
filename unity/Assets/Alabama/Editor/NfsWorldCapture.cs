@@ -19,6 +19,7 @@ namespace Alabama.Editor
         public static void District() => Start("District", NfsWorldSetup.DistrictScene);
         public static void Style() => Start("StylePreview", NfsWorldStylePreview.ScenePath);
         public static void Art() => Start("ArtPass", NfsWorldArtPass.ScenePath);
+        public static void ArtExits() => Start("ArtExits", NfsWorldArtPass.ScenePath);
         public static void LightingStudy() => Start("LightingStudy", NfsWorldStylePreview.LightingStudyScenePath);
 
         private static void Start(string name, string scene)
@@ -44,6 +45,12 @@ namespace Alabama.Editor
                 var camera = Camera.main;
                 NfsWorldSetup.Require(camera != null, "Capture camera missing");
                 var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
+                if (variant == "ArtExits")
+                {
+                    CaptureExits(camera, culling, output);
+                    Finish(null);
+                    return;
+                }
                 if (culling != null) culling.Refresh();
                 Save(camera, Path.Combine(output, "chase.png"));
                 if (variant != "Sample")
@@ -87,6 +94,34 @@ namespace Alabama.Editor
             // textures. Read back a warmup frame before keeping the actual capture.
             VehicleCapture.Save(camera, path);
             VehicleCapture.Save(camera, path);
+        }
+
+        private static void CaptureExits(Camera camera, NfsWorldDistanceCulling culling, string output)
+        {
+            var root = GameObject.Find("Downtown exit closures");
+            NfsWorldSetup.Require(root != null && root.transform.childCount == 6, "Six exit walls are required.");
+            var car = UnityEngine.Object.FindFirstObjectByType<ArcadeCarController>();
+            foreach (Transform wall in root.transform)
+            {
+                float width = wall.GetComponent<MeshFilter>().sharedMesh.bounds.size.x;
+                var hits = new RaycastHit[0];
+                foreach (float fraction in new[] { -.25f, .25f, 0 })
+                {
+                    var probe = wall.position - wall.forward * 12 + wall.right * (width * fraction);
+                    hits = Physics.RaycastAll(probe + Vector3.up * 5, Vector3.down, 10)
+                        .Where(hit => hit.collider.transform.root.name == "RoadsPhysical" && hit.normal.y > .5f)
+                        .OrderBy(hit => Mathf.Abs(hit.point.y - probe.y)).ToArray();
+                    if (hits.Length > 0) break;
+                }
+                NfsWorldSetup.Require(hits.Length > 0, "Exit capture approach has no road: " + wall.name);
+                car.transform.SetPositionAndRotation(hits[0].point + Vector3.up * .24f, wall.rotation);
+                camera.transform.position = car.transform.TransformPoint(new Vector3(0, 1.9f, -6));
+                camera.transform.LookAt(wall.position + Vector3.up * 1.2f);
+                Physics.SyncTransforms();
+                if (culling != null) culling.Refresh();
+                Save(camera, Path.Combine(output, "exit-" + (wall.GetSiblingIndex() + 1) + ".png"));
+            }
+            Debug.Log("Six road-level exit wall captures saved: " + output);
         }
 
         private static void Finish(Exception error)

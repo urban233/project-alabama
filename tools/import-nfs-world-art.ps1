@@ -3,6 +3,10 @@ param([switch]$SkipBlender, [switch]$SkipTextureBake, [string]$BlenderPath = 'C:
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
+$taskExitsPath = Join-Path $taskRoot 'unity/Assets/Alabama/Art/Maps/NfsWorld/ArtPass/exits.json'
+if (-not (Test-Path -LiteralPath $taskExitsPath)) { throw 'Prepare and inspect the local district exit manifest first; see tools/nfs_world/README.md.' }
+$taskExits = Get-Content -LiteralPath $taskExitsPath -Raw | ConvertFrom-Json
+if (-not $taskExits.reviewed -or $taskExits.sourceCollisionChanged -or $taskExits.closures.Count -ne 6) { throw 'The six district exit spans need review.' }
 if (-not $SkipBlender) {
     & $BlenderPath --background --factory-startup --disable-autoexec --python-exit-code 1 --python (Join-Path $taskRoot 'tools/blender/art_nfs_world.py') -- --root $taskRoot
     if ($LASTEXITCODE -ne 0) { throw 'Blender rejected the art meshes.' }
@@ -22,5 +26,7 @@ if (-not $SkipTextureBake) {
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtOptimize
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtVerify
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action DrivingTest
+& (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action QualificationTest
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtCapture
+& (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtExitCapture
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtBuild

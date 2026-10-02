@@ -96,6 +96,12 @@ The working interpretation is a grounded lower-poly racing environment: realisti
 
 **Milestone 2:** comparable in-engine captures show the agreed visual direction across Downtown Rockport, with complete prototype driving preserved and measured performance reported. Traffic, police, pursuit UI, and the screenshot's HUD are outside this map conversion scope.
 
+The user subsequently made steady 60 FPS on the local Ryzen 7 5700U integrated
+GPU a requirement. Qualify the current art player on that machine, with 1080p
+output, and explicitly report any internal render scaling/upscaling. Average FPS
+alone is insufficient: inspect slow-frame percentiles and moving-car behaviour.
+Keep the approved autumn lighting and shadows while measuring optimizations.
+
 ## Planned outputs and next action
 
 - Public-safe scripts and this plan can live in `tools/`, `unity/Assets/Alabama/Editor/`, and `docs/`; commit and push validated code checkpoints as subsequently requested. Never stage the generated map assets or archive.

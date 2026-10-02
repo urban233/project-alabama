@@ -14,8 +14,9 @@ The baseline, optimized visual pass, and separate model/texture art pass are
 available for local testing.
 The latter retains the approved autumn lighting and shadows and improves rendering
 through spatial batches, shared materials, and a local pipeline copy. Substantial
-geometry simplification, full-road traversal, district exit treatment, and 60 FPS
-qualification remain outstanding; this is a prototype delivery.
+geometry simplification and full-road traversal remain outstanding. Six reviewed
+exit walls are now present in the art scene. Steady 60 FPS on the local integrated
+GPU is a user requirement and is still undergoing qualification.
 
 ## Open and play locally
 
@@ -35,10 +36,11 @@ steering; Space for handbrake; R to reset to spawn; Escape to pause. Gamepad
 triggers, left stick, south face button, north face button, and Start provide the
 equivalent actions. There is no authored race route, traffic, police, or lap logic.
 
-The neighboring six districts are excluded. Roads leading into those districts
-can terminate at the import boundary; they currently have no authored closures.
-R resets immediately; automatic recovery resets falls below local Y = -80 m.
-This recovery is not a substitute for reviewing and closing each exit.
+The neighboring six districts are excluded. The art scene closes five connections
+to Camden, Kempton and Rosewood, plus the unfinished northern connector, with six
+visible angular concrete/hazard walls. The earlier comparison scenes retain their
+original boundaries. R resets immediately; automatic recovery resets falls below
+local Y = -80 m.
 
 ## Conversion contract
 
@@ -216,8 +218,9 @@ Unity binds replacements to **971 materials** and imports them in a batch.
 The resulting art scene has **2,721 batches / 3,117,257 visible triangles**, with
 53 texture-array materials. The reduction from baseline is **15,715 triangles
 (0.50%)**. This is primarily an appearance pass; substantial district-wide polygon
-reduction has not been achieved. The new art player has not been benchmarked, so
-the earlier optimized player's FPS figures do not qualify it.
+reduction has not been achieved. Six exit-wall meshes add 2,960 triangles; total
+art visuals are now 2,727 meshes / 3,120,217 triangles. Source collision is unchanged,
+with 74 additional BoxColliders for the walls.
 
 All **2,201 colliders / 3,381,268 collision triangles** remain exact, and
 **13,834/13,834 road samples** match, maximum error 0.765 mm. The full Unity suites
@@ -234,10 +237,28 @@ exact scene match. Broad silhouette/LOD reductions still require further authori
 flat shading alone does not reduce triangle counts. The reference's traffic, police and pursuit HUD
 remain outside the map conversion.
 
-Next work: author stronger LOD/silhouette
-reductions without losing façades/signs, close reviewed district exits, and qualify
-multi-level/high-speed routes. Further performance work is required for 60 FPS on
-the tested integrated GPU. No entire-district driving certification is claimed.
+The exit audit checks outward probes against neighbouring physical road surfaces
+at the correct elevation, rather than relying on shared vertex tessellation. It
+found 113 continuation edges in five regions. A sixth northern source-road terminal
+is closed separately. The layout diagram was inspected before importing the walls;
+all six walls passed collisions with the real car at an initial 108 km/h. High-speed
+multi-level traversal tests are being qualified separately. No entire-district
+driving certification is claimed.
+
+The art renderer now avoids unused opaque/depth copies, reconstructs half-resolution
+AO from depth, and reuses that prepass for opaque depth rejection. Sun, fog, ambient,
+exposure, shadow distance, cascades, resolution and softness stay unchanged. Native
+1080p still averaged 47–65 FPS across the five viewpoints. A 1440×810 world rendered
+through FSR1 at 1920×1080 output averaged 49–70 FPS, with 95th-percentile frame times
+16.6–22.7 ms: **steady 60 FPS is not yet met**. A temporary diagnostic with shadows
+disabled averaged 73–130 FPS; this is profiling evidence, not the saved art direction.
+Conservative occlusion culling has been baked against opaque geometry, excluding
+cutout cards as occluders. Its performance and visibility are still being evaluated.
+Reports are under `artifacts/NfsWorld/player-art-*.json`; they identify output and
+internal dimensions and explicitly describe the stationary-view sampling method.
+
+Next work: finish performance/visibility and high-speed qualification, capture all
+six walls at road level, and complete final regression/build checks before a PR.
 
 All map sources, Blender files, FBX/PNG/material/scene assets and their metadata,
 builds, and evidence remain under Git-ignored paths. The archive credits

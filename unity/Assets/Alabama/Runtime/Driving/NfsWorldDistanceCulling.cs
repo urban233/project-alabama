@@ -15,6 +15,27 @@ namespace Alabama.Driving
             distances = limits;
         }
 
+        public void AddTargets(Renderer[] targets, float limit)
+        {
+            var retained = new System.Collections.Generic.List<Renderer>();
+            var limits = new System.Collections.Generic.List<float>();
+            if (renderers != null)
+                for (int index = 0; index < renderers.Length; index++)
+                    if (renderers[index] != null && System.Array.IndexOf(targets, renderers[index]) < 0)
+                    {
+                        retained.Add(renderers[index]);
+                        limits.Add(distances[index]);
+                    }
+            foreach (var target in targets)
+                if (target != null && !retained.Contains(target))
+                {
+                    retained.Add(target);
+                    limits.Add(limit);
+                }
+            renderers = retained.ToArray();
+            distances = limits.ToArray();
+        }
+
         public float DistanceFor(Renderer renderer)
         {
             int index = System.Array.IndexOf(renderers, renderer);

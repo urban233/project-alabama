@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Profiling;
+using UnityEngine.Rendering.Universal;
 
 namespace Alabama.Driving
 {
@@ -33,6 +34,10 @@ namespace Alabama.Driving
             public string processor;
             public int width;
             public int height;
+            public float renderScale;
+            public int internalWidth;
+            public int internalHeight;
+            public string upscaling;
             public int cameraRenders;
             public long allocatedMemoryBytes;
             public View[] views;
@@ -45,6 +50,19 @@ namespace Alabama.Driving
         private IEnumerator Start()
         {
             if (Application.isEditor || !Environment.GetCommandLineArgs().Contains("-nfs-benchmark")) yield break;
+            var arguments = Environment.GetCommandLineArgs();
+            bool diagnosticNoShadows = arguments.Contains("-nfs-diagnostic-no-shadows");
+            bool diagnosticHardShadows = arguments.Contains("-nfs-diagnostic-hard-shadows");
+            if (diagnosticNoShadows)
+                foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None)) light.shadows = LightShadows.None;
+            else if (diagnosticHardShadows)
+                foreach (var light in FindObjectsByType<Light>(FindObjectsSortMode.None)) light.shadows = LightShadows.Hard;
+            int scaleArgument = Array.IndexOf(arguments, "-nfs-diagnostic-render-scale");
+            if (scaleArgument >= 0 && scaleArgument + 1 < arguments.Length &&
+                float.TryParse(arguments[scaleArgument + 1], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var scale) &&
+                GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset diagnosticPipeline)
+                diagnosticPipeline.renderScale = Mathf.Clamp(scale, .5f, 1);
             Application.runInBackground = true;
             Application.targetFrameRate = -1;
             QualitySettings.vSyncCount = 0;
@@ -119,11 +137,18 @@ namespace Alabama.Driving
                 scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
                 method = "Uncapped rendered standalone player; five stationary road viewpoints, 120 warmup and 360 measured frames each. Not a route-driving benchmark."
             };
+            if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline)
+            {
+                report.renderScale = pipeline.renderScale;
+                report.internalWidth = Mathf.RoundToInt(Screen.width * pipeline.renderScale);
+                report.internalHeight = Mathf.RoundToInt(Screen.height * pipeline.renderScale);
+                report.upscaling = pipeline.upscalingFilter.ToString();
+            }
             var directory = Path.GetFullPath(Path.Combine(Application.dataPath, "../../../artifacts/NfsWorld"));
             Directory.CreateDirectory(directory);
-            var arguments = Environment.GetCommandLineArgs();
             string filename = arguments.Contains("-nfs-art-benchmark") ? "player-art-benchmark.json" :
                 arguments.Contains("-nfs-style-benchmark") ? "player-style-benchmark.json" : "player-view-benchmark.json";
+            if (diagnosticNoShadows || diagnosticHardShadows || scaleArgument >= 0) filename = "player-art-diagnostic-benchmark.json";
             File.WriteAllText(Path.Combine(directory, filename), JsonUtility.ToJson(report, true));
             Debug.Log($"NFS World rendered benchmark finished: {cameraRenders} camera renders, {views.Sum(v => v.gpuSamples)} GPU samples.");
             Application.Quit(cameraRenders >= 2400 && views.All(v => v.gpuSamples > 0) ? 0 : 1);

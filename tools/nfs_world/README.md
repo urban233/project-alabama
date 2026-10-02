@@ -172,3 +172,43 @@ Outputs: `NfsWorldArtPass.unity`, `builds/nfs-world-art/Alabama.exe`,
 `collision-Art.json` and `Captures/ArtPass`. Texture treatment spans the full
 district; substantial polygon/LOD reduction and route qualification remain separate
 work. A clean checkout still needs the local source archive and generated assets.
+
+## District exits and performance qualification
+
+The art helper requires the local reviewed `ArtPass/exits.json` before importing.
+Extract only the six neighbouring `*-RoadsPhysical.kn5` files into ignored
+`source-art/maps/nfs-world/neighbor-roads/mauleous_nfs_world/`. Pass explicit archive
+member paths to 7-Zip; an include filter alone can retain its default all-files
+selection. Run these scripts with the local Python/NumPy/Pillow runtime:
+
+```powershell
+python tools/nfs_world/audit_district_exits.py
+python tools/nfs_world/plan_exit_closures.py
+```
+
+The first script probes outside Downtown's physical road boundaries, retaining
+source elevation when matching neighbouring road triangles. The second groups
+those connections and the northern unfinished terminal into six barrier spans,
+five metres inside the retained district. Inspect `exit-closure-plan.png` and
+the source topology before setting `reviewed` to true in the local manifest.
+Identical regeneration retains review; changed spans invalidate it. Source data
+and the reviewed manifest stay ignored. `ArtExits` imports the angular walls with
+grounded box collision; `ArtExitCapture` saves six road-level previews.
+
+```powershell
+./tools/nfs-world.ps1 -Action QualificationTest
+./tools/nfs-world.ps1 -Action ArtRenderOptimize
+./tools/nfs-world.ps1 -Action ArtOcclusion
+./tools/nfs-world.ps1 -Action ArtBuild
+./tools/benchmark-nfs-world.ps1 -Visible -Art
+```
+
+Occlusion baking must follow scene regeneration: it stores scene-specific static
+visibility data in the ignored scene directory. Opaque surfaces can occlude;
+foliage/fence cutouts cannot. Captures and rendered benchmarks must verify the
+result. The scene-local renderer preserves approved lighting/shadows and currently
+tests FSR1 at 0.75 render scale with a 1080p output/HUD. Benchmark reports expose
+both resolutions and slow-frame percentiles. This candidate has not yet qualified
+steady 60 FPS on the Ryzen 7 5700U. Optional `-DiagnosticNoShadows` and
+`-DiagnosticRenderScale` affect only the benchmark process and write a separate
+diagnostic report. They are profiling tools, not accepted final settings.

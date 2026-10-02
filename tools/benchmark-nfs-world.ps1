@@ -1,5 +1,6 @@
 [CmdletBinding()]
-param([switch]$Visible, [switch]$Style, [switch]$Art)
+param([switch]$Visible, [switch]$Style, [switch]$Art, [switch]$DiagnosticNoShadows, [switch]$DiagnosticHardShadows,
+      [ValidateRange(0,1)][float]$DiagnosticRenderScale = 0)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
@@ -8,6 +9,7 @@ $taskPlayer = Join-Path $taskRoot $(if ($Art) { 'builds/nfs-world-art/Alabama.ex
 $taskOutput = Join-Path $taskRoot 'artifacts/NfsWorld'
 if (-not (Test-Path -LiteralPath $taskPlayer)) { throw 'Build the local NFS World player first.' }
 $taskName = if ($Art) { 'player-art-benchmark' } elseif ($Style) { 'player-style-benchmark' } else { 'player-view-benchmark' }
+if ($DiagnosticNoShadows -or $DiagnosticHardShadows -or $DiagnosticRenderScale -gt 0) { $taskName = 'player-art-diagnostic-benchmark' }
 $taskLog = Join-Path $taskOutput ($taskName + '.log')
 $taskReport = Join-Path $taskOutput ($taskName + '.json')
 if (Test-Path -LiteralPath $taskReport) { Remove-Item -LiteralPath $taskReport }
@@ -15,6 +17,9 @@ if (Test-Path -LiteralPath $taskReport) { Remove-Item -LiteralPath $taskReport }
 $taskArguments = @('-nfs-benchmark', '-screen-fullscreen', '0', '-screen-width', '1920', '-screen-height', '1080', '-logFile', $taskLog)
 if ($Style) { $taskArguments += '-nfs-style-benchmark' }
 if ($Art) { $taskArguments += '-nfs-art-benchmark' }
+if ($DiagnosticNoShadows) { $taskArguments += '-nfs-diagnostic-no-shadows' }
+if ($DiagnosticHardShadows) { $taskArguments += '-nfs-diagnostic-hard-shadows' }
+if ($DiagnosticRenderScale -gt 0) { $taskArguments += @('-nfs-diagnostic-render-scale', $DiagnosticRenderScale.ToString([System.Globalization.CultureInfo]::InvariantCulture)) }
 $taskArguments = $taskArguments | ForEach-Object { '"' + $_ + '"' }
 $taskWindowStyle = if ($Visible) { 'Normal' } else { 'Hidden' }
 $taskProcess = Start-Process -FilePath $taskPlayer -ArgumentList $taskArguments -WindowStyle $taskWindowStyle -PassThru
