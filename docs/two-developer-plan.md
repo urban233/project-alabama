@@ -13,6 +13,9 @@ as the baseline. Both developers restore the pinned base and NFS packs using
 [asset versioning](asset-versioning.md). Use Unity 6000.3.25f1, Blender 4.4, the
 same package lock and world origin. Keep assets/ZIPs outside Git; commit and push
 code, recipes, profiles, small locks and docs on dedicated `codex/` branches.
+Use the [same chat prompt](shared-asset-prompt.md) in both checkouts. Place privately
+received ZIPs in each project root and run `python tools/asset_handoff.py receive`.
+Exported releases and contributor candidates also go in the root, ignored by Git.
 
 Agree on the source-to-Unity coordinate frame and district connection records.
 Independently centering each district would misalign adjoining roads. Record
@@ -33,6 +36,10 @@ A owns publication of the shared pack so its lock is not updated independently
 by both developers. Shared runtime/import contracts need the other's review
 before dependent generation. Use separate workspaces; avoid concurrent edits to
 one Blender file, Unity scene, config or generated asset directory.
+A configures `--publish-pack nfs-world` in the root handoff helper; B configures
+no publishing pack and uses `contribute` for privately reviewed artwork changes.
+Private transfer remains separate from code pushes. A integrates owned files and
+deletions, then publishes one accepted version that both developers receive.
 
 ## Deliverable 1: reusable district boundaries
 

@@ -3,9 +3,12 @@
 artifacts/
 builds/
 local-toolchain.json
+local-asset-handoff.json
 
 # Separate asset handoffs never belong in the public repository.
 /project-alabama-*.zip
+/project-alabama-*.zip.sha256
+/project-alabama-*.zip.partial
 
 # Supplied NFS World source archive stays local.
 /asw-nfs-world.7z

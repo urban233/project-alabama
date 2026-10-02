@@ -174,7 +174,9 @@ Outputs: `NfsWorldArtPass.unity`, `builds/nfs-world-art/Alabama.exe`,
 `artifacts/NfsWorld/art-meshes.json`, `art-validation.json`, `art-batching.json`,
 `collision-Art.json` and `Captures/ArtPass`. Texture treatment spans the full
 district; substantial polygon/LOD reduction remains further authoring work.
-A clean checkout still needs the local source archive and generated assets.
+A clean checkout can receive the pinned private ZIPs in its project root using
+the [shared chat procedure](../../docs/shared-asset-prompt.md); conversion from
+scratch still needs the original local source archive.
 
 ## District exits and performance qualification
 
