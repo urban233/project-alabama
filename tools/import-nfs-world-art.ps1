@@ -24,6 +24,8 @@ if (-not $SkipTextureBake) {
     if ($LASTEXITCODE -ne 0) { throw 'Blender rejected the texture bake.' }
 }
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtOptimize
+& (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtShadowPartition
+& (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtOcclusion
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action ArtVerify
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action DrivingTest
 & (Join-Path $PSScriptRoot 'nfs-world.ps1') -Action QualificationTest

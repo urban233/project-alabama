@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('SampleSetup', 'Setup', 'SampleCapture', 'Capture', 'SampleVerify', 'Verify', 'Build', 'DrivingTest', 'QualificationTest', 'StylePreview', 'StyleCapture', 'LightingCapture', 'StyleOptimize', 'StyleVerify', 'StyleBuild', 'StyleAntialiasing', 'RestoreProjectAntialiasing', 'ArtOptimize', 'ArtRenderOptimize', 'ArtExits', 'ArtVerify', 'ArtCapture', 'ArtExitCapture', 'ArtOcclusion', 'ArtBuild')]
+    [ValidateSet('SampleSetup', 'Setup', 'SampleCapture', 'Capture', 'SampleVerify', 'Verify', 'Build', 'DrivingTest', 'QualificationTest', 'StylePreview', 'StyleCapture', 'LightingCapture', 'StyleOptimize', 'StyleVerify', 'StyleBuild', 'StyleAntialiasing', 'RestoreProjectAntialiasing', 'ArtOptimize', 'ArtRenderOptimize', 'ArtExits', 'ArtVerify', 'ArtCapture', 'ArtExitCapture', 'ArtOcclusion', 'ArtShadowPartition', 'ArtBuild')]
     [string]$Action = 'Setup',
     [string]$EditorPath = 'C:/Program Files/Unity/Hub/Editor/6000.3.25f1/Editor/Unity.exe'
 )
@@ -37,6 +37,7 @@ $taskMethods = @{
     ArtBuild = 'Alabama.Editor.NfsWorldValidation.BuildArt'
     ArtExitCapture = 'Alabama.Editor.NfsWorldCapture.ArtExits'
     ArtOcclusion = 'Alabama.Editor.NfsWorldOcclusion.Run'
+    ArtShadowPartition = 'Alabama.Editor.NfsWorldShadowProxies.Run'
 }
 $taskOutput = Join-Path $taskRoot ('artifacts/NfsWorld/' + $Action)
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null

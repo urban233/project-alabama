@@ -75,12 +75,17 @@ namespace Alabama.Editor
                     }
                 }
                 camera.orthographic = true;
+                camera.useOcclusionCulling = false; // Overview is outside the baked driving view volume.
                 camera.orthographicSize = variant == "Sample" ? 230 : 2200;
                 camera.farClipPlane = 10000;
                 camera.transform.position = new Vector3(variant == "Sample" ? 0 : -160, 4500, variant == "Sample" ? 0 : 730);
                 camera.transform.rotation = Quaternion.Euler(90, 0, 0);
                 RenderSettings.fog = false;
-                if (culling != null) culling.enabled = false; // Overview intentionally shows the complete district.
+                if (culling != null)
+                {
+                    culling.enabled = false;
+                    culling.ShowAll(); // Editor callbacks do not run for ordinary runtime components.
+                }
                 Save(camera, Path.Combine(output, "overview.png"));
                 Debug.Log("NFS World captures saved: " + output);
                 Finish(null);

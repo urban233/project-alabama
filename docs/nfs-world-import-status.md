@@ -224,7 +224,7 @@ with 74 additional BoxColliders for the walls.
 
 All **2,201 colliders / 3,381,268 collision triangles** remain exact, and
 **13,834/13,834 road samples** match, maximum error 0.765 mm. The full Unity suites
-passed 12 EditMode and 9 PlayMode tests, including all three converted-map driving
+passed 14 EditMode and 11 PlayMode tests, including all three converted-map driving
 tests for the final district-wide texture/facet revision. The strict art Windows build
 succeeded. Evidence is in `artifacts/NfsWorld/art-validation.json`,
 `art-batching.json`, `collision-Art.json`, `DrivingTest/results.xml`,
@@ -241,24 +241,58 @@ The exit audit checks outward probes against neighbouring physical road surfaces
 at the correct elevation, rather than relying on shared vertex tessellation. It
 found 113 continuation edges in five regions. A sixth northern source-road terminal
 is closed separately. The layout diagram was inspected before importing the walls;
-all six walls passed collisions with the real car at an initial 108 km/h. High-speed
-multi-level traversal tests are being qualified separately. No entire-district
-driving certification is claimed.
+all six walls passed collisions with the real car at an initial 108 km/h, and all
+six road-level barrier captures were inspected. Three clear, 120-metre corridors
+at different elevations passed traversal at initial 126 km/h along the source
+grade: 240/240 physics steps maintained wheel support on every route, with
+68.8-70.8 metres travelled in two seconds. No entire-district driving certification
+is claimed.
 
 The art renderer now avoids unused opaque/depth copies, reconstructs half-resolution
 AO from depth, and reuses that prepass for opaque depth rejection. Sun, fog, ambient,
-exposure, shadow distance, cascades, resolution and softness stay unchanged. Native
-1080p still averaged 47–65 FPS across the five viewpoints. A 1440×810 world rendered
-through FSR1 at 1920×1080 output averaged 49–70 FPS, with 95th-percentile frame times
-16.6–22.7 ms: **steady 60 FPS is not yet met**. A temporary diagnostic with shadows
-disabled averaged 73–130 FPS; this is profiling evidence, not the saved art direction.
+exposure, shadow distance, cascades, resolution and softness stay unchanged.
+The user revised the target to **30 FPS on this device** on 2026-10-02, with testing
+on mains. Ordinary art play now uses a map-local 30 FPS cap; other scenes retain
+their own settings. The world renders at 1440×810 through FSR1 at 1920×1080 output.
+Earlier uncapped battery/Windows Power saver trials ranged from 49–70 FPS, with
+95th-percentile frame times of 16.6–22.7 ms. Those are not power-controlled comparisons.
+A temporary diagnostic with shadows disabled averaged 73–130 FPS; this is profiling
+evidence, not the saved art direction. No Windows power-plan change was made.
 Conservative occlusion culling has been baked against opaque geometry, excluding
-cutout cards as occluders. Its performance and visibility are still being evaluated.
-Reports are under `artifacts/NfsWorld/player-art-*.json`; they identify output and
-internal dimensions and explicitly describe the stationary-view sampling method.
+cutout cards as occluders. Exact shadow surfaces now use 29,738 smaller 32-metre
+batches, with all 3,117,257 triangles retained. Original colour batches stop casting
+duplicate shadows. This trades more local mesh assets/import work for tighter
+cascade bounds; it is not a polygon reduction. Cached bounds and renderer-state
+changes reduce repeated managed/native culling work.
 
-Next work: finish performance/visibility and high-speed qualification, capture all
-six walls at road level, and complete final regression/build checks before a PR.
+The first verified mains/Power saver run averaged **40.9–58.4 FPS** across five
+stationary views, with P95 frame times **19.8–32.0 ms** and P99 **20.5–39.1 ms**.
+GPU timings dominate; these averages alone do not establish consistent pacing.
+Reports are under `artifacts/NfsWorld/player-art-*.json`; they identify output and
+internal dimensions and explicitly describe the sampling method. Current scripts
+also record charger/power-plan state, CPU thread timings and present waits. A
+moving qualification adds nine two-second traversals over the three clear source
+road corridors, repeated three times, and checks actual wheel support/displacement.
+
+The final mains/Power saver capped run recorded **4,020 camera renders** and
+**2,340 measured frames**. Five stationary views averaged **29.88–29.99 FPS**;
+P95 was **33.36–36.09 ms**, P99 **33.51–40.44 ms**. Nine high-speed traversals
+averaged **29.98–30.00 FPS**, with P95 **33.34–33.66 ms**, P99 **33.34–33.91 ms**,
+and **540/540 measured frames** supported by at least three source-road wheel
+contacts. Each traversal covered **68.77–70.82 metres**. Nine measured frames
+overall exceeded 40 ms (0.38%), maximum 48.42 ms: the prototype reaches the revised
+30 FPS target in these samples, with occasional hitches rather than a claim of
+perfect pacing on every street. Charger presence and unchanged Power saver are
+recorded at both ends in `player-art-benchmark-driving-cap30.json`.
+The capped run's raw GPU timestamps sometimes exceed the observed frame interval;
+they are retained as driver output and are not interpreted as GPU work duration.
+Use uncapped runs for bottleneck comparisons.
+
+Final build, captures and regression evidence remain local. Reproduction uses
+`tools/import-nfs-world-art.ps1`: generate art, partition exact shadow surfaces,
+bake scene occlusion, verify collision, run driving/qualification tests, capture
+road/exit views and build. Broad new silhouette/LOD authoring is a future extension,
+not required to run this district prototype at the revised target.
 
 All map sources, Blender files, FBX/PNG/material/scene assets and their metadata,
 builds, and evidence remain under Git-ignored paths. The archive credits

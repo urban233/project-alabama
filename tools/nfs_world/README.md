@@ -170,8 +170,8 @@ surface coverage separately from screen-space visibility. Reports are in
 Outputs: `NfsWorldArtPass.unity`, `builds/nfs-world-art/Alabama.exe`,
 `artifacts/NfsWorld/art-meshes.json`, `art-validation.json`, `art-batching.json`,
 `collision-Art.json` and `Captures/ArtPass`. Texture treatment spans the full
-district; substantial polygon/LOD reduction and route qualification remain separate
-work. A clean checkout still needs the local source archive and generated assets.
+district; substantial polygon/LOD reduction remains further authoring work.
+A clean checkout still needs the local source archive and generated assets.
 
 ## District exits and performance qualification
 
@@ -198,17 +198,33 @@ grounded box collision; `ArtExitCapture` saves six road-level previews.
 ```powershell
 ./tools/nfs-world.ps1 -Action QualificationTest
 ./tools/nfs-world.ps1 -Action ArtRenderOptimize
+./tools/nfs-world.ps1 -Action ArtShadowPartition
 ./tools/nfs-world.ps1 -Action ArtOcclusion
 ./tools/nfs-world.ps1 -Action ArtBuild
 ./tools/benchmark-nfs-world.ps1 -Visible -Art
+./tools/benchmark-nfs-world.ps1 -Visible -Art -Driving -FrameRateCap 30
 ```
 
 Occlusion baking must follow scene regeneration: it stores scene-specific static
 visibility data in the ignored scene directory. Opaque surfaces can occlude;
 foliage/fence cutouts cannot. Captures and rendered benchmarks must verify the
-result. The scene-local renderer preserves approved lighting/shadows and currently
-tests FSR1 at 0.75 render scale with a 1080p output/HUD. Benchmark reports expose
-both resolutions and slow-frame percentiles. This candidate has not yet qualified
-steady 60 FPS on the Ryzen 7 5700U. Optional `-DiagnosticNoShadows` and
-`-DiagnosticRenderScale` affect only the benchmark process and write a separate
-diagnostic report. They are profiling tools, not accepted final settings.
+result. Exact shadow surfaces are partitioned into 32-metre batches, retaining
+every source triangle, normal and UV/cutout mask; colour batches stop casting
+duplicate shadows. This increases stored meshes and build/import work, while
+tighter bounds reduce unnecessary cascade submissions. Source collision is unchanged.
+The art helper now runs shadow partitioning and occlusion after scene generation.
+The scene-local renderer preserves approved lighting/shadows and uses FSR1 at
+0.75 render scale (1440x810 world, 1920x1080 output/HUD). Ordinary art play is capped
+at the user's revised 30 FPS target; other prototype scenes keep their own target.
+
+Reports expose both resolutions, GPU/CPU thread timings, frame percentiles and
+Windows power/charger state at both ends of the run. The helper records this state
+without changing the power plan. `-Driving` adds nine two-second traversals over
+three source-road corridors, repeated three times at initial 126 km/h along the
+road grade. It rejects failed displacement or wheel support. This samples movement
+and loading/culling behaviour, rather than certifying every street. `-FrameRateCap`
+tests pacing; omit it to measure uncapped performance headroom. Suffixes `-driving`
+and `-cap30` identify these reports. Optional `-DiagnosticNoShadows`,
+`-DiagnosticHardShadows`, `-DiagnosticRenderScale` and `-GraphicsApi` affect only
+the benchmark process and write separate diagnostic reports; they are profiling
+tools, not accepted final settings. See the status document for observed results.

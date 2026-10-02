@@ -22,6 +22,8 @@ namespace Alabama.Editor
             public int meshColliders;
             public int visibleMeshes;
             public int visibleTriangles;
+            public int shadowProxyMeshes;
+            public int shadowProxyTriangles;
             public int collisionTriangles;
             public float maximumRoadSampleError;
             public string[] failures;
@@ -45,10 +47,19 @@ namespace Alabama.Editor
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
                 {
                     var renderer = filter.GetComponent<MeshRenderer>();
+                    bool shadowOnly = renderer != null && renderer.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+                    if (shadowOnly)
+                    {
+                        report.shadowProxyMeshes++;
+                        report.shadowProxyTriangles += filter.sharedMesh.triangles.Length / 3;
+                    }
                     if (renderer != null && renderer.enabled)
                     {
-                        report.visibleMeshes++;
-                        report.visibleTriangles += filter.sharedMesh.triangles.Length / 3;
+                        if (!shadowOnly)
+                        {
+                            report.visibleMeshes++;
+                            report.visibleTriangles += filter.sharedMesh.triangles.Length / 3;
+                        }
                         NfsWorldSetup.Require(renderer.sharedMaterials.All(m => m != null &&
                             (m.shader.name == "Universal Render Pipeline/Lit" || m.shader.name == "Alabama/Map Texture Array")),
                             "Missing/mismatched URP material: " + filter.name);

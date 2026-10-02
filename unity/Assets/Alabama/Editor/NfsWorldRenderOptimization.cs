@@ -1,5 +1,7 @@
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using Alabama.Driving;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -10,10 +12,13 @@ namespace Alabama.Editor
     {
         public static void Run()
         {
+            var scene = EditorSceneManager.OpenScene(NfsWorldArtPass.ScenePath);
             string directory = NfsWorldSetup.BasePath + "/ArtPass/Optimized";
             var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(directory + "/BatchedPipeline.asset");
             NfsWorldSetup.Require(pipeline != null, "Generate the art scene first.");
             Configure(pipeline, directory);
+            Object.FindFirstObjectByType<NfsWorldRenderSettings>().Configure(pipeline, 30);
+            EditorSceneManager.SaveScene(scene);
         }
 
         public static void Configure(UniversalRenderPipelineAsset pipeline, string directory)

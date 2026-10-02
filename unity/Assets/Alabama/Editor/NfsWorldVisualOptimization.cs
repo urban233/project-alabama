@@ -192,7 +192,7 @@ namespace Alabama.Editor
             ConfigureAntialiasing(batchedPipeline);
             if (art) NfsWorldRenderOptimization.Configure(batchedPipeline, DirectoryPath);
             EditorUtility.SetDirty(batchedPipeline);
-            new GameObject("Local map render settings").AddComponent<NfsWorldRenderSettings>().Configure(batchedPipeline);
+            new GameObject("Local map render settings").AddComponent<NfsWorldRenderSettings>().Configure(batchedPipeline, art ? 30 : 0);
             if (art) NfsWorldExitClosures.Apply();
             AssetDatabase.SaveAssets();
             EditorSceneManager.SaveScene(scene, art ? NfsWorldArtPass.ScenePath : NfsWorldStylePreview.ScenePath);
@@ -420,7 +420,7 @@ namespace Alabama.Editor
             return Covers(before, after) && Covers(after, before);
         }
 
-        private static IEnumerable<(Vector2Int cell, Mesh mesh)> Partition(Mesh source)
+        public static IEnumerable<(Vector2Int cell, Mesh mesh)> Partition(Mesh source, int cellMetres = 256)
         {
             var vertices = source.vertices;
             var normals = source.normals;
@@ -431,7 +431,7 @@ namespace Alabama.Editor
             for (int index = 0; index < triangles.Length; index += 3)
             {
                 var centre = (vertices[triangles[index]] + vertices[triangles[index + 1]] + vertices[triangles[index + 2]]) / 3;
-                var cell = new Vector2Int(Mathf.FloorToInt(centre.x / 256), Mathf.FloorToInt(centre.z / 256));
+                var cell = new Vector2Int(Mathf.FloorToInt(centre.x / cellMetres), Mathf.FloorToInt(centre.z / cellMetres));
                 if (!cells.TryGetValue(cell, out var indices)) { indices = new List<int>(); cells.Add(cell, indices); }
                 indices.Add(triangles[index]); indices.Add(triangles[index + 1]); indices.Add(triangles[index + 2]);
             }
