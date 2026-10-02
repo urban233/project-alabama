@@ -4,7 +4,7 @@ An open-source arcade racing game built with Unity, developed by two contributor
 
 ## Restore the separate assets first
 
-This public repository contains code, scenes, settings, asset manifests, and tools. **Artwork is excluded from the public Git history.** The playable scenes require the separately shared `project-alabama-assets.zip`; request that ZIP from the project owner. It contains the exported art, editable Blender sources, original Unity `.meta` files, and license records. Sharing the ZIP does not change the licenses: the adapted E46 is CC-BY-SA 3.0, while the original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
+This public repository contains code, scenes, settings, asset manifests, tools, and the [art-direction reference pack](docs/art-direction/2026-10-02-nfsmw/README.md). **Runtime artwork is excluded from the public Git history.** The reference pack's screenshots, generated concepts, guides and prompt records are included at the project owner's request. The playable scenes require the separately shared `project-alabama-assets.zip`; request that ZIP from the project owner. It contains the exported art, editable Blender sources, original Unity `.meta` files, and license records. Sharing the ZIP does not change the licenses: the adapted E46 is CC-BY-SA 3.0, while the original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
 
 Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place the privately received ZIP directly in the project root. Keep Unity closed until the asset import finishes. From the repository root:
 
@@ -40,7 +40,7 @@ To create another copy of the reviewed pack from an already restored workspace:
 python ./tools/asset_pack.py export --output ./project-alabama-assets.zip
 ```
 
-Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer without requiring Unity or artwork. The public remote contains only the code-only `main` history; any asset-inclusive baseline branch kept by the owner is local and must not be pushed.
+Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer without requiring Unity or artwork. Public Git includes the art-direction references, while runtime artwork is distributed through private asset packs; any baseline branch containing runtime assets kept by the owner is local and must not be pushed.
 
 ### Versioned asset handoffs and the NFS prototype
 
@@ -106,7 +106,7 @@ timings, transition hitches, tests and the private contributor handoff.
 - Git for the public source repository; artwork is restored from the separate ZIP.
 - Windows is the initial build target; the 1920 x 1080 / 60 FPS reference PC and current measurements are recorded in [qualification status](docs/qualification-status.md).
 
-The Unity editor and packages keep their own licenses. Contributors need a suitable Unity installation and license. Original code uses MIT; each artwork/source dependency has its own recorded license. The supplied screenshot is local reference material and is excluded from Git.
+The Unity editor and packages keep their own licenses. Contributors need a suitable Unity installation and license. Original code uses MIT; each artwork/source dependency has its own recorded license. The supplied screenshot is included in the art-direction reference pack as reference material; the repository's code license does not establish a license for third-party content depicted in it.
 
 ## Work locally
 
