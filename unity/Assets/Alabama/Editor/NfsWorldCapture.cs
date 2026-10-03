@@ -23,12 +23,13 @@ namespace Alabama.Editor
         public static void ArtExits() => Start("ArtExits", NfsWorldArtPass.ScenePath);
         public static void LightingStudy() => Start("LightingStudy", NfsWorldStylePreview.LightingStudyScenePath);
         public static void RosewoodConnector() => Start("RosewoodConnector", NfsWorldDistrictRuntimeSetup.RuntimeScene);
+        public static void RosewoodConnectorLighting() => Start("RosewoodConnectorLighting", NfsWorldDistrictRuntimeSetup.RuntimeScene);
 
         private static void Start(string name, string scene)
         {
             variant = name;
             EditorSceneManager.OpenScene(scene);
-            if (name == "RosewoodConnector")
+            if (name.StartsWith("RosewoodConnector", StringComparison.Ordinal))
             {
                 EditorSceneManager.OpenScene(NfsWorldDistrictRuntimeSetup.DowntownScene, OpenSceneMode.Additive);
                 EditorSceneManager.OpenScene(NfsWorldRosewoodSetup.ScenePath, OpenSceneMode.Additive);
@@ -52,9 +53,10 @@ namespace Alabama.Editor
                 var camera = Camera.main;
                 NfsWorldSetup.Require(camera != null, "Capture camera missing");
                 var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
-                if (variant == "RosewoodConnector")
+                if (variant.StartsWith("RosewoodConnector", StringComparison.Ordinal))
                 {
-                    CaptureRosewoodConnector(camera, output);
+                    if (variant == "RosewoodConnectorLighting") CaptureConnectorLighting(camera, output);
+                    else CaptureRosewoodConnector(camera, output);
                     Finish(null);
                     return;
                 }
@@ -106,18 +108,39 @@ namespace Alabama.Editor
             catch (Exception error) { Finish(error); }
         }
 
-        private static void CaptureRosewoodConnector(Camera camera, string output)
+        private static void CaptureConnectorLighting(Camera camera, string output)
+        {
+            var root = GameObject.Find("Rosewood connector study fill");
+            NfsWorldSetup.Require(root != null, "Generate the connector fill before capturing lighting variants.");
+            var lights = root.GetComponentsInChildren<Light>();
+            NfsWorldSetup.Require(lights.Length == 3, "The connector study expects three local fill lights.");
+            var original = lights.Select(light => light.intensity).ToArray();
+            try
+            {
+                foreach (float intensity in new[] { 0f, 13.2f, 39.6f, 79.2f })
+                {
+                    foreach (var light in lights) light.intensity = intensity;
+                    CaptureRosewoodConnector(camera, output, "fill-" + intensity.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + "-");
+                }
+            }
+            finally { for (int i = 0; i < lights.Length; i++) lights[i].intensity = original[i]; }
+        }
+
+        private static void CaptureRosewoodConnector(Camera camera, string output, string prefix = "")
         {
             camera.useOcclusionCulling = false; // Fixed art views sit outside the driving bake.
+            var pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            NfsWorldSetup.Require(pipeline != null, "Connector captures require the active URP pipeline.");
+            Debug.Log("Connector capture: 1920x1080 output, URP render scale " + pipeline.renderScale + ".");
             var culling = UnityEngine.Object.FindObjectsByType<NfsWorldDistanceCulling>(FindObjectsSortMode.None);
             camera.transform.position = new Vector3(485f, 25f, -1087f);
             camera.transform.LookAt(new Vector3(560f, 24f, -1080f));
             foreach (var item in culling) item.Refresh();
-            Save(camera, Path.Combine(output, "route.png"));
+            Save(camera, Path.Combine(output, prefix + "route.png"));
             camera.transform.position = new Vector3(510f, 27f, -1080f);
             camera.transform.LookAt(new Vector3(527f, 27f, -1100f));
             foreach (var item in culling) item.Refresh();
-            Save(camera, Path.Combine(output, "wall.png"));
+            Save(camera, Path.Combine(output, prefix + "wall.png"));
             Debug.Log("Rosewood connector art captures saved: " + output);
         }
 

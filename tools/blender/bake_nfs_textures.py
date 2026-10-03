@@ -24,7 +24,7 @@ ROSEWOOD_CONNECTOR_CONCRETE = {
     '8ccb9837f46a5f7f1c0d44cc48d7995c52d634283d3cd05888ce29d1363d4522.png',
     '632df24c36a5e59d50607839a5a79eb0a3b2e909d0965c8fe640b0ebd5155f7b.png',
 }
-ROSEWOOD_CONNECTOR_RECIPE = 'rosewood-connector-concrete-v1'
+ROSEWOOD_CONNECTOR_RECIPE = 'rosewood-connector-concrete-v2'
 
 
 def simplify_colour(rgba, alpha_clip, foliage, road):
@@ -57,7 +57,7 @@ def simplify_colour(rgba, alpha_clip, foliage, road):
     return result
 
 
-def quiet_connector_concrete(rgba):
+def quiet_connector_concrete(rgba, source):
     """Lift shaded neutral concrete slightly without washing lamps or paint."""
     result = rgba.copy()
     rgb = result[:, :, :3]
@@ -65,6 +65,9 @@ def quiet_connector_concrete(rgba):
     chroma = rgb.max(axis=2) - rgb.min(axis=2)
     neutral = np.clip((.18 - chroma) / .08, 0, 1)
     not_bright = np.clip((.70 - luminance) / .15, 0, 1)
+    # The first Unity capture was too smooth. Retain subdued source wear within
+    # neutral concrete regions while keeping the established atlas edges.
+    rgb[:] += .25 * (source[:, :, :3] - rgb) * (neutral * not_bright)[:, :, None]
     lift = .10 * np.clip(1 - luminance / .70, 0, 1) * neutral * not_bright
     rgb[:] = np.clip(rgb + lift[:, :, None] * np.array([1, .84, .68], dtype=np.float32), 0, 1)
     return result
@@ -82,7 +85,7 @@ def verify_recipe():
     assert baked[:, :14, :3].std() < source[:, :14, :3].std(), 'Noise was not reduced'
     assert abs(float(baked[:, :, :3].mean() - source[:, :, :3].mean())) < .03
     assert baked[:, 15, :3].mean() < .25 and baked[:, 16, :3].mean() > .65, 'Window edge moved'
-    concrete = quiet_connector_concrete(baked)
+    concrete = quiet_connector_concrete(baked, source)
     assert np.array_equal(concrete[:, :, 3], baked[:, :, 3]), 'Connector alpha changed'
     assert concrete[:, 4, :3].mean() > baked[:, 4, :3].mean(), 'Shaded concrete was not lifted'
     assert np.array_equal(concrete[:, 24, :3], baked[:, 24, :3]), 'Bright atlas region changed'
@@ -152,7 +155,7 @@ def main():
             if connector_study:
                 if definition['alpha'] or categories != ['Buildings']:
                     raise ValueError('Connector concrete must be opaque architecture: ' + source_file)
-                result = quiet_connector_concrete(result)
+                result = quiet_connector_concrete(result, rgba)
             brightness_shift = float(result[:, :, :3].mean() - rgba[:, :, :3].mean())
             allowed_shift = .08 if connector_study else .04
             if abs(brightness_shift) > allowed_shift or not np.isfinite(result).all():

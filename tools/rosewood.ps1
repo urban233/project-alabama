@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Generate','FinalizeContent','Verify','Build','AcceptSeam','Occlusion','ArtStudyCapture')][string]$Action = 'Verify',
+    [ValidateSet('Generate','FinalizeContent','Verify','Build','AcceptSeam','Occlusion','ArtStudyCapture','ArtStudyLightingCapture','ArtStudyVerify')][string]$Action = 'Verify',
     [string]$EditorPath = 'C:/Program Files/Unity/Hub/Editor/6000.3.25f1/Editor/Unity.exe',
     [switch]$AllowEditorUpgrade
 )
@@ -17,11 +17,13 @@ $taskOutput = Join-Path $taskRoot ('artifacts/NfsWorld/Rosewood/' + $Action)
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
 $taskMethod = if ($Action -eq 'Occlusion') { 'Alabama.Editor.NfsWorldRosewoodSetup.BakeOcclusion' }
     elseif ($Action -eq 'ArtStudyCapture') { 'Alabama.Editor.NfsWorldCapture.RosewoodConnector' }
+    elseif ($Action -eq 'ArtStudyLightingCapture') { 'Alabama.Editor.NfsWorldCapture.RosewoodConnectorLighting' }
+    elseif ($Action -eq 'ArtStudyVerify') { 'Alabama.Editor.NfsWorldRosewoodSetup.VerifyConnectorStudy' }
     else { 'Alabama.Editor.NfsWorldRosewoodSetup.' + $Action }
 $taskArguments = @('-batchmode','-projectPath',(Join-Path $taskRoot 'unity'),
     '-logFile',(Join-Path $taskOutput 'editor.log'),'-executeMethod',$taskMethod)
-if ($Action -ne 'ArtStudyCapture') { $taskArguments += '-nographics' }
-if ($Action -notin @('Occlusion','ArtStudyCapture')) { $taskArguments += '-quit' }
+if ($Action -notin @('ArtStudyCapture','ArtStudyLightingCapture')) { $taskArguments += '-nographics' }
+if ($Action -notin @('Occlusion','ArtStudyCapture','ArtStudyLightingCapture')) { $taskArguments += '-quit' }
 $taskArguments = $taskArguments | ForEach-Object { '"' + $_ + '"' }
 $taskProcess = Start-Process -FilePath $EditorPath -ArgumentList $taskArguments -WindowStyle Hidden -PassThru
 $taskProcess.WaitForExit(); $taskProcess.Refresh()

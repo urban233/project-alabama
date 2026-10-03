@@ -215,10 +215,28 @@ namespace Alabama.Editor
                 light.transform.position = positions[i];
                 light.type = LightType.Point;
                 light.color = new Color(.76f, .82f, .89f);
-                light.intensity = 2.2f;
+                light.intensity = 39.6f;
                 light.range = 24f;
                 light.shadows = LightShadows.None;
             }
+        }
+
+        public static void VerifyConnectorStudy()
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(Root + "/District/Buildings.fbx");
+            var authored = AssetDatabase.LoadAssetAtPath<GameObject>(Root + "/ArtMeshes/Buildings.fbx");
+            NfsWorldSetup.Require(source != null && authored != null, "Connector source and authored models are required.");
+            var original = source.GetComponentsInChildren<MeshFilter>().Single(filter => filter.name == "Buildings_00213").sharedMesh;
+            var candidate = authored.GetComponentsInChildren<MeshFilter>().Single(filter => filter.name == "Buildings_00213").sharedMesh;
+            NfsWorldSetup.Require(candidate.triangles.Length < original.triangles.Length, "Connector fitting was not reduced.");
+            NfsWorldSetup.Require(Vector3.Distance(original.bounds.min, candidate.bounds.min) < .002f &&
+                Vector3.Distance(original.bounds.max, candidate.bounds.max) < .002f &&
+                NfsWorldVisualOptimization.PreservesBoundaryCurves(original, candidate, .02f),
+                "Connector reduction changed its boundary curves after FBX import.");
+            int before = original.triangles.Length / 3, after = candidate.triangles.Length / 3;
+            File.WriteAllText(Evidence("connector-geometry.json"),
+                $"{{\"mesh\":\"Buildings_00213\",\"sourceTriangles\":{before},\"acceptedTriangles\":{after},\"boundaryPreserved\":true,\"collisionChanged\":false}}");
+            Debug.Log($"Connector fitting accepted after FBX import: {before} -> {after} triangles.");
         }
 
         private static void ConfigureBuildSettings()
