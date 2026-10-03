@@ -4,6 +4,8 @@ This pack gives coding agents visual targets for adapting the already imported N
 
 Start with the [art style guide](ART-STYLE-GUIDE.md), then read the [existing-map adaptation guide](agent-reference-pack/ADAPTATION-GUIDE.md). The guides point to the current Blender/Unity pipeline and explain which geometry, UV regions, alpha masks and collision surfaces to preserve.
 
+The [Rosewood connector first pass](rosewood-connector-first-pass.md) records the focused implementation, accepted geometry counts and repeatable in-engine review workflow.
+
 ## Primary style targets
 
 The three balanced images define the working detail level. Supplementary images below provide closer material and environmental context.

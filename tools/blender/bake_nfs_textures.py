@@ -17,6 +17,15 @@ import numpy as np
 VERSION = 'edge-preserving-albedo-v2'
 PROTECTED = re.compile(r'(?:^|_)(?:SGN|ADS|SFX|HUD|UI|DECAL|SIGN)(?:_|\d)|GRAF|GRAFF|LOGO|CHEVRON|WARNING|ARROWDOWN|ARROWUP', re.I)
 
+# Albedo atlases used by the connector tunnel's roof, wall and supports. Keep
+# their dimensions, UV islands and bright lamps; only quiet neutral concrete.
+ROSEWOOD_CONNECTOR_CONCRETE = {
+    '09fe35c0c0d072bc969c7e3b4872e43ac5c32a9fd0c15f42b69ff069b36631c6.png',
+    '8ccb9837f46a5f7f1c0d44cc48d7995c52d634283d3cd05888ce29d1363d4522.png',
+    '632df24c36a5e59d50607839a5a79eb0a3b2e909d0965c8fe640b0ebd5155f7b.png',
+}
+ROSEWOOD_CONNECTOR_RECIPE = 'rosewood-connector-concrete-v3'
+
 
 def simplify_colour(rgba, alpha_clip, foliage, road):
     original_alpha = rgba[:, :, 3].copy()
@@ -48,6 +57,22 @@ def simplify_colour(rgba, alpha_clip, foliage, road):
     return result
 
 
+def quiet_connector_concrete(rgba, source):
+    """Lift shaded neutral concrete slightly without washing lamps or paint."""
+    result = rgba.copy()
+    rgb = result[:, :, :3]
+    luminance = np.sum(rgb * np.array([.2126, .7152, .0722], dtype=np.float32), axis=2)
+    chroma = rgb.max(axis=2) - rgb.min(axis=2)
+    neutral = np.clip((.18 - chroma) / .08, 0, 1)
+    not_bright = np.clip((.70 - luminance) / .15, 0, 1)
+    # The first Unity capture was too smooth. Retain subdued source wear within
+    # neutral concrete regions while keeping the established atlas edges.
+    rgb[:] += .60 * (source[:, :, :3] - rgb) * (neutral * not_bright)[:, :, None]
+    lift = .10 * np.clip(1 - luminance / .70, 0, 1) * neutral * not_bright
+    rgb[:] = np.clip(rgb + lift[:, :, None] * np.array([1, .84, .68], dtype=np.float32), 0, 1)
+    return result
+
+
 def verify_recipe():
     rng = np.random.default_rng(19)
     source = np.ones((32, 32, 4), dtype=np.float32)
@@ -60,6 +85,10 @@ def verify_recipe():
     assert baked[:, :14, :3].std() < source[:, :14, :3].std(), 'Noise was not reduced'
     assert abs(float(baked[:, :, :3].mean() - source[:, :, :3].mean())) < .03
     assert baked[:, 15, :3].mean() < .25 and baked[:, 16, :3].mean() > .65, 'Window edge moved'
+    concrete = quiet_connector_concrete(baked, source)
+    assert np.array_equal(concrete[:, :, 3], baked[:, :, 3]), 'Connector alpha changed'
+    assert concrete[:, 4, :3].mean() > baked[:, 4, :3].mean(), 'Shaded concrete was not lifted'
+    assert np.array_equal(concrete[:, 24, :3], baked[:, 24, :3]), 'Bright atlas region changed'
 
 
 def main():
@@ -105,7 +134,9 @@ def main():
             report.append(dict(source=source_file, name=name, treatment='hand-authored' if source_file in authored else 'protected-lettering', categories=categories))
             continue
         digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
-        signature = hashlib.sha256((VERSION + digest + str(definition['alpha']) + str(categories)).encode()).hexdigest()
+        connector_study = config['districtId'] == 'rosewood' and source_file in ROSEWOOD_CONNECTOR_CONCRETE
+        version = VERSION + (ROSEWOOD_CONNECTOR_RECIPE if connector_study else '')
+        signature = hashlib.sha256((version + digest + str(definition['alpha']) + str(categories)).encode()).hexdigest()
         target_path = output / source_file
         prior = previous.get(source_file)
         if prior and prior.get('signature') == signature and target_path.is_file():
@@ -121,8 +152,13 @@ def main():
             foliage = 'Trees' in categories
             road = any(category in categories for category in ('Roads', 'Terrain'))
             result = simplify_colour(rgba, definition['alpha'], foliage, road)
+            if connector_study:
+                if definition['alpha'] or categories != ['Buildings']:
+                    raise ValueError('Connector concrete must be opaque architecture: ' + source_file)
+                result = quiet_connector_concrete(result, rgba)
             brightness_shift = float(result[:, :, :3].mean() - rgba[:, :, :3].mean())
-            if abs(brightness_shift) > .04 or not np.isfinite(result).all():
+            allowed_shift = .08 if connector_study else .04
+            if abs(brightness_shift) > allowed_shift or not np.isfinite(result).all():
                 raise ValueError('Bake changed overall palette or produced invalid pixels: ' + source_file)
             baked = bpy.data.images.new('Baked ' + source_file, width=width, height=height, alpha=True)
             baked.colorspace_settings.name = 'Non-Color'
@@ -133,6 +169,8 @@ def main():
             baked.save()
             record = dict(source=source_file, name=name, signature=signature, treatment='baked-albedo', categories=categories,
                           width=width, height=height, alpha=definition['alpha'], meanBrightnessShift=brightness_shift)
+            if connector_study:
+                record['study'] = ROSEWOOD_CONNECTOR_RECIPE
             bpy.data.images.remove(source)
             bpy.data.images.remove(baked)
         report.append(record)

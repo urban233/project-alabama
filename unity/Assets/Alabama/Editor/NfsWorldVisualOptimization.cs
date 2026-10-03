@@ -383,7 +383,7 @@ namespace Alabama.Editor
             AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(texture)) + ":" +
             AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(texture))));
 
-        private static bool PreservesBoundaryCurves(Mesh original, Mesh candidate, float tolerance)
+        internal static bool PreservesBoundaryCurves(Mesh original, Mesh candidate, float tolerance)
         {
             if (original == candidate) return true;
             Vector3Int Key(Vector3 point) => new Vector3Int(Mathf.RoundToInt(point.x * 1000),

@@ -11,9 +11,18 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simplify_nfs_world import bounds, simplify_planes, verify_bounds_reader, verify_planar_reduction
 from nfs_primitives import coarse_solids, verify_coarse_solids
+from nfs_guarded_components import simplify_components, verify_components
+
+
+# First Rosewood study: connected pieces of the tunnel's opaque metal fitting.
+# Open shell/pipe candidates failed Unity's boundary guard and retain the existing recipe.
+ROSEWOOD_CONNECTOR_ANGLES = {
+    'Buildings_00213': 15,  # metalwork
+}
 
 
 def main():
+    verify_components()
     verify_bounds_reader()
     verify_planar_reduction()
     verify_coarse_solids()
@@ -30,6 +39,12 @@ def main():
     inventory = json.loads((root / config['artifactRoot'] / 'inventory.json').read_text())
     texture_names = {t['sha256']: t['name'] for model in inventory['models'] for t in model['textures']}
     materials = {m['name']: m for m in contract['materials']}
+    if config['districtId'] == 'rosewood':
+        buildings = next(part for part in contract['parts'] if part['category'] == 'Buildings')
+        visible = {mesh['name'] for mesh in buildings['meshes'] if mesh['visible']}
+        missing = ROSEWOOD_CONNECTOR_ANGLES.keys() - visible
+        if missing:
+            raise ValueError('Rosewood connector fitting is absent from the source contract: ' + ', '.join(sorted(missing)))
     output = root / config['outputRoot'] / 'ArtMeshes' if args.config else root / 'source-art/maps/nfs-world/art-export'
     sources = root / config['editableRoot'] / 'ArtMeshes'
     output.mkdir(parents=True, exist_ok=True)
@@ -66,14 +81,19 @@ def main():
                 (category in ('Buildings', 'Props') and not material['alphaClip']) or trunk)
             changed = False
             primitives = 0
+            guarded_components = 0
             if candidate:
                 reduced = original.copy()
-                if category in ('Buildings', 'Props'):
+                connector_study = config['districtId'] == 'rosewood' and obj.name in ROSEWOOD_CONNECTOR_ANGLES
+                if category in ('Buildings', 'Props') and not connector_study:
                     primitives = coarse_solids(reduced, .30 if category == 'Buildings' else .15)
-                angle = math.radians(3 if category == 'Buildings' else 15)
+                angle_degrees = ROSEWOOD_CONNECTOR_ANGLES[obj.name] if connector_study else 3 if category == 'Buildings' else 15
+                angle = math.radians(angle_degrees)
                 # Rebuilt props must leave the object's other open surfaces
                 # exact. Dissolving those surfaces can move their rims.
-                if not primitives or category == 'Buildings':
+                if connector_study:
+                    guarded_components = simplify_components(reduced, angle)
+                elif not primitives or category == 'Buildings':
                     simplify_planes(reduced, angle=angle, preserve_normals=False)
                 reduced.calc_loop_triangles()
                 # Keep footprints/extrema exact to 2 cm, even for faceted cylinders.
@@ -94,6 +114,11 @@ def main():
             records.append(dict(name=obj.name, category=category, sourceName=definition['sourceName'],
                                 before=before, after=len(obj.data.loop_triangles), changed=changed,
                                 boundsErrorLimitMetres=.02, trunk=trunk, primitiveComponents=primitives if changed else 0))
+            if config['districtId'] == 'rosewood' and obj.name in ROSEWOOD_CONNECTOR_ANGLES:
+                records[-1]['study'] = 'rosewood-connector-fitting-v2'
+                records[-1]['planarAngleDegrees'] = ROSEWOOD_CONNECTOR_ANGLES[obj.name]
+                records[-1]['guardedComponents'] = guarded_components
+                records[-1]['componentBoundaryLimitMetres'] = .002
             if index % 250 == 0:
                 print(f'{category}: {index}', flush=True)
         for obj in bpy.data.objects:
