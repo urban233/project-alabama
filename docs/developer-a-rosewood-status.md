@@ -76,7 +76,17 @@ and occlusion data. The release adds 108,179 files beyond the baseline and B's 1
 additions. Base 1.0.0 is unchanged. Integrated `nfs-world` 0.2.0 contains 194,614
 files (14,173,582,956 bytes), with content ID
 `26c9d89d7aa3780d1faeb027ed0062be6fc112fd420fcd5a5ef1116352dfc237`.
-Export and receipt verification are in progress.
+Export and receipt verification passed: all 194,614 ZIP entries were validated,
+with zero files changed or removed. Both required/installed releases match:
+base 1.0.0 and `nfs-world` 0.2.0. The full workspace check found zero missing or
+modified files. A subsequent strict accepted-release rebuild also passed and
+preserved the host, both content scenes, combined occlusion and their metadata
+byte for byte. Accepted builds retain the publisher's qualification identity;
+regenerated trial builds still refresh it before seam qualification.
+
+The accepted ZIP/checksum and separate private verification ZIP/checksum are
+prepared directly in the project root. The latter contains the handoff record,
+reports, captures and test evidence. No private transfer has been performed.
 
 Main subsequently advanced to `fe2e19f` with documentation/reference-pack changes
 only. The new [adaptation guide](art-direction/2026-10-02-nfsmw/agent-reference-pack/ADAPTATION-GUIDE.md)
