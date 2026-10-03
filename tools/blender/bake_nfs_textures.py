@@ -24,7 +24,7 @@ ROSEWOOD_CONNECTOR_CONCRETE = {
     '8ccb9837f46a5f7f1c0d44cc48d7995c52d634283d3cd05888ce29d1363d4522.png',
     '632df24c36a5e59d50607839a5a79eb0a3b2e909d0965c8fe640b0ebd5155f7b.png',
 }
-ROSEWOOD_CONNECTOR_RECIPE = 'rosewood-connector-concrete-v2'
+ROSEWOOD_CONNECTOR_RECIPE = 'rosewood-connector-concrete-v3'
 
 
 def simplify_colour(rgba, alpha_clip, foliage, road):
@@ -67,7 +67,7 @@ def quiet_connector_concrete(rgba, source):
     not_bright = np.clip((.70 - luminance) / .15, 0, 1)
     # The first Unity capture was too smooth. Retain subdued source wear within
     # neutral concrete regions while keeping the established atlas edges.
-    rgb[:] += .25 * (source[:, :, :3] - rgb) * (neutral * not_bright)[:, :, None]
+    rgb[:] += .60 * (source[:, :, :3] - rgb) * (neutral * not_bright)[:, :, None]
     lift = .10 * np.clip(1 - luminance / .70, 0, 1) * neutral * not_bright
     rgb[:] = np.clip(rgb + lift[:, :, None] * np.array([1, .84, .68], dtype=np.float32), 0, 1)
     return result

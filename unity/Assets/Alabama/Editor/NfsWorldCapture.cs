@@ -56,7 +56,19 @@ namespace Alabama.Editor
                 if (variant.StartsWith("RosewoodConnector", StringComparison.Ordinal))
                 {
                     if (variant == "RosewoodConnectorLighting") CaptureConnectorLighting(camera, output);
-                    else CaptureRosewoodConnector(camera, output);
+                    else
+                    {
+                        CaptureRosewoodConnector(camera, output);
+                        var pipeline = (UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset)
+                            UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+                        float scale = pipeline.renderScale;
+                        try
+                        {
+                            pipeline.renderScale = 1f;
+                            CaptureRosewoodConnector(camera, output, "native-");
+                        }
+                        finally { pipeline.renderScale = scale; }
+                    }
                     Finish(null);
                     return;
                 }
