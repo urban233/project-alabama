@@ -36,13 +36,19 @@ namespace Alabama.Editor
         public static void Art() => Verify("Art", NfsWorldArtPass.ScenePath);
         public static void RuntimeContent() => Verify("RuntimeContent", NfsWorldDistrictRuntimeSetup.DowntownScene);
 
-        private static void Verify(string variant, string path)
+        internal static void Verify(string variant, string path)
         {
-            EditorSceneManager.OpenScene(path);
+            var scene = EditorSceneManager.OpenScene(path);
+            VerifyLoaded(variant, scene);
+        }
+
+        internal static void VerifyLoaded(string variant, UnityEngine.SceneManagement.Scene scene)
+        {
+            NfsWorldSetup.Require(scene.isLoaded, "Collision validation requires loaded content.");
             Physics.SyncTransforms();
             var report = new Report { variant = variant };
             var failures = new List<string>();
-            foreach (var root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            foreach (var root in scene.GetRootGameObjects())
             {
                 if (root.name == "E46 driver car") continue;
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>())

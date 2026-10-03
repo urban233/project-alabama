@@ -1,4 +1,5 @@
 """Group audited road frontiers and prepare local, reviewable barrier spans."""
+import argparse
 import json
 from pathlib import Path
 
@@ -7,11 +8,17 @@ from PIL import Image, ImageDraw
 
 from audit_district_exits import ORIGIN
 from kn5 import Reader
+from district_config import load
 
 
 def main():
-    root = Path(__file__).resolve().parents[2]
-    output = root / 'artifacts/NfsWorld'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument('--config', type=Path)
+    args = parser.parse_args()
+    root = args.root.resolve()
+    config = load(root, args.config)
+    output = root / config['artifactRoot']
     audit = json.loads((output / 'district-exits.json').read_text())
     source = np.load(output / 'road-boundary-probes.npz')
     source_edges = source['edges']; source_mid = source_edges.mean(axis=1)
@@ -20,7 +27,7 @@ def main():
     # The northern connector ends in the supplied geometry without a neighbour
     # crossing. Its terminal edge is the west-facing frontier of the top stub.
     north = (source_mid[:, 2] > 3650) & (source_mid[:, 0] < 2460) & (outward[:, 0] < -.7)
-    if north.sum() < 3:
+    if args.config is None and north.sum() < 3:
         raise ValueError('Northern terminal frontier requires inspection')
     lookup = {tuple(np.rint(edge.reshape(-1) / .01).astype(int)): index for index, edge in enumerate(source_edges)}
     records = audit['continuationEdges']
@@ -37,7 +44,8 @@ def main():
                    for index in group]
         neighbours = sorted({name for index in group for name in records[index]['neighbours']})
         groups.append((indices, ', '.join(name.removeprefix('nfs-world-').removesuffix('-RoadsPhysical') for name in neighbours), 'neighbour-road surface probes'))
-    groups.append((np.flatnonzero(north).tolist(), 'Northern connector', 'supplied-road terminal; no neighbouring surface continuation'))
+    if args.config is None:
+        groups.append((np.flatnonzero(north).tolist(), 'Northern connector', 'supplied-road terminal; no neighbouring surface continuation'))
     closures = []
     for indices, name, evidence in groups:
         edges = source_edges[indices]
@@ -57,7 +65,8 @@ def main():
         direction = forward.copy(); direction[0] *= -1
         closures.append(dict(name=name, start=unity(a), end=unity(b), outward=direction.tolist(),
                              evidence=evidence, auditedEdges=len(indices), sourceStart=a.tolist(), sourceEnd=b.tolist()))
-    destination = root / 'unity/Assets/Alabama/Art/Maps/NfsWorld/ArtPass/exits.json'
+    destination = root / config['outputRoot'] / 'ArtPass/exits.json'
+    destination.parent.mkdir(parents=True, exist_ok=True)
     previous = json.loads(destination.read_text()) if destination.exists() else {}
     # Re-running identical inputs retains their inspection; changed spans need a
     # fresh geometry/road-level review before the Unity importer accepts them.
@@ -66,7 +75,7 @@ def main():
     destination.write_text(json.dumps(manifest, indent=2) + '\n')
     # A diagnostic geometry diagram, not a game texture.
     canvas = Image.new('RGB', (1800, 1800), '#17222c'); draw = ImageDraw.Draw(canvas)
-    path = root / 'source-art/maps/nfs-world/original/mauleous_nfs_world/nfs-world-DowntownRockport-Roads.kn5'
+    path = root / config['sourceRoot'] / f"nfs-world-{config['sourceDistrict']}-Roads.kn5"
     triangles = []
     with Reader(path) as reader:
         for mesh in reader.meshes():
@@ -84,7 +93,7 @@ def main():
         draw.line([project(a), project(b)], fill='#f5ae35', width=7)
         u, v = project((a + b) / 2)
         draw.text((u + 12, v - 8), str(index + 1) + ': ' + closure['name'], fill='#ffd26d')
-    draw.text((40, 25), 'Downtown Rockport - six prototype exit closures (source geometry, source X/Z)', fill='white')
+    draw.text((40, 25), f"{config['sourceDistrict']} - {len(closures)} exit closures (source geometry, source X/Z)", fill='white')
     canvas.save(output / 'exit-closure-plan.png')
     print(json.dumps(closures, indent=2))
 

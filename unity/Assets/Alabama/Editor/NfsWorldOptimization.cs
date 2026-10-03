@@ -14,7 +14,7 @@ namespace Alabama.Editor
     {
         private sealed class Rule { public Regex[] patterns; public float distance; }
 
-        internal static void Apply()
+        internal static void Apply(NfsWorldSetup.Contract contract = null, bool contentOnly = false)
         {
             string path = Path.GetFullPath(Path.Combine(Application.dataPath,
                 "../../source-art/maps/nfs-world/original/mauleous_nfs_world/extension/ext_config.ini"));
@@ -41,7 +41,7 @@ namespace Alabama.Editor
             }
             var targets = new List<Renderer>();
             var limits = new List<float>();
-            foreach (var part in NfsWorldSetup.ReadContract("District").parts)
+            foreach (var part in (contract ?? NfsWorldSetup.ReadContract("District")).parts)
             {
                 var root = GameObject.Find(part.category);
                 var meshes = root.GetComponentsInChildren<MeshRenderer>().ToDictionary(r => r.name);
@@ -64,7 +64,7 @@ namespace Alabama.Editor
             // Explicit diffuse probe makes the configured ambient fill available in a batch-created scene.
             var ambient = new SphericalHarmonicsL2();
             ambient.AddAmbientLight(RenderSettings.ambientEquatorColor);
-            RenderSettings.ambientProbe = ambient;
+            if (!contentOnly) RenderSettings.ambientProbe = ambient;
             Debug.Log($"Source distance limits configured for {targets.Count} renderers; collision retained.");
         }
     }

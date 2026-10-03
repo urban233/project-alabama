@@ -6,6 +6,27 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Runtime/DistrictRuntime.unity
+    guid: 8dedf1a2462f1b3409bd68c913ff8760
+  - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Runtime/DowntownContent.unity
+    guid: 4ea971bcc91f83a4c8753d30e45f5766
+  - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Runtime/FixtureA.unity
+    guid: 3c501172ef4d2a0459ac39da49bb913c
+  - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Runtime/FixtureB.unity
+    guid: 0e2f62f255c074e42aa12df242dd6689
+  - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Runtime/FixtureDuplicate.unity
+    guid: a97131efaf8e8a7438d8218e8a2bf307
+  - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Runtime/FixtureUnsupported.unity
+    guid: 691a43e2cf1d3fe46a0ce5071d072fc7
+  - enabled: 1
+    path: Assets/Alabama/Art/Maps/NfsWorld/Rosewood/RosewoodContent.unity
+    guid: 864254d20f115e74694ec453ac9338ad
+  - enabled: 1
     path: Assets/Alabama/Scenes/Foundation.unity
     guid: 9cce857e5393d594abfba276145c285a
   - enabled: 1

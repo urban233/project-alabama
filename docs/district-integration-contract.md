@@ -53,13 +53,18 @@ driving surfaces over a seam. Include road height, lane-edge alignment, ramps/br
 level and ownership of the exit barrier in the review. Use a single collision owner
 for an overlap, or complementary non-overlapping collider extents.
 
-All six accepted Downtown barriers remain active. Their generated records use
+In the original Downtown-only baseline, all six barriers remain active. Its generated records use
 `downtown-exit-1` through `downtown-exit-6`, with unresolved neighbour/reciprocal
 data and `seamVerified=false`. They identify closures, not accepted crossings.
 Only replace those placeholders and remove the relevant closure after both
 districts load and the seam is driven in both directions with source-road contacts,
 height/lane/scale checks and no duplicate contact. Retain all other closures.
 `seamVerified` is reviewed metadata; the loader does not automatically open exits.
+A's [Rosewood integration](rosewood-integration.md) adds the opt-in
+`DistrictConnectionGate` for accepted reciprocal connections. It opens a verified
+pair only while both matching districts are registered, and closes the retained
+barrier when its neighbour unloads. The other connection records stay unresolved
+and closed. This uses the existing lifetime hooks without changing loader API v1.
 
 ## Lifetime API and hooks
 

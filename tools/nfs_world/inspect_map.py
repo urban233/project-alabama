@@ -8,20 +8,23 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from kn5 import Reader, file_hash
+from district_config import load
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
-    source = root / "source-art/maps/nfs-world/original/mauleous_nfs_world"
-    output = root / "artifacts/NfsWorld"
+    config = load(root, args.config)
+    source = root / config["sourceRoot"]
+    output = root / config["artifactRoot"]
     output.mkdir(parents=True, exist_ok=True)
-    report = {"district": "DowntownRockport", "models": []}
+    report = {"district": config["sourceDistrict"], "models": []}
     road_triangles = []
-    for path in sorted(source.glob("*DowntownRockport-*.kn5")):
-        with Reader(path, root / "source-art/maps/nfs-world/textures") as reader:
+    for path in sorted(source.glob(f"*{config['sourceDistrict']}-*.kn5")):
+        with Reader(path, root / config["rawTextureRoot"]) as reader:
             for mesh in reader.meshes():
                 if path.stem.endswith("-Roads") and mesh["record"]["active"]:
                     road_triangles.append(mesh["positions"][mesh["triangles"]])
@@ -59,7 +62,7 @@ def main():
                 draw.ellipse((u - 4, v - 4, u + 4, v + 4), fill="#ffd26d")
                 if node["name"] in ("AC_PIT_0", "AC_START_0"):
                     draw.text((u + 8, v), node["name"], fill="white")
-    draw.text((40, 20), f"Downtown Rockport - source road geometry | X {low[0]:.0f}..{high[0]:.0f} m | Z {low[2]:.0f}..{high[2]:.0f} m", fill="white")
+    draw.text((40, 20), f"{config['sourceDistrict']} - source road geometry | X {low[0]:.0f}..{high[0]:.0f} m | Z {low[2]:.0f}..{high[2]:.0f} m", fill="white")
     image.save(output / "source-overview.png")
     print(f"Inventory and overview: {output}", flush=True)
 

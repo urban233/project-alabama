@@ -50,6 +50,8 @@ namespace Alabama.Tests
             return false;
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator RepresentativeRoadsSupportHighSpeedWheelContact()
         {
@@ -102,6 +104,8 @@ namespace Alabama.Tests
             car.ResetToSpawn();
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator AllReviewedExitWallsStopThePrototypeCar()
         {

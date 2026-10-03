@@ -3,12 +3,14 @@
 Neighbour geometry is read only for the boundary audit, never imported into Unity.
 Candidate edges still require grouping and visual review before placing barriers.
 """
+import argparse
 import json
 from pathlib import Path
 
 import numpy as np
 
 from kn5 import Reader
+from district_config import load
 
 
 GRID = .01
@@ -80,8 +82,15 @@ def surface_matches(points, batches, tolerance=.35):
 
 
 def main():
-    root = Path(__file__).resolve().parents[2]
-    source = root / 'source-art/maps/nfs-world/original/mauleous_nfs_world/nfs-world-DowntownRockport-RoadsPhysical.kn5'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument('--config', type=Path)
+    args = parser.parse_args()
+    root = args.root.resolve()
+    config = load(root, args.config)
+    output_root = root / config['artifactRoot']
+    output_root.mkdir(parents=True, exist_ok=True)
+    source = root / config['sourceRoot'] / f"nfs-world-{config['sourceDistrict']}-RoadsPhysical.kn5"
     triangles = np.concatenate(list(roads(source)))
     quantized = np.rint(triangles / GRID).astype(np.int32)
     order = np.lexsort((quantized[:, :, 2], quantized[:, :, 1], quantized[:, :, 0]), axis=1)
@@ -111,11 +120,14 @@ def main():
         direction[1] = -(normal[0] * direction[0] + normal[2] * direction[2]) / normal[1]
         probes.append(edge.mean(axis=0) + direction)
     probes = np.asarray(probes)
-    np.savez_compressed(root / 'artifacts/NfsWorld/road-boundary-probes.npz',
+    np.savez_compressed(output_root / 'road-boundary-probes.npz',
                         edges=np.asarray([entry['edge'] for _, entry in records]), probes=probes)
     owned = surface_matches(probes, [triangles])
     print('Outside-own-road probes', int((~owned).sum()), flush=True)
     paths = sorted((root / 'source-art/maps/nfs-world/neighbor-roads').rglob('*-RoadsPhysical.kn5'))
+    if args.config:
+        paths = [p for p in paths if p.name != source.name]
+        paths.append(root / 'source-art/maps/nfs-world/original/mauleous_nfs_world/nfs-world-DowntownRockport-RoadsPhysical.kn5')
     if len(paths) != 6:
         raise ValueError('Expected six omitted districts for an exhaustive connection audit')
     for path in paths:
@@ -130,7 +142,7 @@ def main():
         result.append(dict(a=unity(edge[0]), b=unity(edge[1]),
                            sourceA=edge[0].tolist(), sourceB=edge[1].tolist(),
                            neighbours=sorted(neighbors)))
-    output = root / 'artifacts/NfsWorld/district-exits.json'
+    output = output_root / 'district-exits.json'
     output.write_text(json.dumps(dict(gridMetres=GRID, probeDistanceMetres=1, surfaceHeightToleranceMetres=.35,
                                      sourceBoundaryEdges=len(boundary), outsideOwnRoadProbes=int((~owned).sum()),
                                      continuationEdges=result), indent=2) + '\n')
