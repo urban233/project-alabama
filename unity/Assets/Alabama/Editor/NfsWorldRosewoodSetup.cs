@@ -285,8 +285,19 @@ namespace Alabama.Editor
             ConfigureBuildSettings();
             Verify(); PlayerSettings.enableFrameTimingStats = true;
             var probe = UnityEngine.Object.FindFirstObjectByType<RosewoodQualificationProbe>();
-            probe.Configure(AssetDatabase.LoadAssetAtPath<TextAsset>(Root + "/qualification-route.json"), Signature());
-            EditorUtility.SetDirty(probe); EditorSceneManager.SaveScene(probe.gameObject.scene);
+            NfsWorldSetup.Require(probe != null, "The saved combined host requires its qualification probe.");
+            var downtown = Descriptor(SceneManager.GetSceneByPath(NfsWorldDistrictRuntimeSetup.DowntownScene));
+            var rosewood = Descriptor(SceneManager.GetSceneByPath(ScenePath));
+            bool accepted = downtown.Connections.Single(c => c.id == "downtown-exit-3").seamVerified &&
+                rosewood.Connections.Single(c => c.id == "rosewood-exit-7").seamVerified;
+            // The accepted host carries the publisher's evidence identity. Importer dependency
+            // hashes can differ on another machine; rebuilding must preserve received assets.
+            // A regenerated trial still needs a fresh identity before its qualification run.
+            if (!accepted)
+            {
+                probe.Configure(AssetDatabase.LoadAssetAtPath<TextAsset>(Root + "/qualification-route.json"), Signature());
+                EditorUtility.SetDirty(probe); EditorSceneManager.SaveScene(probe.gameObject.scene);
+            }
             string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../builds/nfs-world-rosewood/Alabama.exe"));
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = NfsWorldDistrictRuntimeSetup.BuildScenes.Concat(new[] { ScenePath }).Distinct().ToArray(),

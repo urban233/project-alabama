@@ -91,6 +91,10 @@ connection records and opening their saved barriers. It does not accept fixture
 recovery as seam proof. Generating content again restores the closed trial state.
 Verified connection gates also follow district lifetime: they open only while
 matching reciprocal content is registered and close when that neighbour unloads.
+Building an accepted connection preserves its saved qualification identity and
+host scene. Unity importer dependency hashes can differ between machines; a
+normal received-pack build must not rewrite accepted artwork. Regenerated trial
+builds still refresh the identity before their rendered qualification.
 
 The player probe drives with the production controller and four WheelColliders,
 checks both scene-owned road contacts and duplicate district contact at each
