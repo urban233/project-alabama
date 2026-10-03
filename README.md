@@ -47,7 +47,7 @@ Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer wi
 The original ZIP commands above remain compatible. Named asset releases add
 checked-in version locks, status/verification, safe upgrades and rollback. The
 reviewed original pack is pinned as `base` **1.0.0**. The separate private
-`nfs-world` **0.1.0** pack includes Downtown's generated assets and editable sources;
+`nfs-world` **0.2.0** pack includes Downtown, Rosewood, their combined runtime and editable sources;
 it is excluded from the original shared pack and must remain private.
 
 Place both privately supplied ZIPs in the project root. With Unity and Blender
@@ -97,6 +97,28 @@ before generating a neighbouring district. Synthetic fixture recovery is not a
 verified real district connection.
 The [B qualification record](docs/developer-b-runtime-status.md) records player
 timings, transition hitches, tests and the private contributor handoff.
+
+## Developer A Rosewood integration
+
+Rosewood uses a separate content scene and the accepted shared coordinate frame.
+The persistent runtime loads Downtown and Rosewood together; one qualified pair
+connects Downtown exit 3 with Rosewood exit 7. The remaining exits retain barriers.
+See [A's qualification record](docs/developer-a-rosewood-status.md) and
+[the conversion and qualification recipe](docs/rosewood-integration.md) for
+source members, protected textures, seam collision ownership and private release.
+After restoring the exact packs pinned by this checkout, use the saved combined
+host rather than regenerating the Downtown-only baseline:
+
+```powershell
+./tools/rosewood.ps1 -Action Verify -EditorPath 'C:/path/to/6000.3.25f1/Editor/Unity.exe'
+./tools/rosewood.ps1 -Action Build -EditorPath 'C:/path/to/6000.3.25f1/Editor/Unity.exe'
+```
+
+Open `Assets/Alabama/Art/Maps/NfsWorld/Runtime/DistrictRuntime.unity` or run
+`builds/nfs-world-rosewood/Alabama.exe`. `RuntimeSetup` regenerates the original
+Downtown-only host and unresolved connection records. Rebuilding Rosewood content
+also restores its closed trial state; follow the full two-way qualification and
+combined occlusion procedure before accepting a regenerated seam.
 
 ## Toolchain
 

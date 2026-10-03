@@ -17,11 +17,23 @@ namespace Alabama.Editor
             public float distance;
             public List<CombineInstance> meshes = new List<CombineInstance>();
         }
-        private const string AssetPath = NfsWorldSetup.BasePath + "/ArtPass/ShadowChunks";
+        private static string AssetPath = NfsWorldSetup.BasePath + "/ArtPass/ShadowChunks";
 
         public static void Run()
         {
             var scene = EditorSceneManager.OpenScene(NfsWorldArtPass.ScenePath);
+            AssetPath = NfsWorldSetup.BasePath + "/ArtPass/ShadowChunks";
+            PartitionLoadedScene(scene, "artifacts/NfsWorld/shadow-proxies.json");
+        }
+
+        internal static void RunContent(UnityEngine.SceneManagement.Scene scene, string assetRoot)
+        {
+            AssetPath = assetRoot + "/ArtPass/ShadowChunks";
+            PartitionLoadedScene(scene, "artifacts/NfsWorld/Rosewood/shadow-proxies.json");
+        }
+
+        private static void PartitionLoadedScene(UnityEngine.SceneManagement.Scene scene, string evidence)
+        {
             var root = GameObject.Find("Optimized district visuals");
             NfsWorldSetup.Require(root != null, "Art scene is absent.");
             var old = GameObject.Find("Spatial shadow casters");
@@ -77,7 +89,7 @@ namespace Alabama.Editor
             NfsWorldSetup.Require(sourceTriangles == shadowTriangles, "Shadow partition lost or duplicated triangles.");
             foreach (var group in targets) culling.AddTargets(group.Value.ToArray(), group.Key);
             EditorUtility.SetDirty(culling); AssetDatabase.SaveAssets(); EditorSceneManager.SaveScene(scene);
-            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/shadow-proxies.json")),
+            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../" + evidence)),
                 $"{{\"shadowBatches\":{batches.Count},\"chunkMetres\":32,\"sourceTriangles\":{sourceTriangles},\"shadowTriangles\":{shadowTriangles},\"visibleGeometryChanged\":false,\"collisionChanged\":false}}\n");
             Debug.Log($"Exact shadow surfaces: {sourceTriangles} triangles in {batches.Count} 32-metre batches.");
         }

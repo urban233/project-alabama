@@ -19,20 +19,24 @@ def main():
     verify_coarse_solids()
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, required=True)
+    parser.add_argument('--config', type=Path)
     parser.add_argument('--category', choices=('Buildings', 'Props', 'Trees'))
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     root = args.root.resolve()
-    contract = json.loads((root / 'unity/Assets/Alabama/Art/Maps/NfsWorld/District/contract.json').read_text())
-    inventory = json.loads((root / 'artifacts/NfsWorld/inventory.json').read_text())
+    sys.path.insert(0, str(root / 'tools/nfs_world'))
+    from district_config import load
+    config = load(root, args.config)
+    contract = json.loads((root / config['outputRoot'] / 'District/contract.json').read_text())
+    inventory = json.loads((root / config['artifactRoot'] / 'inventory.json').read_text())
     texture_names = {t['sha256']: t['name'] for model in inventory['models'] for t in model['textures']}
     materials = {m['name']: m for m in contract['materials']}
-    output = root / 'source-art/maps/nfs-world/art-export'
-    sources = root / 'source-art/maps/nfs-world/blender/ArtMeshes'
+    output = root / config['outputRoot'] / 'ArtMeshes' if args.config else root / 'source-art/maps/nfs-world/art-export'
+    sources = root / config['editableRoot'] / 'ArtMeshes'
     output.mkdir(parents=True, exist_ok=True)
     sources.mkdir(parents=True, exist_ok=True)
     records = []
     if args.category:
-        previous = json.loads((root / 'artifacts/NfsWorld/art-meshes.json').read_text())
+        previous = json.loads((root / config['artifactRoot'] / 'art-meshes.json').read_text())
         records = [record for record in previous['meshes'] if record['category'] != args.category]
     for part in contract['parts']:
         category = part['category']
@@ -41,7 +45,7 @@ def main():
         if args.category and category != args.category:
             continue
         print(f'Authoring {category}', flush=True)
-        bpy.ops.wm.open_mainfile(filepath=str(root / f'source-art/maps/nfs-world/blender/District/{category}.blend'))
+        bpy.ops.wm.open_mainfile(filepath=str(root / config['editableRoot'] / 'District' / f'{category}.blend'))
         definitions = {m['name']: m for m in part['meshes']}
         for index, obj in enumerate(list(bpy.data.objects)):
             if obj.type != 'MESH':
@@ -108,7 +112,7 @@ def main():
     report = dict(method='coarse convex solids with volume/nearest-surface guards; flat facets and limited dissolve',
                   meshes=records, collisionChanged=False, finiteCoordinatesValidated=True,
                   sourceTriangles=sum(m['before'] for m in records), candidateTriangles=sum(m['after'] for m in records))
-    (root / 'artifacts/NfsWorld/art-meshes.json').write_text(json.dumps(report, indent=2))
+    (root / config['artifactRoot'] / 'art-meshes.json').write_text(json.dumps(report, indent=2))
     print(f"Art candidates: {report['sourceTriangles']} -> {report['candidateTriangles']}", flush=True)
 
 

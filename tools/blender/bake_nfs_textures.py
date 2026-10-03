@@ -66,11 +66,15 @@ def main():
     verify_recipe()
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, required=True)
+    parser.add_argument('--config', type=Path)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     root = args.root.resolve()
-    base = root / 'unity/Assets/Alabama/Art/Maps/NfsWorld'
+    sys.path.insert(0, str(root / 'tools/nfs_world'))
+    from district_config import load
+    config = load(root, args.config)
+    base = root / config['outputRoot']
     contract = json.loads((base / 'District/contract.json').read_text())
-    inventory = json.loads((root / 'artifacts/NfsWorld/inventory.json').read_text())
+    inventory = json.loads((root / config['artifactRoot'] / 'inventory.json').read_text())
     names = {texture['sha256']: texture['name'] for model in inventory['models'] for texture in model['textures']}
     materials = {material['name']: material for material in contract['materials']}
     used = {}
@@ -83,12 +87,12 @@ def main():
             entry['categories'].add(part['category'])
             entry['alpha'] |= material['alphaClip']
     manifest_path = base / 'ArtPass/textures.json'
-    manifest = json.loads(manifest_path.read_text())
+    manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else dict(textures=[])
     manual = [entry for entry in manifest['textures'] if not entry['file'].startswith('Baked/')]
     authored = {entry['source'] for entry in manual}
     output = base / 'ArtPass/Textures/Baked'
     output.mkdir(parents=True, exist_ok=True)
-    cache_path = root / 'artifacts/NfsWorld/texture-bake.json'
+    cache_path = root / config['artifactRoot'] / 'texture-bake.json'
     cache = json.loads(cache_path.read_text()) if cache_path.exists() else {}
     previous = {entry['source']: entry for entry in cache.get('textures', [])}
     report = []

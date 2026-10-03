@@ -1,0 +1,12 @@
+{
+  "districtId": "rosewood",
+  "sourceDistrict": "Rosewood",
+  "sourceRoot": "source-art/maps/nfs-world/original/rosewood/mauleous_nfs_world",
+  "outputRoot": "unity/Assets/Alabama/Art/Maps/NfsWorld/Rosewood",
+  "editableRoot": "source-art/maps/nfs-world/blender/Rosewood",
+  "rawTextureRoot": "source-art/maps/nfs-world/textures/rosewood",
+  "artifactRoot": "artifacts/NfsWorld/Rosewood",
+  "sourceConfig": "source-art/maps/nfs-world/original/mauleous_nfs_world/extension/ext_config.ini",
+  "sharedOrigin": [1978.0977783203125, 99.6069107055664, 1165.766845703125],
+  "spawnNode": "AC_PIT_0"
+}

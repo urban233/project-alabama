@@ -24,7 +24,19 @@ namespace Alabama.Editor
         public const string FixtureB = DirectoryPath + "/FixtureB.unity";
         public const string FixtureDuplicate = DirectoryPath + "/FixtureDuplicate.unity";
         public const string FixtureUnsupported = DirectoryPath + "/FixtureUnsupported.unity";
-        public static string[] BuildScenes => new[] { RuntimeScene, DowntownScene, FixtureA, FixtureB, FixtureDuplicate, FixtureUnsupported };
+        public static string[] BuildScenes => new[] { RuntimeScene, DowntownScene, FixtureA, FixtureB, FixtureDuplicate, FixtureUnsupported }
+            .Concat(File.Exists(NfsWorldRosewoodSetup.ScenePath) ? new[] { NfsWorldRosewoodSetup.ScenePath } : Array.Empty<string>()).ToArray();
+
+        private static bool IncludesRosewood()
+        {
+            if (!File.Exists(NfsWorldRosewoodSetup.ScenePath)) return false;
+            var runtime = UnityEngine.Object.FindFirstObjectByType<DistrictRuntime>();
+            if (runtime == null) return false;
+            var initial = new SerializedObject(runtime).FindProperty("initialDistrictScenes");
+            for (int i = 0; i < initial.arraySize; i++)
+                if (initial.GetArrayElementAtIndex(i).stringValue == NfsWorldRosewoodSetup.ScenePath) return true;
+            return false;
+        }
 
         private static bool Shared(GameObject root) =>
             root.GetComponent<ArcadeCarController>() != null || root.GetComponent<Camera>() != null ||
@@ -115,12 +127,22 @@ namespace Alabama.Editor
             NfsWorldSetup.Require(descriptor.ValidateContract() == null, descriptor.ValidateContract());
             NfsWorldSetup.Require(descriptor.RecoveryPoses.All(descriptor.Supports), "Downtown recovery lacks collision support.");
             NfsWorldSetup.Require(SceneManager.GetActiveScene() == host, "Content cannot own active-scene rendering.");
+            if (IncludesRosewood())
+            {
+                var neighbour = EditorSceneManager.OpenScene(NfsWorldRosewoodSetup.ScenePath, OpenSceneMode.Additive);
+                var data = neighbour.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<DistrictContent>()).Single();
+                NfsWorldSetup.Require(data.ValidateContract() == null, data.ValidateContract());
+                NfsWorldSetup.Require(data.RecoveryPoses.All(data.Supports), "Rosewood recovery lacks collision support.");
+                NfsWorldSetup.Require(SceneManager.GetActiveScene() == host, "Neighbour content cannot own active-scene rendering.");
+            }
             Debug.Log("District runtime structure, recovery support and culling ownership verified.");
         }
 
         private static double bakeDeadline;
         public static void BakeOcclusion()
         {
+            EditorSceneManager.OpenScene(RuntimeScene);
+            if (IncludesRosewood()) { NfsWorldRosewoodSetup.BakeOcclusion(); return; }
             Verify(); Camera.main.useOcclusionCulling = true;
             foreach (var scene in new[] { SceneManager.GetActiveScene(), SceneManager.GetSceneByPath(DowntownScene) })
                 EditorSceneManager.SaveScene(scene);

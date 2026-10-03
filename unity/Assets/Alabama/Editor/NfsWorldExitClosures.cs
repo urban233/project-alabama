@@ -12,7 +12,7 @@ namespace Alabama.Editor
     /// <summary>Visible low-poly walls at reviewed prototype road exits; source collision stays untouched.</summary>
     public static class NfsWorldExitClosures
     {
-        private const string DirectoryPath = NfsWorldSetup.BasePath + "/ArtPass/Exits";
+        private static string DirectoryPath = NfsWorldSetup.BasePath + "/ArtPass/Exits";
         [Serializable] private sealed class Closure { public string name; public float[] start; public float[] end; public float[] outward; }
         [Serializable] private sealed class Manifest { public bool reviewed; public bool sourceCollisionChanged; public Closure[] closures; }
         private static Vector3 Point(float[] value) => new Vector3(value[0], value[1], value[2]);
@@ -24,20 +24,23 @@ namespace Alabama.Editor
             EditorSceneManager.SaveScene(scene);
         }
 
-        public static void Apply()
+        public static void Apply() => ApplyContent(NfsWorldSetup.BasePath, "Downtown", 6);
+
+        internal static void ApplyContent(string assetRoot, string districtName, int expected)
         {
-            string manifestPath = NfsWorldSetup.BasePath + "/ArtPass/exits.json";
+            DirectoryPath = assetRoot + "/ArtPass/Exits";
+            string manifestPath = assetRoot + "/ArtPass/exits.json";
             if (!File.Exists(manifestPath)) return;
             var manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(manifestPath));
-            NfsWorldSetup.Require(manifest.reviewed && !manifest.sourceCollisionChanged && manifest.closures.Length == 6,
-                "Review the source-derived six exit spans first.");
-            var previous = GameObject.Find("Downtown exit closures");
+            NfsWorldSetup.Require(manifest.reviewed && !manifest.sourceCollisionChanged && manifest.closures.Length == expected,
+                $"Review all {expected} source-derived exit spans first.");
+            var previous = GameObject.Find(districtName + " exit closures");
             if (previous != null) UnityEngine.Object.DestroyImmediate(previous);
             Directory.CreateDirectory(DirectoryPath);
             AssetDatabase.Refresh();
             var materials = new[] { Material("Concrete", new Color(.36f, .36f, .32f)),
                 Material("Ochre", new Color(.72f, .47f, .13f)), Material("Charcoal", new Color(.045f, .045f, .05f)) };
-            var root = new GameObject("Downtown exit closures");
+            var root = new GameObject(districtName + " exit closures");
             var renderers = new List<Renderer>();
             int blocks = 0, groundedBlocks = 0;
             Physics.SyncTransforms();
@@ -86,9 +89,9 @@ namespace Alabama.Editor
             var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
             if (culling != null) culling.AddTargets(renderers.ToArray(), 500);
             AssetDatabase.SaveAssets();
-            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/exit-closures.json")),
-                $"{{\"exits\":6,\"boxColliders\":{blocks},\"groundedBlocks\":{groundedBlocks},\"sourceCollisionChanged\":false}}\n");
-            Debug.Log($"Six reviewed exit walls added: {blocks} collision blocks, {groundedBlocks} on source road surfaces.");
+            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/" + (districtName == "Downtown" ? "" : districtName + "/") + "exit-closures.json")),
+                 $"{{\"exits\":{expected},\"boxColliders\":{blocks},\"groundedBlocks\":{groundedBlocks},\"sourceCollisionChanged\":false}}\n");
+            Debug.Log($"{expected} reviewed {districtName} exit walls added: {blocks} collision blocks, {groundedBlocks} on source road surfaces.");
         }
 
         private static Material Material(string name, Color colour)

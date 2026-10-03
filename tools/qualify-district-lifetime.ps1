@@ -1,12 +1,12 @@
 [CmdletBinding()]
-param([switch]$Visible)
+param([switch]$Visible, [switch]$Rosewood)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
-$taskPlayer = Join-Path $taskRoot 'builds/nfs-world-runtime/Alabama.exe'
+$taskPlayer = Join-Path $taskRoot $(if ($Rosewood) { 'builds/nfs-world-rosewood/Alabama.exe' } else { 'builds/nfs-world-runtime/Alabama.exe' })
 $taskReport = Join-Path $taskRoot 'artifacts/NfsWorld/player-runtime-lifetime.json'
 $taskLog = Join-Path $taskRoot 'artifacts/NfsWorld/player-runtime-lifetime.log'
-if (-not (Test-Path -LiteralPath $taskPlayer)) { throw 'Run nfs-world.ps1 RuntimeBuild first.' }
+if (-not (Test-Path -LiteralPath $taskPlayer)) { throw 'Build the selected district runtime player first.' }
 if (Test-Path -LiteralPath $taskReport) { Remove-Item -LiteralPath $taskReport }
 if (-not ('DistrictLifetimePower' -as [type])) {
     Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class DistrictLifetimePower { [StructLayout(LayoutKind.Sequential)] public struct Status { public byte ACLineStatus, BatteryFlag, BatteryLifePercent, SystemStatusFlag; public uint BatteryLifeTime, BatteryFullLifeTime; } [DllImport("kernel32.dll")] public static extern bool GetSystemPowerStatus(out Status status); }'

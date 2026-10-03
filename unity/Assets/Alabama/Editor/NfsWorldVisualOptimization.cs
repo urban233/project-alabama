@@ -37,6 +37,17 @@ namespace Alabama.Editor
                 artCandidates = NfsWorldArtPass.Prepare();
             }
             else NfsWorldStylePreview.Create();
+            OptimizeLoadedScene(art, NfsWorldSetup.BasePath, artCandidates, false);
+        }
+
+        internal static void RunContent(string assetRoot, HashSet<string> candidates)
+        {
+            DirectoryPath = assetRoot + "/ArtPass/Optimized";
+            OptimizeLoadedScene(true, assetRoot, candidates, true);
+        }
+
+        private static void OptimizeLoadedScene(bool art, string assetRoot, HashSet<string> artCandidates, bool contentOnly)
+        {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             Directory.CreateDirectory(DirectoryPath + "/Meshes");
             Directory.CreateDirectory(DirectoryPath + "/Arrays");
@@ -53,13 +64,13 @@ namespace Alabama.Editor
             var acceptedArtMeshes = new List<string>();
             var rejectedArtMeshes = new List<string>();
             var facetedArtMeshes = new List<string>();
-            var contract = NfsWorldSetup.ReadContract("District");
+            var contract = JsonUtility.FromJson<NfsWorldSetup.Contract>(File.ReadAllText(assetRoot + "/District/contract.json"));
             var definitionsByMaterial = contract.materials.ToDictionary(m => m.name);
             foreach (var part in contract.parts)
             {
                 if (!part.meshes.Any(m => m.visible)) continue;
-                string modelPath = NfsWorldSetup.BasePath + "/" +
-                    (art && File.Exists(NfsWorldSetup.BasePath + "/ArtMeshes/" + part.category + ".fbx") ? "ArtMeshes" : "StyleMeshes") +
+                string modelPath = assetRoot + "/" +
+                    (art && File.Exists(assetRoot + "/ArtMeshes/" + part.category + ".fbx") ? "ArtMeshes" : contentOnly ? "District" : "StyleMeshes") +
                     "/" + part.category + ".fbx";
                 var importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
                 NfsWorldSetup.Require(importer != null, "Run the Blender visible-mesh reduction first: " + modelPath);
@@ -176,6 +187,14 @@ namespace Alabama.Editor
             NfsWorldSetup.Require(batchedTriangles == reducedTriangles, "Spatial batching lost or duplicated visible triangles.");
             culling.Configure(targets.ToArray(), distances.ToArray());
             EditorUtility.SetDirty(culling);
+            if (contentOnly)
+            {
+                AssetDatabase.SaveAssets();
+                Debug.Log($"Content batching: {originalTriangles} -> {reducedTriangles} triangles, {originals.Length} -> {batches.Count} renderers; source collision retained.");
+                File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/Rosewood/batching.json")),
+                    $"{{\"sourceVisibleMeshes\":{originals.Length},\"batchedMeshes\":{batches.Count},\"originalTriangles\":{originalTriangles},\"reducedTriangles\":{reducedTriangles},\"collisionChanged\":false}}");
+                return;
+            }
             // Preserve the approved lighting/shadow/AA settings. This local copy
             // enables SRP material batching without changing the project's pipeline.
             var pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;

@@ -12,6 +12,8 @@ namespace Alabama.Tests
 {
     public sealed class NfsWorldDrivingTests
     {
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator ConvertedDistrictSupportsWheelContactDrivingAndRecovery()
         {
@@ -21,12 +23,16 @@ namespace Alabama.Tests
             return CheckDriving(path);
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator ConvertedVisualStudySupportsDrivingAndRecovery()
         {
             return CheckDriving("Assets/Alabama/Art/Maps/NfsWorld/Scenes/NfsWorldStylePreview.unity");
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator ConvertedArtStudySupportsDrivingAndRecovery()
         {

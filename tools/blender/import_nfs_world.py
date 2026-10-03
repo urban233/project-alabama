@@ -59,25 +59,28 @@ def add_mesh(name, positions, normals, uv, triangles, material):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--config", type=Path)
     parser.add_argument("--sample", action="store_true")
     parser.add_argument("--category", default="all")
     args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:])
     root = args.root.resolve()
     sys.path.insert(0, str(root / "tools/nfs_world"))
     from kn5 import Reader
+    from district_config import load
 
-    inventory = json.loads((root / "artifacts/NfsWorld/inventory.json").read_text())
-    config = (root / "source-art/maps/nfs-world/original/mauleous_nfs_world/extension/ext_config.ini").read_text()
-    alpha_rules = material_alpha_overrides(config)
+    config = load(root, args.config)
+    inventory = json.loads((root / config["artifactRoot"] / "inventory.json").read_text())
+    alpha_rules = material_alpha_overrides((root / config["sourceConfig"]).read_text())
     pit_model = next(m for m in inventory["models"] if m["file"].endswith("-Pits.kn5"))
-    pit = next(n for n in pit_model["nodes"] if n["name"] == "AC_PIT_0" and n["type"] == 1)
-    origin = np.array(pit["matrix"][3][:3], dtype=np.float32)
+    pit = next(n for n in pit_model["nodes"] if n["name"] == config["spawnNode"] and n["type"] == 1)
+    origin = np.array(config["sharedOrigin"], dtype=np.float32)
     variant = "Sample" if args.sample else "District"
-    export = root / "unity/Assets/Alabama/Art/Maps/NfsWorld" / variant
+    export = root / config["outputRoot"] / variant
     export.mkdir(parents=True, exist_ok=True)
-    sources = root / "source-art/maps/nfs-world/blender" / variant
+    sources = root / config["editableRoot"] / variant
     sources.mkdir(parents=True, exist_ok=True)
     contract = dict(variant=variant, sourceOrigin=origin.tolist(),
+                    districtId=config["districtId"], sourceSpawn=pit["matrix"][3][:3],
                     spawnForward=pit["matrix"][2][:3], parts=[], materials=[],
                     sourceSpace="KN5 X,Y,Z -> Blender X,-Z,Y -> Unity -X,Y,Z; one shared source origin")
     material_definitions = {}
@@ -92,7 +95,7 @@ def main():
         texture_map = {t["name"]: t for t in model["textures"]}
         records = []
         print(f"Importing {category}", flush=True)
-        path = root / "source-art/maps/nfs-world/original/mauleous_nfs_world" / model["file"]
+        path = root / config["sourceRoot"] / model["file"]
         with Reader(path) as reader:
             for item in reader.meshes():
                 record = item["record"]
@@ -103,7 +106,8 @@ def main():
                 if args.sample:
                     # Keep whole triangles intersecting the sample's horizontal square.
                     # This retains shared border vertices exactly, without capping surfaces.
-                    points = positions[triangles][:, :, [0, 2]]
+                    centre = np.array(pit["matrix"][3][:3], dtype=np.float32) - origin if args.config else np.zeros(3)
+                    points = (positions[triangles] - centre)[:, :, [0, 2]]
                     keep = (points.min(axis=1) <= 170).all(axis=1) & (points.max(axis=1) >= -170).all(axis=1)
                     triangles = triangles[keep]
                     if not len(triangles):
@@ -152,7 +156,7 @@ def main():
                     material.use_nodes = True
                     material.diffuse_color = (.45, .45, .45, 1)
                     if texture and texture["bytes"]:
-                        image = bpy.data.images.load(str(root / "source-art/maps/nfs-world/textures" / texture["stored"]), check_existing=True)
+                        image = bpy.data.images.load(str(root / config["rawTextureRoot"] / texture["stored"]), check_existing=True)
                         node = material.node_tree.nodes.new("ShaderNodeTexImage")
                         node.image = image
                         bsdf = material.node_tree.nodes.get("Principled BSDF")

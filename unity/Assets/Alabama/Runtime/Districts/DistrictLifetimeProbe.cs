@@ -35,7 +35,7 @@ namespace Alabama.Districts
             public int initialGameObjects, finalGameObjects, initialColliders, finalColliders;
             public long initialAllocatedBytes, finalAllocatedBytes;
             public Operation[] operations;
-            public string method = "Rendered Windows player; six remote fixture cycles, two real Downtown unload/reload cycles with explicit recovery to retained synthetic support. No real neighbouring district or seamless connection is claimed.";
+            public string method = "Rendered Windows player; six remote fixture cycles, two real Downtown unload/reload cycles with explicit recovery to retained synthetic support. Rosewood is explicitly unloaded before this Downtown-only regression; real seam/combined route proof is reported separately.";
         }
         private readonly List<string> failures = new List<string>();
         private readonly List<Operation> operations = new List<Operation>();
@@ -61,6 +61,13 @@ namespace Alabama.Districts
             float deadline = Time.realtimeSinceStartup + 120;
             while (runtime != null && !runtime.Ready && runtime.LastFailure == null && Time.realtimeSinceStartup < deadline) yield return null;
             if (runtime == null || !runtime.Ready) { Check(false, "Runtime did not become ready."); Finish(); yield break; }
+            // This remains the Downtown-only lifetime regression. A separately
+            // qualifies the real combined seam and route with the Rosewood probe.
+            if (runtime.LoadedDistricts.Any(d => d.Id == "rosewood"))
+            {
+                yield return runtime.UnloadDistrict("rosewood");
+                if (runtime.LastFailure != null) { Check(false, runtime.LastFailure); Finish(); yield break; }
+            }
             var car = runtime.Player; var camera = runtime.Chase;
             var input = car.GetComponent<VehicleInput>();
             var pipeline = QualitySettings.renderPipeline;
@@ -105,7 +112,7 @@ namespace Alabama.Districts
                 var downtown = runtime.LoadedDistricts.FirstOrDefault(d => d.Id == "downtown");
                 Check(downtown != null && car.GetComponentsInChildren<WheelCollider>().Count(w => w.GetGroundHit(out var h) &&
                     h.collider.gameObject.scene == downtown.gameObject.scene) == 4, "Real Downtown tyre support failed.");
-                Check(downtown != null && downtown.Connections.All(c => !c.seamVerified && c.closure.activeInHierarchy), "Unverified exits must remain closed.");
+                Check(downtown != null && downtown.Connections.All(c => c.closure.activeInHierarchy), "Exits to unloaded neighbours must remain closed.");
             }
             Check(FindObjectsByType<ArcadeCarController>(FindObjectsSortMode.None).SequenceEqual(new[] { car }) &&
                 FindObjectsByType<ChaseCamera>(FindObjectsSortMode.None).SequenceEqual(new[] { camera }) &&

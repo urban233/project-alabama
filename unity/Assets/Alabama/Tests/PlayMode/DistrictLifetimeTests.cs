@@ -77,6 +77,8 @@ namespace Alabama.Tests
             Assert.That(Application.targetFrameRate, Is.EqualTo(cap));
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator RepeatedLoadsKeepOwnersAndRemoveAllRegistrations()
         {
@@ -106,6 +108,8 @@ namespace Alabama.Tests
             Assert.That(added, Is.EqualTo(6)); Assert.That(removed, Is.EqualTo(6));
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator InvalidAndDuplicateContentIsRejectedWithoutChangingOwners()
         {
@@ -120,6 +124,8 @@ namespace Alabama.Tests
             Assert.That(runtime.LastFailure, Does.Contain("absent")); AssertOwners();
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator SupportingUnloadRequiresRetainedRecoveryAndPreservesPause()
         {
@@ -143,6 +149,8 @@ namespace Alabama.Tests
             Assert.That(runtime.DistrictCount, Is.EqualTo(1)); AssertOwners();
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator AirborneVehicleStillProtectsItsSupportingDistrict()
         {
@@ -153,6 +161,8 @@ namespace Alabama.Tests
             Assert.That(runtime.DistrictCount, Is.EqualTo(2)); AssertOwners();
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(1200000)]
         [UnityTest]
         public IEnumerator RetainedRecoveryMustStillHaveCollisionAtUnloadTime()
         {
@@ -165,6 +175,8 @@ namespace Alabama.Tests
             Assert.That(runtime.DistrictCount, Is.EqualTo(2)); Assert.That(car.Body.position.x, Is.EqualTo(-10000).Within(1)); AssertOwners();
         }
 
+        // Allow cold private-map loading while retaining every driving assertion.
+        [Timeout(2400000)]
         [UnityTest]
         public IEnumerator RealDowntownReloadsAndSupportsDrivingWithoutRecreatingGameplay()
         {
@@ -176,7 +188,8 @@ namespace Alabama.Tests
                 Assert.That(runtime.LastFailure, Is.Null);
                 var downtown = runtime.LoadedDistricts.Single(d => d.Id == "downtown");
                 Assert.That(downtown.Connections.Length, Is.EqualTo(6));
-                Assert.That(downtown.Connections.All(c => !c.seamVerified && c.closure.activeInHierarchy), Is.True);
+                Assert.That(downtown.Connections.Where(c => c.seamVerified).All(c => c.id == "downtown-exit-3" && c.neighbourId == "rosewood"), Is.True);
+                Assert.That(downtown.Connections.All(c => c.closure.activeInHierarchy), Is.True);
                 for (int step = 0; step < 120; step++) yield return new WaitForFixedUpdate();
                 Assert.That(car.GetComponentsInChildren<WheelCollider>().Count(w => w.GetGroundHit(out var h) &&
                     h.collider.gameObject.scene == downtown.gameObject.scene), Is.EqualTo(4));

@@ -21,6 +21,8 @@ namespace Alabama.Editor
         [Serializable] public sealed class Contract
         {
             public string variant;
+            public string districtId;
+            public float[] sourceSpawn;
             public float[] sourceOrigin;
             public float[] spawnForward;
             public Part[] parts;
@@ -163,7 +165,7 @@ namespace Alabama.Editor
             Debug.Log($"NFS World {variant}: {visibleCount} visible meshes, {colliderCount} static colliders. Scene: {scenePath}");
         }
 
-        private static Dictionary<string, Material> CreateMaterials(Contract contract)
+        internal static Dictionary<string, Material> CreateMaterials(Contract contract, string assetRoot = BasePath)
         {
             var result = new Dictionary<string, Material>();
             var preparedTextures = new HashSet<string>();
@@ -171,7 +173,7 @@ namespace Alabama.Editor
             {
                 if (!string.IsNullOrEmpty(definition.texture) && preparedTextures.Add(definition.texture))
                 {
-                    string texturePath = BasePath + "/Textures/" + definition.texture;
+                    string texturePath = assetRoot + "/Textures/" + definition.texture;
                     var textureImporter = AssetImporter.GetAtPath(texturePath) as TextureImporter;
                     Require(textureImporter != null, "Decode source texture first: " + texturePath);
                     bool alphaTransparency = contract.materials.Any(m => m.texture == definition.texture && m.alphaClip);
@@ -189,7 +191,7 @@ namespace Alabama.Editor
                     textureImporter.textureCompression = TextureImporterCompression.Compressed;
                     if (changed) textureImporter.SaveAndReimport();
                 }
-                string path = BasePath + "/Materials/" + definition.name + ".mat";
+                string path = assetRoot + "/Materials/" + definition.name + ".mat";
                 var material = AssetDatabase.LoadAssetAtPath<Material>(path);
                 if (material == null)
                 {
@@ -198,7 +200,7 @@ namespace Alabama.Editor
                 }
                 material.SetColor("_BaseColor", Color.white);
                 material.SetTexture("_BaseMap", string.IsNullOrEmpty(definition.texture) ? null :
-                    AssetDatabase.LoadAssetAtPath<Texture2D>(BasePath + "/Textures/" + definition.texture));
+                    AssetDatabase.LoadAssetAtPath<Texture2D>(assetRoot + "/Textures/" + definition.texture));
                 material.SetFloat("_Metallic", 0);
                 material.SetFloat("_Smoothness", .12f);
                 material.SetFloat("_Cull", definition.doubleSided ? (float)CullMode.Off : (float)CullMode.Back);
@@ -217,7 +219,7 @@ namespace Alabama.Editor
             return result;
         }
 
-        private static void AlignAxes(Transform wrapper, Transform model)
+        internal static void AlignAxes(Transform wrapper, Transform model)
         {
             var nodes = model.GetComponentsInChildren<Transform>();
             var origin = nodes.Single(t => t.name == "OriginMarker");

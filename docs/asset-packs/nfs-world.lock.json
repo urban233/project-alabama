@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "name": "nfs-world",
-  "version": "0.1.0",
-  "packId": "ca86c3dbca728a3312c17c2c965df0bc3c5c64444d8200e56c2cc0765ac8d52d",
-  "manifestSha256": "0f174863a02fc1c68bfe4c0222c2eca503c667c740453d2fbb4dad4904bfb49e",
-  "manifestPath": "artifacts/asset-packs/nfs-world/0.1.0/asset-pack-manifest.json",
-  "archiveName": "project-alabama-nfs-world-0.1.0.zip",
-  "fileCount": 86417,
-  "totalBytes": 7047035106,
+  "version": "0.2.0",
+  "packId": "26c9d89d7aa3780d1faeb027ed0062be6fc112fd420fcd5a5ef1116352dfc237",
+  "manifestSha256": "32f9539a887d76c0b12e69539bf47c687d34c40564aceb0e6629ca34bbb8a144",
+  "manifestPath": "artifacts/asset-packs/nfs-world/0.2.0/asset-pack-manifest.json",
+  "archiveName": "project-alabama-nfs-world-0.2.0.zip",
+  "fileCount": 194614,
+  "totalBytes": 14173582956,
   "dependencies": [
     {
       "lockPath": "docs/asset-packs/base.lock.json",
