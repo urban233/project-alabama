@@ -12,7 +12,7 @@ namespace Alabama.Tests
         [UnityTest]
         public IEnumerator RoadColliderSupportsCentreAndBothDrivingLanesAroundLoop()
         {
-            yield return SceneManager.LoadSceneAsync("DistrictLoop", LoadSceneMode.Single);
+            yield return ReviewSceneLoader.Load("DistrictLoop");
             var route = Object.FindFirstObjectByType<RouteProgress>();
             var road = GameObject.Find("Continuous 917 m road").GetComponent<MeshCollider>();
             Assert.That(route.LengthMetres, Is.InRange(900, 940));
@@ -32,7 +32,7 @@ namespace Alabama.Tests
         [UnityTest]
         public IEnumerator RepeatableSteeringCanCompleteOneClosedLap()
         {
-            yield return SceneManager.LoadSceneAsync("DistrictLoop", LoadSceneMode.Single);
+            yield return ReviewSceneLoader.Load("DistrictLoop");
             var car = Object.FindFirstObjectByType<ArcadeCarController>();
             var route = Object.FindFirstObjectByType<RouteProgress>();
             car.GetComponent<VehicleInput>().enabled = false;

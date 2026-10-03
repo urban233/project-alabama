@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 
 namespace Alabama.Editor
 {
-    /// <summary>Derived material review that retains accepted geometry, cutouts and lighting.</summary>
+    /// <summary>Full Downtown visual treatment with independent source driving collision.</summary>
     public static class NfsWorldArtDirection
     {
         public const string DirectoryPath = NfsWorldSetup.BasePath + "/ArtDirection";
@@ -29,10 +29,11 @@ namespace Alabama.Editor
             NfsWorldSetup.Require(File.Exists(DirectoryPath + "/textures.json"), "Run the reviewed Blender material bake first.");
             NfsWorldVisualOptimization.RunArtDirection();
             ConfigureRoadDetails();
+            ConfigureVehicleMaterials();
             var target = SceneManager.GetActiveScene();
             var targetCulling = Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
-            // The visible surfaces are identical to the accepted art pass. Reuse its
-            // exact small shadow meshes; all cutout textures remain byte-identical.
+            // Keep reviewed lighting/shadows fixed during geometry and material
+            // comparisons. Source collision and cutout masks retain their identity.
             var baseline = EditorSceneManager.OpenScene(NfsWorldArtPass.ScenePath, OpenSceneMode.Additive);
             NfsWorldSetup.Require(CollisionSignatures(target).SequenceEqual(CollisionSignatures(baseline)),
                 "Art direction must retain every source collision mesh, exit collider and transform.");
@@ -64,6 +65,56 @@ namespace Alabama.Editor
         }
 
         public static void BakeOcclusion() => NfsWorldOcclusion.Bake(ScenePath, "art-direction-occlusion.json");
+
+        public static void ConfigureVehicle()
+        {
+            EditorSceneManager.OpenScene(ScenePath);
+            ConfigureVehicleMaterials();
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+        }
+
+        private static void ConfigureVehicleMaterials()
+        {
+            string directory = DirectoryPath + "/Vehicle";
+            Directory.CreateDirectory(directory); AssetDatabase.Refresh();
+            var response = new Dictionary<string, Vector2>
+            {
+                { "E46_Paint", new Vector2(.38f, .2f) }, { "E46_Blue", new Vector2(.38f, .2f) },
+                { "E46_Silver", new Vector2(.38f, .2f) }, { "E46_Glass", new Vector2(.55f, .12f) },
+                { "E46_Alloy", new Vector2(.5f, .75f) }
+            };
+            var copies = new Dictionary<string, Material>();
+            var car = Object.FindFirstObjectByType<ArcadeCarController>();
+            foreach (var renderer in car.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                var bindings = renderer.sharedMaterials;
+                bool changed = false;
+                for (int index = 0; index < bindings.Length; index++)
+                {
+                    string role = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(bindings[index]));
+                    if (!response.TryGetValue(role, out var value)) continue;
+                    if (!copies.TryGetValue(role, out var copy))
+                    {
+                        var original = AssetDatabase.LoadAssetAtPath<Material>("Assets/Alabama/Art/Vehicles/E46/" + role + ".mat");
+                        NfsWorldSetup.Require(original != null, "Missing reviewed vehicle material: " + role);
+                        string path = directory + "/" + role + ".mat";
+                        copy = AssetDatabase.LoadAssetAtPath<Material>(path);
+                        if (copy == null) { copy = Object.Instantiate(original); AssetDatabase.CreateAsset(copy, path); }
+                        else EditorUtility.CopySerialized(original, copy);
+                        copy.name = role + " middle detail";
+                        copy.SetFloat("_Smoothness", value.x); copy.SetFloat("_Metallic", value.y);
+                        EditorUtility.SetDirty(copy); copies.Add(role, copy);
+                    }
+                    bindings[index] = copy; changed = true;
+                }
+                if (changed) renderer.sharedMaterials = bindings;
+            }
+            NfsWorldSetup.Require(copies.ContainsKey("E46_Paint") && copies.ContainsKey("E46_Glass"),
+                "Vehicle styling did not reach the body and glazing.");
+            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/DeveloperBArt/vehicle-style.json")),
+                "{\"derivedMaterials\":" + copies.Count + ",\"bodySmoothness\":0.38,\"glassSmoothness\":0.55,\"vehicleGeometryChanged\":false,\"sourceMaterialsChanged\":false}\n");
+        }
 
         public static void ConfigureRoadDetails()
         {
@@ -186,6 +237,9 @@ namespace Alabama.Editor
             NfsWorldDistrictRuntimeSetup.Verify(RuntimeScene, ContentScene);
             var content = SceneManager.GetSceneByPath(ContentScene);
             var visuals = content.GetRootGameObjects().Single(r => r.name == "Optimized district visuals");
+            var lods = visuals.GetComponent<NfsWorldMeshLods>();
+            NfsWorldSetup.Require(lods != null && lods.TargetsBelongTo(content),
+                "Generate the visual LODs before runtime assembly; all targets must belong to Downtown content.");
             NfsWorldSetup.Require(visuals.GetComponentsInChildren<MeshRenderer>().All(r =>
                 !r.sharedMaterial.IsKeywordEnabled("_ALPHATEST_ON") ||
                 (GameObjectUtility.GetStaticEditorFlags(r.gameObject) & StaticEditorFlags.OccluderStatic) == 0),
@@ -193,12 +247,30 @@ namespace Alabama.Editor
         }
         public static void BakeRuntimeOcclusion() => NfsWorldDistrictRuntimeSetup.BakeOcclusion(RuntimeScene, ContentScene);
 
-        public static void BuildRuntime()
+        [MenuItem("Alabama/Play/Open Styled Game")]
+        public static void ConfigureGame()
+        {
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            NfsWorldSetup.Require(File.Exists(RuntimeScene) && File.Exists(ContentScene),
+                "Receive or generate Developer B's styled Downtown assets first.");
+            VerifyRuntime();
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(RuntimeScene, true),
+                new EditorBuildSettingsScene(ContentScene, true) }.Concat(EditorBuildSettings.scenes
+                .Where(s => s.path != RuntimeScene && s.path != ContentScene)
+                .Select(s => new EditorBuildSettingsScene(s.path, false))).ToArray();
+            EditorSceneManager.OpenScene(RuntimeScene);
+            Debug.Log("Styled Downtown is the game entry scene; review courses remain available separately.");
+        }
+
+        public static void BuildRuntime() => BuildRuntimeAt("nfs-world-art-direction-runtime");
+        public static void BuildGame() => BuildRuntimeAt("windows");
+
+        private static void BuildRuntimeAt(string directory)
         {
             Verify();
             VerifyRuntime();
             PlayerSettings.enableFrameTimingStats = true;
-            string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../builds/nfs-world-art-direction-runtime/Alabama.exe"));
+            string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../builds/" + directory + "/Alabama.exe"));
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {

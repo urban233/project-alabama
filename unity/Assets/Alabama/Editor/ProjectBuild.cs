@@ -11,8 +11,14 @@ namespace Alabama.Editor
         [MenuItem("Alabama/Build/Windows Development")]
         public static void BuildWindows()
         {
+            NfsWorldArtDirection.BuildGame();
+        }
+
+        [MenuItem("Alabama/Build/Foundation Review")]
+        public static void BuildFoundationReview()
+        {
             ProjectFoundation.Verify();
-            BuildScene(ProjectFoundation.ScenePath, "windows");
+            BuildScene(ProjectFoundation.ScenePath, "foundation-review");
         }
 
         [MenuItem("Alabama/Build/Vehicle Review")]

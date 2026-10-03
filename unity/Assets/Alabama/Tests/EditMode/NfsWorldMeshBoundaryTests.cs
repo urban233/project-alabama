@@ -70,6 +70,37 @@ namespace Alabama.Tests
             Assert.That(Preserves(original, split, .003f), Is.True);
         }
 
+        [Test]
+        public void SubMillimetreSeamOffsetsDoNotInventOpenEdges()
+        {
+            var a = new Vector3(.0004f, 0, 0);
+            var c = new Vector3(1.0004f, 1, 0);
+            var split = NewMesh(new[] { a, Vector3.right, c,
+                a + new Vector3(.0003f, 0, 0), c + new Vector3(.0003f, 0, 0), Vector3.up },
+                new[] { 0, 1, 2, 3, 4, 5 });
+            var clean = NewMesh(new[] { a, Vector3.right, c, Vector3.up }, new[] { 0, 1, 2, 0, 2, 3 });
+            Assert.That(Preserves(split, clean, .02f, .001f), Is.True);
+        }
+
+        [Test]
+        public void FillingAnExistingOpeningIsRejected()
+        {
+            var vertices = new List<Vector3>();
+            for (int y = 0; y < 4; y++)
+                for (int x = 0; x < 4; x++) vertices.Add(new Vector3(x, y, 0));
+            var open = new List<int>(); var filled = new List<int>();
+            for (int y = 0; y < 3; y++)
+                for (int x = 0; x < 3; x++)
+                {
+                    int a = y * 4 + x;
+                    var indices = new[] { a, a + 1, a + 5, a, a + 5, a + 4 };
+                    filled.AddRange(indices);
+                    if (x != 1 || y != 1) open.AddRange(indices);
+                }
+            Assert.That(Preserves(NewMesh(vertices.ToArray(), open.ToArray()),
+                NewMesh(vertices.ToArray(), filled.ToArray()), .02f, .001f), Is.False);
+        }
+
         private Mesh NewMesh(Vector3[] vertices, int[] triangles)
         {
             var mesh = new Mesh { vertices = vertices, triangles = triangles };
@@ -77,8 +108,8 @@ namespace Alabama.Tests
             return mesh;
         }
 
-        private static bool Preserves(Mesh source, Mesh candidate, float tolerance) =>
+        private static bool Preserves(Mesh source, Mesh candidate, float tolerance, float weldTolerance = 0) =>
             (bool)typeof(NfsWorldVisualOptimization).GetMethod("PreservesBoundaryCurves",
-                BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { source, candidate, tolerance });
+                BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { source, candidate, tolerance, weldTolerance });
     }
 }

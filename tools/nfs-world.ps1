@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('SampleSetup', 'Setup', 'SampleCapture', 'Capture', 'SampleVerify', 'Verify', 'Build', 'DrivingTest', 'QualificationTest', 'StylePreview', 'StyleCapture', 'LightingCapture', 'StyleOptimize', 'StyleVerify', 'StyleBuild', 'StyleAntialiasing', 'RestoreProjectAntialiasing', 'ArtOptimize', 'ArtRenderOptimize', 'ArtExits', 'ArtVerify', 'ArtCapture', 'ArtExitCapture', 'ArtOcclusion', 'ArtShadowPartition', 'ArtBuild', 'RuntimeSetup', 'RuntimeVerify', 'RuntimeOcclusion', 'RuntimeBuild', 'RuntimeTest', 'ArtDirectionSetup', 'ArtDirectionDetail', 'ArtDirectionVerify', 'ArtDirectionBeforeCapture', 'ArtDirectionCapture', 'ArtDirectionOcclusion', 'ArtDirectionBuild', 'ArtDirectionRuntimeSetup', 'ArtDirectionRuntimeVerify', 'ArtDirectionRuntimeOcclusion', 'ArtDirectionRuntimeBuild')]
+    [ValidateSet('SampleSetup', 'Setup', 'SampleCapture', 'Capture', 'SampleVerify', 'Verify', 'Build', 'DrivingTest', 'QualificationTest', 'StylePreview', 'StyleCapture', 'LightingCapture', 'StyleOptimize', 'StyleVerify', 'StyleBuild', 'StyleAntialiasing', 'RestoreProjectAntialiasing', 'ArtOptimize', 'ArtRenderOptimize', 'ArtExits', 'ArtVerify', 'ArtCapture', 'ArtExitCapture', 'ArtOcclusion', 'ArtShadowPartition', 'ArtBuild', 'RuntimeSetup', 'RuntimeVerify', 'RuntimeOcclusion', 'RuntimeBuild', 'RuntimeTest', 'ArtDirectionSetup', 'ArtDirectionDetail', 'ArtDirectionVerify', 'ArtDirectionBeforeCapture', 'ArtDirectionCapture', 'ArtDirectionOcclusion', 'ArtDirectionBuild', 'ArtDirectionRuntimeSetup', 'ArtDirectionRuntimeVerify', 'ArtDirectionRuntimeOcclusion', 'ArtDirectionRuntimeBuild', 'ArtDirectionLodExport', 'ArtDirectionLodImport', 'GameSetup', 'ArtDirectionVehicle', 'ArtDirectionNearCapture')]
     [string]$Action = 'Setup',
     [string]$EditorPath = 'C:/Program Files/Unity/Hub/Editor/6000.3.25f1/Editor/Unity.exe'
 )
@@ -53,6 +53,11 @@ $taskMethods = @{
     ArtDirectionRuntimeVerify = 'Alabama.Editor.NfsWorldArtDirection.VerifyRuntime'
     ArtDirectionRuntimeOcclusion = 'Alabama.Editor.NfsWorldArtDirection.BakeRuntimeOcclusion'
     ArtDirectionRuntimeBuild = 'Alabama.Editor.NfsWorldArtDirection.BuildRuntime'
+    ArtDirectionLodExport = 'Alabama.Editor.NfsWorldGeometryLods.Export'
+    ArtDirectionLodImport = 'Alabama.Editor.NfsWorldGeometryLods.Import'
+    GameSetup = 'Alabama.Editor.NfsWorldArtDirection.ConfigureGame'
+    ArtDirectionVehicle = 'Alabama.Editor.NfsWorldArtDirection.ConfigureVehicle'
+    ArtDirectionNearCapture = 'Alabama.Editor.NfsWorldCapture.ArtDirectionNear'
 }
 $taskOutput = Join-Path $taskRoot ('artifacts/NfsWorld/' + $Action)
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null
@@ -67,7 +72,7 @@ if ($Action -in @('DrivingTest', 'QualificationTest', 'RuntimeTest')) {
                       '-runTests', '-testPlatform', 'PlayMode', '-testFilter', $taskFilter,
                       '-testResults', $taskResults)
 } elseif ($Action -in @('ArtOcclusion', 'RuntimeOcclusion', 'ArtDirectionOcclusion', 'ArtDirectionRuntimeOcclusion')) { $taskArguments += '-nographics' }
-elseif ($Action -notin @('SampleCapture', 'Capture', 'StyleCapture', 'LightingCapture', 'ArtCapture', 'ArtExitCapture', 'ArtDirectionBeforeCapture', 'ArtDirectionCapture')) { $taskArguments += @('-nographics', '-quit') }
+elseif ($Action -notin @('SampleCapture', 'Capture', 'StyleCapture', 'LightingCapture', 'ArtCapture', 'ArtExitCapture', 'ArtDirectionBeforeCapture', 'ArtDirectionCapture', 'ArtDirectionNearCapture')) { $taskArguments += @('-nographics', '-quit') }
 $taskQuoted = $taskArguments | ForEach-Object { '"' + $_ + '"' }
 $taskProcess = Start-Process -FilePath $EditorPath -ArgumentList $taskQuoted -WindowStyle Hidden -PassThru
 $taskProcess.WaitForExit()

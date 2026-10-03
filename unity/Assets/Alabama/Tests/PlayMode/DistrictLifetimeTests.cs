@@ -185,6 +185,22 @@ namespace Alabama.Tests
                 yield return runtime.UnloadDistrict("fixture-a", "downtown");
                 Assert.That(runtime.LastFailure, Is.Null);
                 var downtown = runtime.LoadedDistricts.Single(d => d.Id == "downtown");
+                var lods = downtown.gameObject.scene.GetRootGameObjects()
+                    .SelectMany(r => r.GetComponentsInChildren<NfsWorldMeshLods>()).SingleOrDefault();
+                if (content == ArtDirectionContent)
+                {
+                    Assert.That(lods, Is.Not.Null);
+                    Assert.That(lods.TargetsBelongTo(downtown.gameObject.scene), Is.True);
+                    var entries = new SerializedObject(lods).FindProperty("entries");
+                    Assert.That(entries.arraySize, Is.EqualTo(lods.TargetCount));
+                    for (int index = 0; index < entries.arraySize; index++)
+                    {
+                        var filter = (MeshFilter)entries.GetArrayElementAtIndex(index).FindPropertyRelative("target").objectReferenceValue;
+                        Assert.That(GameObjectUtility.GetStaticEditorFlags(filter.gameObject) &
+                            StaticEditorFlags.BatchingStatic, Is.EqualTo((StaticEditorFlags)0),
+                            "Distance meshes must remain outside Unity's build-time static batches.");
+                    }
+                }
                 Assert.That(downtown.Connections.Length, Is.EqualTo(6));
                 Assert.That(downtown.Connections.All(c => !c.seamVerified && c.closure.activeInHierarchy), Is.True);
                 for (int step = 0; step < 120; step++) yield return new WaitForFixedUpdate();
@@ -200,6 +216,7 @@ namespace Alabama.Tests
                 var stale = downtown.Culling;
                 yield return runtime.UnloadDistrict("downtown", "fixture-a");
                 Assert.That(runtime.LastFailure, Is.Null); Assert.That(stale.All(c => c == null), Is.True);
+                Assert.That(lods == null, Is.True, "Visual LOD ownership must end with district unload.");
                 Assert.That(runtime.DistrictCount, Is.EqualTo(1)); AssertOwners();
             }
         }

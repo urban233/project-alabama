@@ -14,6 +14,7 @@ namespace Alabama.Editor
         private static double deadline;
         private static string variant;
         private static NfsWorldRenderSettings rendering;
+        private static (string name, Vector3 position, Vector3 target)[] propPoses;
 
         public static void Sample() => Start("Sample", NfsWorldSetup.SampleScene);
         public static void District() => Start("District", NfsWorldSetup.DistrictScene);
@@ -22,11 +23,14 @@ namespace Alabama.Editor
         public static void ArtExits() => Start("ArtExits", NfsWorldArtPass.ScenePath);
         public static void ArtDirectionBefore() => Start("ArtDirectionBefore", NfsWorldArtPass.ScenePath);
         public static void ArtDirection() => Start("ArtDirection", NfsWorldArtDirection.ScenePath);
+        public static void ArtDirectionNear() => Start("ArtDirectionNear", NfsWorldArtDirection.ScenePath);
         public static void LightingStudy() => Start("LightingStudy", NfsWorldStylePreview.LightingStudyScenePath);
 
         private static void Start(string name, string scene)
         {
             variant = name;
+            propPoses = Array.Empty<(string name, Vector3 position, Vector3 target)>();
+            if (variant.StartsWith("ArtDirection") && variant != "ArtDirectionNear") PreparePropPoses();
             EditorSceneManager.OpenScene(scene);
             rendering = UnityEngine.Object.FindFirstObjectByType<NfsWorldRenderSettings>();
             if (rendering != null) rendering.Apply();
@@ -46,7 +50,7 @@ namespace Alabama.Editor
                 Directory.CreateDirectory(output);
                 var camera = Camera.main;
                 NfsWorldSetup.Require(camera != null, "Capture camera missing");
-                // Fixed material comparisons must not include differences from a new visibility bake.
+                // Fixed visual comparisons must not include differences from a new visibility bake.
                 if (variant.StartsWith("ArtDirection")) camera.useOcclusionCulling = false;
                 var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
                 if (variant == "ArtExits")
@@ -84,7 +88,17 @@ namespace Alabama.Editor
                             Save(camera, Path.Combine(output, "facade-close.png"));
                         }
                     }
-                    if (variant.StartsWith("ArtDirection")) CapturePassage(camera, culling, roads, output);
+                    if (variant.StartsWith("ArtDirection"))
+                    {
+                        CapturePassage(camera, culling, roads, output);
+                        foreach (var pose in propPoses)
+                        {
+                            camera.transform.position = pose.position;
+                            camera.transform.LookAt(pose.target);
+                            if (culling != null) culling.Refresh();
+                            Save(camera, Path.Combine(output, pose.name + "-close.png"));
+                        }
+                    }
                 }
                 camera.orthographic = true;
                 camera.useOcclusionCulling = false; // Overview is outside the baked driving view volume.
@@ -107,10 +121,38 @@ namespace Alabama.Editor
 
         private static void Save(Camera camera, string path)
         {
+            var lods = UnityEngine.Object.FindFirstObjectByType<NfsWorldMeshLods>();
+            if (variant == "ArtDirectionNear") lods?.Restore();
+            else lods?.Refresh(camera.transform.position);
             // The first request after opening a batch scene can show fallback car
             // textures. Read back a warmup frame before keeping the actual capture.
             VehicleCapture.Save(camera, path);
             VehicleCapture.Save(camera, path);
+        }
+
+        private static void PreparePropPoses()
+        {
+            // Locate real instances in the unchanged source scene. Both comparison
+            // variants use these poses even after individual visuals are batched.
+            EditorSceneManager.OpenScene(NfsWorldStylePreview.LightingStudyScenePath);
+            var probes = new[] { ("barrel", "Props_00061"), ("hydrant", "Props_00050"),
+                ("newspaper-box", "Props_00021"), ("waste-bin", "Props_00065") };
+            var roads = UnityEngine.Object.FindObjectsByType<MeshCollider>(FindObjectsSortMode.None)
+                .Where(c => c.transform.root.name == "RoadsPhysical").ToArray();
+            propPoses = probes.Select(probe =>
+            {
+                var filter = GameObject.Find(probe.Item2).GetComponent<MeshFilter>();
+                var points = filter.sharedMesh.vertices.Select(filter.transform.TransformPoint).ToArray();
+                var closest = points.OrderBy(p => (p - new Vector3(-550, 15, 550)).sqrMagnitude).First();
+                var cluster = points.Where(p => (p - closest).sqrMagnitude < 1.2f * 1.2f).ToArray();
+                var bounds = new Bounds(cluster[0], Vector3.zero);
+                foreach (var point in cluster) bounds.Encapsulate(point);
+                var target = bounds.center;
+                var road = roads.OrderBy(r => r.bounds.SqrDistance(target)).First();
+                var direction = road.bounds.ClosestPoint(target) - target; direction.y = 0;
+                if (direction.sqrMagnitude < .1f) direction = new Vector3(-1, 0, -1);
+                return (probe.Item1, target + direction.normalized * 4 + Vector3.up * 1.7f, target);
+            }).ToArray();
         }
 
         private static void CapturePassage(Camera camera, NfsWorldDistanceCulling culling, MeshCollider[] roads, string output)

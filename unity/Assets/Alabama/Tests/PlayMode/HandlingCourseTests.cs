@@ -12,7 +12,7 @@ namespace Alabama.Tests
         [UnityTest]
         public IEnumerator CarAcceleratesBrakesReversesAndResetsOnTheSavedStreet()
         {
-            yield return SceneManager.LoadSceneAsync("HandlingCourse", LoadSceneMode.Single);
+            yield return ReviewSceneLoader.Load("HandlingCourse");
             var car = Object.FindFirstObjectByType<ArcadeCarController>();
             Assert.That(car, Is.Not.Null);
             car.GetComponent<VehicleInput>().enabled = false;
@@ -44,7 +44,7 @@ namespace Alabama.Tests
         [UnityTest]
         public IEnumerator StraightAtHighSpeedKeepsContactAndDoesNotLeaveTheRoad()
         {
-            yield return SceneManager.LoadSceneAsync("HandlingCourse", LoadSceneMode.Single);
+            yield return ReviewSceneLoader.Load("HandlingCourse");
             var car = Object.FindFirstObjectByType<ArcadeCarController>();
             car.GetComponent<VehicleInput>().enabled = false;
             for (int i = 0; i < 100; i++) yield return new WaitForFixedUpdate();
@@ -66,7 +66,7 @@ namespace Alabama.Tests
         [UnityTest]
         public IEnumerator WheelContactsCurbAndChassisIsContainedByRoadBarrier()
         {
-            yield return SceneManager.LoadSceneAsync("HandlingCourse", LoadSceneMode.Single);
+            yield return ReviewSceneLoader.Load("HandlingCourse");
             var car = Object.FindFirstObjectByType<ArcadeCarController>();
             car.GetComponent<VehicleInput>().enabled = false;
             var body = car.Body;

@@ -19,9 +19,9 @@ namespace Alabama.Editor
         [Serializable] private sealed class Validation { public string[] acceptedMeshes; public string[] rejectedMeshes; public string[] exactFacetedMeshes; public int overriddenMaterials; public float boundaryToleranceMetres; public bool collisionChanged; }
         private static int overriddenMaterials;
 
-        public static HashSet<string> Prepare(string directoryPath = DirectoryPath)
+        public static HashSet<string> Prepare(string directoryPath = DirectoryPath, string meshManifestPath = null)
         {
-            var manifest = JsonUtility.FromJson<MeshManifest>(File.ReadAllText(Path.GetFullPath(
+            var manifest = JsonUtility.FromJson<MeshManifest>(File.ReadAllText(meshManifestPath ?? Path.GetFullPath(
                 Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/art-meshes.json"))));
             NfsWorldSetup.Require(manifest.finiteCoordinatesValidated && !manifest.collisionChanged,
                 "Generate and validate the separate Blender art meshes first.");

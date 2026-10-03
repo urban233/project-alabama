@@ -1,172 +1,210 @@
 # Developer B Downtown art direction
 
-Prepared on 3 October 2026 from updated `main` / `origin/main` at `fe2e19f`, on
-`codex/developer-b-art-direction`. Developer B owns Downtown art and common
-rendering; Developer A retains neighbouring districts and accepted pack publication.
+Prepared on 3–4 October 2026 from updated `main` / `origin/main` at `fe2e19f`,
+on `codex/developer-b-art-direction`. The current playable Downtown game uses
+Developer B's derived geometry, materials and distance LODs by default.
+Developer A retains neighbouring districts and accepted pack publication.
 
 ## Reference application
 
-Reviewed all Markdown guides, prompt records and 19 images in
-`docs/art-direction/2026-10-02-nfsmw`. The balanced safehouse, lighthouse and
-stadium images set fidelity; the original screenshot supplies atmosphere. The
-six agent studies guide road edges, facade/glass, foliage/ground, underpasses,
-intersections and waterfront depth. The polished and coarse images define
-rejected extremes; first-pass images supply composition ideas only. Downtown
-retains its actual imported topology rather than reconstructing invented locations.
+All guides, prompt records and 19 images in
+`docs/art-direction/2026-10-02-nfsmw` informed this pass. The balanced safehouse,
+lighthouse and stadium studies set the medium-detail target; `style-reference.png`
+supplies atmosphere. The six supplemental studies guide roads, facades, foliage,
+underpasses, intersections and waterfront depth. The polished and coarse sets
+bound the rejected extremes; first-pass images provide composition context.
+The adaptation guide calls for the imported Downtown layout, dimensions and
+landmarks to remain authoritative. The conceptual locations are not additional
+playable districts or measured layouts.
 
-The material comparison retains the accepted sunlight, ambient treatment, fog,
-exposure, shadows, collision, metre scale, origin and six closed exits. It derives
-new assets under `ArtDirection/`, leaving accepted scenes and source art intact.
-
-| Reference concern | Implemented treatment |
+| Reference concern | Current treatment |
 | --- | --- |
-| Modest wall detail and substantial architecture | Source-aligned concrete and masonry keep broad stains, seams and mortar; edge-aware filtering quiets finer noise while restoring variation lost in the older bake. |
-| Matte road, curb and marking separation | Six reviewed road albedos retain their canvases; a mean-centred, world-space grain layer affects only 21 explicit pavement layers in two array materials. Upward-facing dark neutral regions receive grain; bright and coloured paint is masked. |
-| Restrained glass, metal and reflections | Existing reviewed window/facade atlases remain bound. Two opaque prop albedos receive sparse source wear; material smoothness and car appearance are retained. |
-| Natural autumn crowns, rocks and terrain | Existing alpha crowns, branches and terrain contours remain intact; they are excluded from the selective bake. |
-| Openings, industrial silhouettes and depth | Existing guarded architecture, bridge decks, skyline, small spatial shadow meshes and distance limits are retained. |
+| Substantial architecture with moderate openings | Guarded coplanar cleanup on 192 building mesh groups; source window grids, trim, openings and broad masses retained. Hard environmental corners remain faceted. |
+| Ordinary, simpler street furniture | 128 closed newspaper-box and waste-bin forms projected onto angular coarse surfaces, with at most 8 cm displacement and exact triangle connectivity and UV corners. Five prop mesh groups accepted, including these four reshaped groups. |
+| Matte roads, curbs and legible markings | 39 derived road albedos plus restrained world-space grain on 21 explicit pavement layers in two array materials. Markings and source road shape retained. |
+| Moderate concrete, brick, glass and metal detail | Broad wear and material transitions retained while fine noise is reduced across nine texture families. Authored atlases, signs, effects and data maps remain protected. |
+| Irregular autumn foliage, terrain and water | Alpha-aware foliage treatment preserves crown gaps and natural source silhouettes; earth/water families retain broad variation. No tree trunks passed the shape-rebuilding guards. |
+| Restrained vehicle reflections | Four derived vehicle materials reduce body/glass gloss while retaining the smoother source body and wheel geometry. |
+| Near/far depth and industrial silhouettes | 146 spatial groups use validated distance meshes at 80/200 m. Original shadows, landmark structure, skyline, culling and reviewed atmosphere remain. |
 
-The committed recipe names the exact source IDs and material families in
-`docs/art-direction/downtown-material-recipe.json`: **26** albedos (14 concrete,
-four masonry, six road, two props). **936** other texture bindings stay on the
-accepted ArtPass textures. Generated road grain is a texture asset, separate
-from all scene illustrations and UV atlases. Its private source, exact ImageGen
-prompt and sampling recipe live in `source-art/maps/nfs-world/art-textures/art-direction/`.
+## Geometry, textures and runtime
 
-This is a selective material refinement with repeatable gameplay-distance
-comparisons. It introduces no additional mesh simplification or LODs: visible
-map geometry stays at **3,117,257 triangles**, versus 3,132,972 imported triangles
-before the existing guarded cleanup (0.50%). Colour rendering keeps 2,721 spatial
-batches / 53 texture-array materials. Further geometry/LOD work, a real connected
-district and a longer combined route qualification remain subsequent deliverables.
+The public geometry recipe is `balanced-downtown-geometry-v4`. It starts from
+original editable district meshes and exports separate FBX files and editable
+Blender copies. A 1 mm weld reconnects submillimetre source seams. Category-specific
+cleanup protects open curves, bounds, material/UV regions, structural roads and
+bridges, alpha cards and readable signs. Flat normals alone do not count as a
+triangle reduction.
 
-## Review and reproduction
+Unity accepted **197 changed mesh groups** (192 buildings and five props) and
+rejected 11 candidates. It also applied faceted normals to **2,309 exact source
+mesh groups**, with category and smooth-silhouette exclusions. Source visual
+meshes assemble into **2,916 spatial batches / 53 texture-array materials**.
+Near map geometry is **3,126,664 triangles**, versus 3,132,972 in the imported map
+(6,308 fewer, 0.20%). It is **9,407 triangles higher** than the accepted ArtPass
+(3,117,257), because this pass restores detail that more aggressive simplification
+failed to preserve. Including the car, the standalone scene has 3,129,624 visible
+triangles. These are conservative style edits, not a large geometry optimization.
 
-Restore the private candidate with its code revision before opening the new
-standalone scene `Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/NfsWorldArtDirection.unity`
-or additive host `ArtDirection/Runtime/DistrictRuntime.unity`. The Windows players
-are under `builds/nfs-world-art-direction/` and `builds/nfs-world-art-direction-runtime/`.
+UV validation covers texture interpolation, not just seams. An earlier candidate
+removed an interior gradient and erased facade window grids; that candidate was
+rejected. The final recipe protects differing affine UV gradients and verifies
+source interpolation within 0.0002 UV units. Blender fixtures exercise atlas
+rejection, continuous gradients, safe affine cleanup, and actual closed-solid
+vertex projection with unchanged UVs/connectivity. Final normal and near-level
+captures preserve the facade grids and trim.
 
-With Unity and Blender closed, `tools/import-nfs-art-direction.ps1` bakes the
-selected albedos, validates their PNGs, generates both scenes, bakes standalone
-and additive occlusion, runs the full Unity suites, captures the comparison and
-builds both strict players. Regeneration also needs the existing lighting-study
-scene and `artifacts/NfsWorld/art-meshes.json` from the baseline art pipeline;
-those prerequisites are not generated by this script. The received derived scenes
-can be used directly without rerunning the generator.
+LOD generation applies the same UV checks, material-layer retention, bidirectional
+surface-distance checks and open-boundary/bounds validation. Of 2,307 eligible
+spatial groups, **146** accept a reduction. Their aggregate triangles are
+2,928,534 near and 2,925,003 at both middle and far: only **3,531 additional
+triangles** saved. The two distance levels currently produce the same accepted
+counts. The 4,326 rejected candidates include candidates with no reduction;
+rejection is expected under these guards. Colour LOD ownership is independent
+of colliders and exact retained shadow proxies, and is scoped to additive content.
+Active distance meshes are excluded from Unity static batching so runtime buffer swaps use their own mesh buffers. Unity copies static-batched mesh data at build time ([Unity 6.3 API](https://docs.unity3d.com/6000.3/Documentation/ScriptReference/StaticBatchingUtility.Combine.html)). The rendered benchmark verifies zero statically batched LOD targets and actual reduced-mesh selection. Disabling the owner restores near meshes. The final update regenerated 20 changed
+inputs and reused 2,287 byte-identical inputs; the cache record checks source
+hashes and output headers, counts and sizes, and Unity verifies every imported input against the
+current scene mesh. A full uncached public regeneration remains available.
 
-Before/after captures are private at `artifacts/NfsWorld/Captures/ArtDirectionBefore/`
-and `ArtDirection/`: chase camera, two source-road viewpoints, close oblique facade,
-real shadowed lower roadway and overview. Road selection uses stable mesh names;
-both passage poses match exactly at `RoadsPhysical_00139`. Comparison captures
-disable baked occlusion in both variants so a different bake cannot masquerade
-as a material change; gameplay scenes retain their separately baked occlusion.
-The compact inspected comparison is `DeveloperBArt/before-after.jpg`. One initial
-capture editor crashed during shutdown after writing its PNGs; clean reruns of
-both capture commands completed successfully.
+The schema-2 material recipe lists exact source IDs: **942** saved albedos
+(concrete 109, masonry 55, road 39, props 127, facade 83, foliage 29, ground 18,
+water 5, other surfaces 477), with **20** protected bindings preserved.
+Dimensions and alpha remain exact; maximum saved mean brightness drift is
+0.00777165 on a 0–1 scale. The material builder overrides 971 material bindings.
+The four vehicle materials are derived assets; source materials/geometry stay
+unchanged. Road grain source, exact generation prompt and sampling recipe stay
+in the private source contribution.
 
-## Verification
+The default Windows build and Unity Play menu now enter the styled additive
+runtime. The enabled build scenes are its persistent host and Downtown content;
+Foundation, HandlingCourse and DistrictLoop remain registered review scenes.
+Foundation setup preserves this entry configuration. Review tests load their
+scenes explicitly through the editor instead of relying on enabled build entries.
+The existing six unresolved exits remain closed.
 
-| Check | Result / evidence |
+## Verification and visual review
+
+| Check | Result / private evidence |
 | --- | --- |
-| Python suite | 45 passed; includes edge/hue retention and transparent-colour bleed checks. |
-| Unity EditMode | 16 passed, zero skipped (`artifacts/EditTests/results.xml`). |
-| Unity PlayMode | 21 passed, zero skipped (`artifacts/PlayTests/results.xml`). Added derived-scene driving, high-speed/collision, six exit barriers and real-content repeated loading checks. |
-| Saved textures | 26 verified; dimensions and alpha exact, 936 fallback bindings retained. Maximum absolute mean brightness drift 0.0005483 on a 0–1 scale (`DeveloperBArt/texture-validation.json`). |
-| Collision | 13,834/13,834 samples on 1,158 source road meshes; maximum discrepancy 0.765 mm (`collision-ArtDirection.json`). Source mesh and exit collider signatures match the accepted scene exactly. |
-| Shared rendering | Sun colour/intensity/rotation/shadows and atmosphere profile match (`DeveloperBArt/scene-validation.json`). |
-| Occlusion | Standalone and additive configurations baked. Runtime generation and baking explicitly exclude cutout cards as solid occluders; verification enforces that rule. |
-| Windows builds | Both final players passed strict builds with zero build errors (`ArtDirectionBuild/editor.log`, `ArtDirectionRuntimeBuild/editor.log`). |
-| Original artwork | 97 recorded files across five assets, license evidence and Unity metadata verified. |
-| Accepted NFS inventory | 86,417 files checked, zero missing or modified; accepted lock remains 0.1.0. |
+| Python suite | 45 passed (`DeveloperBArt/python-tests.log`); Blender-specific geometry/UV/projection fixtures also passed during generation. |
+| Unity EditMode | 18 passed, zero failed/skipped (`artifacts/EditTests/results.xml`). Includes open-boundary, hole and submillimetre seam guards. |
+| Unity PlayMode | 23 passed, zero failed/skipped (`artifacts/PlayTests/results.xml`). Includes driving/collision, six barriers, additive lifetime, LOD distances/restoration and culling-cache invalidation. |
+| Collision | 13,834/13,834 samples on 1,158 source road meshes; maximum discrepancy 0.765 mm. Source mesh and exit collider signatures match exactly; 2,201 mesh colliders / 3,381,268 collision triangles. |
+| Shared rendering | Sun colour/intensity/rotation/shadows and atmosphere profile match the accepted scene exactly (`scene-validation.json`). |
+| Occlusion | Standalone and additive configurations baked. Cutout cards are excluded as solid occluders. |
+| Windows builds | Strict standalone, additive runtime and default game builds succeeded with zero build errors. |
+| Default entry | Actual Foundation Setup followed by GameSetup passed. Build-settings SHA-256 stayed identical; only the two styled runtime scenes are enabled (`default-game-validation.json`). |
+| Original artwork / accepted inventory | 97 recorded files across five assets, license evidence and Unity metadata verified. Accepted NFS inventory: 86,417 files, zero missing/modified; base dependency verified. |
 
-Local evidence is under `artifacts/NfsWorld/DeveloperBArt/`.
-The private `developer-b-art-direction-review-evidence.zip` there bundles 41
-capture, validation, test, build and benchmark files with this record; use its
-SHA-256 sidecar when sharing it alongside the asset candidate.
+Clean final before/after captures cover chase camera, two source-road views,
+oblique facade, shadowed lower roadway, barrel, hydrant, newspaper boxes,
+waste bins and overview. The actual source-road/passage and prop poses are shared
+between variants. Comparisons retain identical lighting and disable baked
+occlusion in both variants; gameplay keeps its baked occlusion. The inspected
+images preserve road paint, signage, facade grids, crown gaps and passages, and
+show the angular bin/box forms. They are an adaptation of the repository's
+medium-detail direction, not an exact recreation of the concept compositions.
 
-## Mains performance comparison
+Private images are under `artifacts/NfsWorld/Captures/ArtDirectionBefore/` and
+`ArtDirection/`. `DeveloperBArt/game-style-comparison.jpg` is the compact four-view
+comparison; `before-after.jpg` contains the full comparison. Earlier material-only
+measurements and rejected geometry captures are historical diagnostics, not
+qualification of these final assets.
 
-All four final visible-player runs confirmed mains before and after measurement,
-with the same **Power saver** plan. Hardware: Ryzen 7 5700U / Radeon integrated
-graphics, Direct3D 11, **1920×1080 output / 1440×810 internal rendering**, 0.75
-render scale. The accepted runtime player is the retained previously qualified
-baseline; the revised player was rebuilt after its final shader and occlusion
-changes. The approved lighting and shadows remain enabled.
+## Mains performance
 
-Each run measures five stationary views (120 warm-up / 360 measured frames
-each) and nine two-second high-speed samples, using three clear source-road
-corridors repeated three times with initial speed 126 km/h. Source-road probe
-coordinates match; the capped spawn view differs vertically by 3.405 mm because
-the benchmark samples the car after suspension settles during startup. The
-fixed material captures use identical recorded poses.
+All four fresh visible-player runs verified mains before and after measurement
+and the same Power saver plan, with Unity and Blender closed. Hardware: Ryzen
+7 5700U / Radeon integrated graphics, Direct3D 11, **1920×1080 output / 1440×810
+internal rendering**, FSR1 at 0.75 scale. The accepted runtime player is the
+retained qualified baseline; revised players were rebuilt from the final assets.
+Lighting and shadows remain enabled.
+
+Each run samples five stationary views (120 warm-up / 360 measured frames each)
+and nine two-second high-speed traversals: three source-road corridors repeated
+three times with initial speed 126 km/h. Every measured driving frame retained
+road support. View/corridor positions and rendering settings match; the spawn
+view allows 1 cm for suspension settling, while other poses match within 1 mm.
 
 | Variant / cap / sample | Mean FPS range | Frame p95 range (ms) | Maximum frame (ms) | Frames over 40 ms |
 | --- | ---: | ---: | ---: | ---: |
-| Accepted / uncapped / stationary | 48.27–65.44 | 17.76–23.71 | 38.15 | 0 / 1,800 |
-| Revised / uncapped / stationary | 48.46–66.50 | 17.34–23.60 | 44.49 | 1 / 1,800 |
-| Accepted / uncapped / driving | 49.28–62.70 | 18.33–23.51 | 32.30 | 0 / 1,027 |
-| Revised / uncapped / driving | 49.50–62.92 | 18.19–23.03 | 30.22 | 0 / 1,042 |
-| Accepted / 30 cap / stationary | 29.98–29.99 | 33.34–33.37 | 36.72 | 0 / 1,800 |
-| Revised / 30 cap / stationary | 29.70–29.99 | 33.36–33.43 | 81.19 | 9 / 1,800 |
-| Accepted / 30 cap / driving | 25.84–30.00 | 33.34–64.92 | 81.04 | 12 / 532 |
-| Revised / 30 cap / driving | 29.98–30.00 | 33.34–33.52 | 40.35 | 1 / 540 |
+| Accepted / uncapped / stationary | 62.28–91.81 | 12.19–17.20 | 32.74 | 0 / 1800 |
+| Revised / uncapped / stationary | 58.14–86.52 | 12.82–20.14 | 44.44 | 2 / 1800 |
+| Accepted / uncapped / driving | 65.56–84.79 | 12.79–16.63 | 36.54 | 0 / 1397 |
+| Revised / uncapped / driving | 63.72–83.08 | 13.11–18.12 | 28.51 | 0 / 1362 |
+| Accepted / 30 cap / stationary | 29.78–30.00 | 33.34–33.48 | 86.18 | 5 / 1800 |
+| Revised / 30 cap / stationary | 29.91–30.00 | 33.34–33.39 | 50.88 | 4 / 1800 |
+| Accepted / 30 cap / driving | 29.99–30.00 | 33.34–33.46 | 38.04 | 0 / 540 |
+| Revised / 30 cap / driving | 29.99–30.00 | 33.34–33.50 | 34.21 | 0 / 540 |
 
-Every measured driving frame retained road support. Camera-render counts are
-4,507 / 4,522 uncapped and 4,012 / 4,020 capped (accepted / revised); every
-sample recorded nonzero GPU timing. Hidden-player runs that skipped rendering
-were rejected; the wrapper now requires `-Visible`.
+Camera-render counts (accepted / revised) are
+4877 / 4842 uncapped and
+4020 / 4020 capped.
+Every sample recorded nonzero GPU timings. Both revised runs verified 146 LOD
+targets, zero in static batches and 143 using reduced meshes at the final viewpoint.
 
-Uncapped snapshots show similar rendering work: stationary draw calls are
-1,317–2,132 accepted / 1,316–2,136 revised, and driving calls are 1,339–2,896 /
-1,342–2,886. Sampled rendered triangles range from 748,668 to about 2.50 million
-stationary, and about 1.22–2.08 million driving. Unity allocated memory at report
-completion is **1,121.32 MB accepted / 1,210.52 MB revised**, an **89.20 MB**
-increase. The derived scene retains accepted shadow materials alongside its new
-colour arrays; this measurement is total Unity allocated memory, not isolated
-GPU texture memory.
+Unity allocated memory at uncapped report completion is
+**1121.17 MB accepted / 1254.15 MB revised**
+(**+132.98 MB**); this is total allocated memory, not isolated GPU
+texture memory. The revised scene retains source shadow materials alongside
+derived colour arrays and distance meshes.
 
-These sequential samples show uncapped headroom and near-30-FPS revised driving
-averages, with occasional hitches. They establish neither a performance gain nor
-hitch-free pacing. The short corridors do not qualify the intended several-minute
-connected route. Capped GPU timing can span frame-pacing waits; use the uncapped
-measurements when assessing rendering cost. Raw final reports and logs are
+These short sequential samples establish local target headroom and observed
+pacing, not a performance gain or a guarantee for every street. Occasional long
+frames must be judged from the table. Capped GPU timings can include frame-pacing
+waits; use uncapped runs to assess rendering cost. They do not qualify the planned
+long connected route. Raw reports/logs are
 `artifacts/NfsWorld/player-{runtime,art-direction}-benchmark-driving{,-cap30}.*`;
-the checked summary is `DeveloperBArt/performance-comparison.json`. Earlier
-battery reports are preserved separately under `DeveloperBArt/battery-before-mains/`.
+`DeveloperBArt/performance-comparison.json` records checked conditions and timings.
 
-All six unresolved exits remain closed. No neighbouring-district connection,
-seamless streaming, whole-map qualification or exact recreation of a concept
-image is claimed. Private transfer and A's integration/publication remain separate
-from this code branch.
+## Reproduction and private handoff
 
-## Private integration handoff
+Restore the pinned private packs and this contributor candidate with its code
+revision before opening the styled scene. Accepted pins remain `base` **1.0.0**
+and `nfs-world` **0.1.0**; Developer B's publisher list remains empty.
 
-Contributor snapshot prepared with `python tools/asset_handoff.py contribute
---pack nfs-world --label developer-b-art-direction`:
+With Unity and Blender closed, `tools/import-nfs-art-direction.ps1` builds guarded
+geometry and derived textures, assembles visual batches, generates/imports LODs,
+builds additive content, bakes both occlusion configurations, runs Unity suites,
+captures comparisons, builds all three strict Windows players and configures the
+default game. Regeneration also requires original district Blender files,
+`artifacts/NfsWorld/inventory.json`, `art-meshes.json`, the reviewed exit manifest
+and lighting-study inputs from the accepted pipeline. The private candidate
+contains derived assets that can be used without regenerating them.
 
-`project-alabama-work-nfs-world-developer-b-art-direction-0.0.20261002234715249251.zip`
+Use **Alabama → Play → Open Styled Game** or open
+`Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/Runtime/DistrictRuntime.unity`.
+`./tools/unity.ps1 -Action Build` writes `builds/windows/Alabama.exe`.
+The qualification variants are `builds/nfs-world-art-direction/Alabama.exe` and
+`builds/nfs-world-art-direction-runtime/Alabama.exe`.
 
-ZIP SHA-256: `96f2a731877c0cab5fd41f00314ceab042feac5387cfb62c8a3389c21f6b2b0d`.
-The ZIP is **3,319,822,429 bytes**; share it and its `.zip.sha256` sidecar privately,
-together with the B code revision and review evidence.
+New contributor snapshot prepared after final qualification with
+`python tools/asset_handoff.py contribute --pack nfs-world --label developer-b-art-direction`:
 
-The full candidate contains **94,776 files / 8,218,144,046 uncompressed bytes**,
-with content ID `4a24bf5f113e90ac79710a44a1e6d73e6dd9525424c62cbc6a005aa6b165b870`.
-Its manifest comparison against accepted NFS World 0.1.0 found **8,359 additions,
-zero modifications and zero deletions**. The private inventory is
-`DeveloperBArt/private-contribution-inventory.json`.
+`project-alabama-work-nfs-world-developer-b-art-direction-0.0.20261003230155458880.zip`
 
-| Owned additions for A's integration | Files |
+ZIP SHA-256: `34a6fece51db09d0484c653dbbfaf3ef6cd7971cc55485509ff611e26be7e3dc`. ZIP size: **4,051,802,440 bytes**.
+Share the ZIP and its `.zip.sha256` sidecar privately with the code revision.
+The full snapshot contains **105,050 files / 10,123,594,292
+uncompressed bytes**, content ID `1b7b5aabad4dfecaecf352867748c7a29d6c7f050c4a54a9df2f6d53b7b37cdc`. Against accepted 0.1.0:
+**18,633 additions, zero modifications and zero deletions**.
+
+| Owned additions for integration | Files |
 | --- | ---: |
-| `unity/Assets/Alabama/Art/Maps/NfsWorld/ArtDirection.meta` and `ArtDirection/**` | 8,338 |
+| `unity/Assets/Alabama/Art/Maps/NfsWorld/ArtDirection.meta` and `ArtDirection/**` | 18,601 |
 | `source-art/maps/nfs-world/art-textures/art-direction/**` | 3 |
+| `source-art/maps/nfs-world/art-direction-geometry/**` | 6 |
+| `source-art/maps/nfs-world/blender/ArtDirection/**` | 5 |
 | Prior B contribution: `NfsWorld/Runtime.meta` and `Runtime/**` | 18 |
 
-The last 18 files are the previously supplied additive runtime contribution;
-they remain outside accepted pack 0.1.0. Preserve every received metadata file.
-Integrate owned additions rather than replacing A's full workspace with this
-snapshot. The new code/recipe and candidate belong together; A reviews and
-publishes the eventual accepted NFS release. B's publisher list stays empty and
-accepted locks/receipts remain **base 1.0.0 / NFS World 0.1.0**. Export alone has
-not transferred or published any private files.
+Preserve received metadata and integrate owned additions rather than replacing
+A's workspace wholesale. Inventory: `DeveloperBArt/private-contribution-inventory.json`.
+The private `DeveloperBArt/developer-b-art-direction-review-evidence.zip` bundles 68 files:
+final captures, tests, builds, collision/texture/LOD/startup validation, benchmark
+reports and this record; verify its separate SHA-256 sidecar when transferring.
+
+Developer A must privately review/integrate owned additions before publishing an
+accepted asset release. The candidate and review evidence remain ignored by Git;
+only code, recipes, settings and this record belong on the review branch. No
+neighbouring district connection or new accepted pack publication is claimed.

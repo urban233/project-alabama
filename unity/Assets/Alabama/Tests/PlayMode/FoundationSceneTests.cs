@@ -38,7 +38,7 @@ namespace Alabama.Tests
         [UnityTest]
         public IEnumerator SavedSceneBootsAndCalibrationBodySettlesOnFloor()
         {
-            yield return SceneManager.LoadSceneAsync("Foundation", LoadSceneMode.Single);
+            yield return ReviewSceneLoader.Load("Foundation");
             var bootstrap = UnityEngine.Object.FindFirstObjectByType<DemoBootstrap>();
             Assert.That(bootstrap, Is.Not.Null);
             Assert.That(bootstrap.Settings, Is.Not.Null);

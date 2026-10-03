@@ -174,6 +174,19 @@ Outputs: `NfsWorldArtPass.unity`, `builds/nfs-world-art/Alabama.exe`,
 `artifacts/NfsWorld/art-meshes.json`, `art-validation.json`, `art-batching.json`,
 `collision-Art.json` and `Captures/ArtPass`. Texture treatment spans the full
 district; substantial polygon/LOD reduction remains further authoring work.
+Developer B's newer [art-direction implementation](../../docs/developer-b-art-direction-status.md)
+supersedes that material-only comparison for the normal game. Run
+`tools/import-nfs-art-direction.ps1` after restoring B's private contribution.
+It derives suitable solid meshes from the original district, assembles the
+moderate material recipes, exports Unity's final spatial batches for guarded
+Blender LOD generation, then imports those LODs before runtime assembly,
+occlusion, tests, captures and strict Windows builds. `GameSetup` selects the
+styled additive runtime as the default entry through Unity's scene API.
+Geometry reduction protects UV seams and changes in texture interpolation, then
+checks the resulting mapping against the source. Blender fixtures cover both
+atlas regions and continuous UV gradients; a geometrically flat wall can still
+need its interior vertices to retain windows and trim. Distance LODs use the
+same checks before Unity validates their bounds and open boundaries.
 A clean checkout can receive the pinned private ZIPs in its project root using
 the [shared chat procedure](../../docs/shared-asset-prompt.md); conversion from
 scratch still needs the original local source archive.

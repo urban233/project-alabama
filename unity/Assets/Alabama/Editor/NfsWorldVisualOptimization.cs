@@ -36,7 +36,9 @@ namespace Alabama.Editor
             if (art)
             {
                 EditorSceneManager.OpenScene(NfsWorldStylePreview.LightingStudyScenePath);
-                artCandidates = NfsWorldArtPass.Prepare(artDirection ? NfsWorldArtDirection.DirectoryPath : NfsWorldSetup.BasePath + "/ArtPass");
+                string geometryManifest = NfsWorldArtDirection.DirectoryPath + "/geometry.json";
+                artCandidates = NfsWorldArtPass.Prepare(artDirection ? NfsWorldArtDirection.DirectoryPath : NfsWorldSetup.BasePath + "/ArtPass",
+                    artDirection && File.Exists(geometryManifest) ? geometryManifest : null);
             }
             else NfsWorldStylePreview.Create();
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -63,6 +65,8 @@ namespace Alabama.Editor
                 string modelPath = NfsWorldSetup.BasePath + "/" +
                     (art && File.Exists(NfsWorldSetup.BasePath + "/ArtMeshes/" + part.category + ".fbx") ? "ArtMeshes" : "StyleMeshes") +
                     "/" + part.category + ".fbx";
+                string authoredModel = NfsWorldArtDirection.DirectoryPath + "/Geometry/" + part.category + ".fbx";
+                if (artDirection && File.Exists(authoredModel)) modelPath = authoredModel;
                 var importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
                 NfsWorldSetup.Require(importer != null, "Run the Blender visible-mesh reduction first: " + modelPath);
                 importer.globalScale = 1;
@@ -88,8 +92,8 @@ namespace Alabama.Editor
                     var filter = filters[definition.name];
                     var renderer = filter.GetComponent<MeshRenderer>();
                     float distance = culling.DistanceFor(renderer);
-                    // Only architecture is reduced. All other categories and the
-                    // source skyline exceptions retain their exact original mesh.
+                    // Each art variant chooses its authored candidates explicitly;
+                    // the earlier style-only comparison reduces architecture.
                     bool architectural = part.category == "Buildings" || part.category == "Panorama";
                     bool useCandidate = art ? artCandidates.Contains(definition.name) : architectural && distance < 90000;
                     var mesh = useCandidate ? replacements[definition.name] : filter.sharedMesh;
@@ -97,7 +101,7 @@ namespace Alabama.Editor
                     var before = WorldBounds(filter.sharedMesh, filter.transform.localToWorldMatrix);
                     var after = WorldBounds(mesh, filter.transform.localToWorldMatrix);
                     if ((before.min - after.min).magnitude >= .04f || (before.max - after.max).magnitude >= .04f ||
-                        !PreservesBoundaryCurves(filter.sharedMesh, mesh, art ? .02f : .003f))
+                        !PreservesBoundaryCurves(filter.sharedMesh, mesh, art ? .02f : .003f, artDirection ? .001f : 0))
                     {
                         // FBX can discard loose extrema. Reject this candidate and retain
                         // the original visible mesh rather than relaxing the silhouette check.
@@ -114,6 +118,10 @@ namespace Alabama.Editor
                     // faceted appearance. Preserve every source triangle and UV.
                     bool structuralRoad = new[] { "visroad", "roadfake", "bridge", "roadmid" }
                         .Any(term => definition.sourceName.ToLowerInvariant().Contains(term));
+                    bool lodEligible = artDirection && !structuralRoad &&
+                        (part.category == "Buildings" || part.category == "Props" || part.category == "Trees" ||
+                         part.category == "Panorama" || (part.category == "Terrain" &&
+                         new[] { "rock", "cliff" }.Any(t => definition.sourceName.ToLowerInvariant().Contains(t))));
                     bool facetSource = art && mesh == filter.sharedMesh && !structuralRoad &&
                         !definitionsByMaterial[definition.material].alphaClip &&
                         (part.category == "Buildings" || part.category == "Props" ||
@@ -132,6 +140,7 @@ namespace Alabama.Editor
                     {
                         string key = slot.material.name + "_" + chunk.cell.x + "_" + chunk.cell.y + "_" +
                             (int)distance + "_" + (int)renderer.shadowCastingMode;
+                        if (artDirection) key += lodEligible ? "_lod" : "_fixed";
                         if (!batches.TryGetValue(key, out var batch))
                         {
                             batch = new Batch { material = slot.material, distance = distance, shadow = renderer.shadowCastingMode };
@@ -368,7 +377,7 @@ namespace Alabama.Editor
             AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(texture)) + ":" +
             AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(texture))));
 
-        private static bool PreservesBoundaryCurves(Mesh original, Mesh candidate, float tolerance)
+        internal static bool PreservesBoundaryCurves(Mesh original, Mesh candidate, float tolerance, float weldTolerance = 0)
         {
             if (original == candidate) return true;
             Vector3Int Key(Vector3 point) => new Vector3Int(Mathf.RoundToInt(point.x * 1000),
@@ -377,7 +386,36 @@ namespace Alabama.Editor
             {
                 // FBX splits vertices at UV/normal seams. Count geometric edges so
                 // those intentional splits do not classify every triangle as open.
-                var keys = mesh.vertices.Select(Key).ToArray();
+                var points = mesh.vertices;
+                var keys = points.Select(Key).ToArray();
+                if (weldTolerance > 0)
+                {
+                    // KN5 seams can differ by fractions of a millimetre. Search
+                    // adjacent buckets so rounding cannot invent open boundaries.
+                    var representatives = new List<Vector3>();
+                    var buckets = new Dictionary<Vector3Int, List<int>>();
+                    for (int vertex = 0; vertex < points.Length; vertex++)
+                    {
+                        var point = points[vertex];
+                        var cell = new Vector3Int(Mathf.FloorToInt(point.x / weldTolerance),
+                            Mathf.FloorToInt(point.y / weldTolerance), Mathf.FloorToInt(point.z / weldTolerance));
+                        int match = -1;
+                        for (int x = -1; x <= 1 && match < 0; x++)
+                            for (int y = -1; y <= 1 && match < 0; y++)
+                                for (int z = -1; z <= 1 && match < 0; z++)
+                                    if (buckets.TryGetValue(cell + new Vector3Int(x, y, z), out var nearby))
+                                        foreach (int index in nearby)
+                                            if ((representatives[index] - point).sqrMagnitude <= weldTolerance * weldTolerance)
+                                            { match = index; break; }
+                        if (match < 0)
+                        {
+                            match = representatives.Count; representatives.Add(point);
+                            if (!buckets.TryGetValue(cell, out var bucketIndices)) buckets[cell] = bucketIndices = new List<int>();
+                            bucketIndices.Add(match);
+                        }
+                        keys[vertex] = Key(representatives[match]);
+                    }
+                }
                 var unique = keys.Distinct().ToArray();
                 var ids = unique.Select((key, id) => (key, id)).ToDictionary(pair => pair.key, pair => pair.id);
                 var edges = new Dictionary<(int a, int b), int>();

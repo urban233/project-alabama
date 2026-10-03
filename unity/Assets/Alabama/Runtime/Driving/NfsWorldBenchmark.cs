@@ -49,6 +49,7 @@ namespace Alabama.Driving
             public int internalHeight;
             public string upscaling;
             public int cameraRenders;
+            public int meshLodTargets, staticBatchLodTargets, reducedLodTargets;
             public long allocatedMemoryBytes;
             public View[] views;
             public string method;
@@ -188,11 +189,15 @@ namespace Alabama.Driving
                 Debug.Log($"NFS World view {index}: {views.Last().meanFps:0.0} FPS; {gpu.Count} GPU samples.");
             }
             RenderPipelineManager.endCameraRendering -= CountRender;
+            var meshLods = FindObjectsByType<NfsWorldMeshLods>(FindObjectsSortMode.None);
             var report = new Report
             {
                 graphicsDevice = SystemInfo.graphicsDeviceName, processor = SystemInfo.processorType,
                 graphicsApi = SystemInfo.graphicsDeviceType.ToString(),
                 width = Screen.width, height = Screen.height, cameraRenders = cameraRenders,
+                meshLodTargets = meshLods.Sum(lod => lod.TargetCount),
+                staticBatchLodTargets = meshLods.Sum(lod => lod.StaticBatchTargetCount),
+                reducedLodTargets = meshLods.Sum(lod => lod.ReducedTargetCount),
                 allocatedMemoryBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong(), views = views.ToArray(),
                 renderingCountersAvailable = drawCalls.Valid && triangles.Valid && setPass.Valid,
                 scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
@@ -219,7 +224,10 @@ namespace Alabama.Driving
             if (Application.targetFrameRate > 0) filename = filename.Replace(".json", "-cap" + Application.targetFrameRate + ".json");
             File.WriteAllText(Path.Combine(directory, filename), JsonUtility.ToJson(report, true));
             Debug.Log($"NFS World rendered benchmark finished: {cameraRenders} camera renders, {views.Sum(v => v.gpuSamples)} GPU samples.");
-            Application.Quit(cameraRenders >= 2400 && views.All(v => v.gpuSamples > 0) ? 0 : 1);
+            Application.Quit(cameraRenders >= 2400 && views.All(v => v.gpuSamples > 0) &&
+                report.staticBatchLodTargets == 0 &&
+                (!arguments.Contains("-nfs-art-direction-benchmark") ||
+                 (report.meshLodTargets > 0 && report.reducedLodTargets > 0)) ? 0 : 1);
         }
 
         private void CountRender(ScriptableRenderContext context, Camera camera) { if (camera == Camera.main) cameraRenders++; }

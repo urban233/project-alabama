@@ -28,7 +28,7 @@ def verify_bounds_reader():
     bpy.data.meshes.remove(fixture)
 
 
-def simplify_planes(mesh, angle=.001, preserve_normals=True):
+def simplify_planes(mesh, angle=.001, preserve_normals=True, weld_tolerance=.00001, preserve_uv_gradients=False):
     """Dissolve redundant coplanar detail, retaining UV seams and loop normals."""
     mesh.calc_loop_triangles()
     source_normals = [normal.vector.copy() for normal in mesh.corner_normals]
@@ -40,8 +40,11 @@ def simplify_planes(mesh, angle=.001, preserve_normals=True):
             loop[layer] = source_normals[loop.index]
     # Welding preserves per-loop UVs and custom data. DISSOLVE's UV/NORMAL
     # delimiters keep seams and faceted edges; open borders are not dissolved.
-    bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=.00001)
+    bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=weld_tolerance)
     bm.normal_update()
+    if preserve_uv_gradients:
+        from uv_layout import protect_uv_gradients
+        protect_uv_gradients(bm)
     # Blender's cosine threshold rounds to 1 below this tolerance, disabling
     # even exactly planar dissolves. 0.001 rad (~0.057 degrees) is conservative.
     delimit = {'MATERIAL', 'SEAM', 'UV'}

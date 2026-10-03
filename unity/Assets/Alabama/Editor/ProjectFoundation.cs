@@ -44,10 +44,13 @@ namespace Alabama.Editor
             {
                 CreateScene();
             }
-            if (!EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == ScenePath))
+            if (!EditorBuildSettings.scenes.Any(scene => scene.path == ScenePath))
             {
-                EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) }
-                    .Concat(EditorBuildSettings.scenes.Where(scene => scene.path != ScenePath)).ToArray();
+                var scenes = EditorBuildSettings.scenes;
+                EditorBuildSettings.scenes = scenes.Concat(new[]
+                {
+                    new EditorBuildSettingsScene(ScenePath, !scenes.Any(scene => scene.enabled))
+                }).ToArray();
             }
             AssetDatabase.SaveAssets();
             Verify();
@@ -63,7 +66,7 @@ namespace Alabama.Editor
             Require(EditorSettings.serializationMode == SerializationMode.ForceText, "Use text asset serialization.");
             Require(VersionControlSettings.mode == "Visible Meta Files", "Unity metadata must be visible.");
             Require(PlayerSettings.colorSpace == ColorSpace.Linear, "Use linear color space.");
-            Require(EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == ScenePath), "Foundation must be an enabled build scene.");
+            Require(EditorBuildSettings.scenes.Any(scene => scene.path == ScenePath), "Foundation review scene must remain registered.");
 
             var settings = AssetDatabase.LoadAssetAtPath<DemoSettings>(SettingsPath);
             Require(settings != null, "The DemoSettings asset is missing; run Setup.");

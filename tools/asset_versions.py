@@ -224,10 +224,12 @@ def snapshot(args):
     # Include folder metadata up to Art.meta and require a sidecar for every Unity
     # asset/folder. Both developers restore identical GUIDs, rather than generating them.
     metadata = set()
+    # Probe each asset, but validate its shared ancestors once during this scan.
+    metadata_parents = set()
     for value in list(selected):
         if not value.startswith("unity/Assets/Alabama/Art/"):
             continue
-        asset = local(value, True)
+        asset = local(value, True, metadata_parents)
         candidates = [asset] if not value.endswith(".meta") else []
         candidates += [parent for parent in asset.parents if parent == ROOT / "unity/Assets/Alabama/Art" or parent.is_relative_to(ROOT / "unity/Assets/Alabama/Art")]
         for candidate in candidates:

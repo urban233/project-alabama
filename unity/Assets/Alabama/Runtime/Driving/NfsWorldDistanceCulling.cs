@@ -10,6 +10,7 @@ namespace Alabama.Driving
         private float nextUpdate;
         private Bounds[] cachedBounds;
         private bool[] hidden;
+        private System.Collections.Generic.Dictionary<Renderer, float> distanceLookup;
 
         public int TargetCount => renderers == null ? 0 : System.Array.FindAll(renderers, r => r != null).Length;
 
@@ -28,6 +29,7 @@ namespace Alabama.Driving
             renderers = targets;
             distances = limits;
             cachedBounds = null;
+            distanceLookup = null;
         }
 
         public void AddTargets(Renderer[] targets, float limit)
@@ -53,12 +55,21 @@ namespace Alabama.Driving
             renderers = retained.ToArray();
             distances = limits.ToArray();
             cachedBounds = null;
+            distanceLookup = null;
         }
 
         public float DistanceFor(Renderer renderer)
         {
-            int index = System.Array.IndexOf(renderers, renderer);
-            return index < 0 ? 90000 : distances[index];
+            if (renderer == null) return 90000;
+            if (distanceLookup == null)
+            {
+                distanceLookup = new System.Collections.Generic.Dictionary<Renderer, float>();
+                if (renderers != null)
+                    for (int index = 0; index < renderers.Length; index++)
+                        if (renderers[index] != null && !distanceLookup.ContainsKey(renderers[index]))
+                            distanceLookup.Add(renderers[index], distances[index]);
+            }
+            return distanceLookup.TryGetValue(renderer, out float limit) ? limit : 90000;
         }
 
         private void LateUpdate()

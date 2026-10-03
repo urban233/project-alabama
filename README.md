@@ -19,6 +19,10 @@ python ./tools/verify_assets.py
 
 Set `UNITY_EDITOR_PATH` to the pinned editor or supply `-EditorPath` on every Unity command when it is installed outside the standard Hub location. Activate your own Unity license. After the checks, open `unity/` in Unity and load `Assets/Alabama/Scenes/DistrictLoop.unity`, or run `builds/district-loop-release/Alabama.exe`.
 
+That base-only procedure runs the earlier handling prototype. The current Downtown
+game also needs the pinned NFS pack and Developer B's private art contribution,
+described below. Use **Alabama → Play → Open Styled Game** after restoring them.
+
 The importer verifies the pack identity, exact file list, byte sizes, and SHA-256 hashes before restoring anything. It preserves Unity GUIDs, rejects unexpected files, and refuses to overwrite locally changed files. Importing the same pack twice is safe. Keep restored artwork ignored by Git; do not add it to commits or GitHub releases. The supplied game screenshot and untouched original vehicle archive are excluded from the pack as well.
 
 ### Instructions for a colleague's agent
@@ -100,12 +104,13 @@ timings, transition hitches, tests and the private contributor handoff.
 
 ## Developer B art direction
 
-Developer B's next material pass follows every guide and reference set in
-`docs/art-direction`, prioritizing the balanced images. It adds a separate
-medium-detail Downtown review and additive runtime, with source-aligned concrete
-and brick, restrained road grain, and retained window/foliage atlases, lighting
-and collision. Restore the private contribution first; generation also needs the
-existing local Blender mesh report and lighting-study inputs. Keep editors closed:
+The playable Downtown game follows the balanced images and adaptation guides in
+`docs/art-direction`. Developer B's derived artwork combines simpler solid
+architecture and props, spatial distance LODs, and moderate detail across the
+district's material families. Source road geometry, collision, openings, texture
+layouts and reviewed autumn lighting remain intact. Restore the private
+contribution first; regeneration also needs the original district Blender files,
+inventory and lighting-study inputs. Keep editors closed:
 
 ```powershell
 ./tools/import-nfs-art-direction.ps1
@@ -113,10 +118,16 @@ existing local Blender mesh report and lighting-study inputs. Keep editors close
 ```
 
 Open `Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/Runtime/DistrictRuntime.unity`,
-or run `builds/nfs-world-art-direction-runtime/Alabama.exe`. Before/after review
+or use **Alabama → Play → Open Styled Game**. The normal Windows build
+(`./tools/unity.ps1 -Action Build`) writes this game to `builds/windows/Alabama.exe`;
+`builds/nfs-world-art-direction-runtime/Alabama.exe` provides the same runtime
+for qualification. Before/after review
 captures are under `artifacts/NfsWorld/Captures/ArtDirectionBefore` and
 `ArtDirection`. See [Developer B's art-direction record](docs/developer-b-art-direction-status.md)
-for measurements, private integration files and remaining visual scope.
+for measurements and private integration files. `-SkipBake` reuses the derived
+source geometry and textures; spatial LODs are still regenerated from Unity's
+final batches. Earlier comparison scenes and the Foundation toolchain scene
+remain available separately.
 
 ## Toolchain
 
@@ -143,7 +154,7 @@ Activate Unity through your own Unity account. Never commit credentials or licen
 
 The script accepts `UNITY_EDITOR_PATH` or `-EditorPath` for other install locations. A git-ignored `local-toolchain.json` can record this machine's editor path. Use short editor **and project checkout** paths on Windows: Unity/URP package files can exceed the traditional path limit in deeply nested directories. The clean-import script checks this before starting. Logs and test results go to `artifacts/`; Windows builds go to `builds/windows/`. Setup creates the initial scene and configuration only when absent. Close the project in the editor before running batch commands against it.
 
-For the interactive check, run `./tools/unity.ps1 -Action Open`, open `Assets/Alabama/Scenes/Foundation.unity`, and press Play. The blue calibration block drops onto the floor. This scene establishes the toolchain and physics import; the separate VehicleReview scene now contains the adapted E46 and a simple industrial street blockout. The development player is `builds/windows/Alabama.exe`.
+For the foundation toolchain check, run `./tools/unity.ps1 -Action Open`, open `Assets/Alabama/Scenes/Foundation.unity`, and press Play. The blue calibration block drops onto the floor. The separate VehicleReview scene contains the adapted E46 and a simple industrial street blockout. **Alabama → Build → Foundation Review** builds that calibration scene separately; the normal Windows player starts the styled Downtown game.
 
 To reproduce the calibration asset export:
 
