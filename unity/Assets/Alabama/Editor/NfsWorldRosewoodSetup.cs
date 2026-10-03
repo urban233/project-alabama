@@ -101,6 +101,7 @@ namespace Alabama.Editor
             var art = JsonUtility.FromJson<MeshReport>(File.ReadAllText(Evidence("art-meshes.json")));
             NfsWorldSetup.Require(!art.collisionChanged && art.finiteCoordinatesValidated, "Rosewood art candidates require validation.");
             NfsWorldVisualOptimization.RunContent(Root, new HashSet<string>(art.meshes.Where(m => m.changed).Select(m => m.name)));
+            AddConnectorStudyFill();
             EditorSceneManager.SaveScene(scene, ScenePath);
             NfsWorldShadowProxies.RunContent(scene, Root);
             var exits = JsonUtility.FromJson<ExitManifest>(File.ReadAllText(Root + "/ArtPass/exits.json"));
@@ -194,6 +195,30 @@ namespace Alabama.Editor
             probe.Configure(AssetDatabase.LoadAssetAtPath<TextAsset>(Root + "/qualification-route.json"), Signature());
             ConfigureBuildSettings();
             EditorSceneManager.SaveScene(scene);
+        }
+
+        private static void AddConnectorStudyFill()
+        {
+            // One short tunnel section receives cool bounce fill. The shared sun,
+            // sky, fog and exposure remain owned by the persistent runtime scene.
+            var root = new GameObject("Rosewood connector study fill");
+            var positions = new[]
+            {
+                new Vector3(485f, 29f, -1086f),
+                new Vector3(510f, 29f, -1083f),
+                new Vector3(535f, 28f, -1081f),
+            };
+            for (int i = 0; i < positions.Length; i++)
+            {
+                var light = new GameObject("Cool tunnel fill " + (i + 1)).AddComponent<Light>();
+                light.transform.SetParent(root.transform, false);
+                light.transform.position = positions[i];
+                light.type = LightType.Point;
+                light.color = new Color(.76f, .82f, .89f);
+                light.intensity = 2.2f;
+                light.range = 24f;
+                light.shadows = LightShadows.None;
+            }
         }
 
         private static void ConfigureBuildSettings()

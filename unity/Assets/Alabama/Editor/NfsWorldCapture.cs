@@ -5,6 +5,7 @@ using Alabama.Driving;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Alabama.Editor
 {
@@ -21,11 +22,17 @@ namespace Alabama.Editor
         public static void Art() => Start("ArtPass", NfsWorldArtPass.ScenePath);
         public static void ArtExits() => Start("ArtExits", NfsWorldArtPass.ScenePath);
         public static void LightingStudy() => Start("LightingStudy", NfsWorldStylePreview.LightingStudyScenePath);
+        public static void RosewoodConnector() => Start("RosewoodConnector", NfsWorldDistrictRuntimeSetup.RuntimeScene);
 
         private static void Start(string name, string scene)
         {
             variant = name;
             EditorSceneManager.OpenScene(scene);
+            if (name == "RosewoodConnector")
+            {
+                EditorSceneManager.OpenScene(NfsWorldDistrictRuntimeSetup.DowntownScene, OpenSceneMode.Additive);
+                EditorSceneManager.OpenScene(NfsWorldRosewoodSetup.ScenePath, OpenSceneMode.Additive);
+            }
             rendering = UnityEngine.Object.FindFirstObjectByType<NfsWorldRenderSettings>();
             if (rendering != null) rendering.Apply();
             frames = 0;
@@ -45,6 +52,12 @@ namespace Alabama.Editor
                 var camera = Camera.main;
                 NfsWorldSetup.Require(camera != null, "Capture camera missing");
                 var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
+                if (variant == "RosewoodConnector")
+                {
+                    CaptureRosewoodConnector(camera, output);
+                    Finish(null);
+                    return;
+                }
                 if (variant == "ArtExits")
                 {
                     CaptureExits(camera, culling, output);
@@ -91,6 +104,21 @@ namespace Alabama.Editor
                 Finish(null);
             }
             catch (Exception error) { Finish(error); }
+        }
+
+        private static void CaptureRosewoodConnector(Camera camera, string output)
+        {
+            camera.useOcclusionCulling = false; // Fixed art views sit outside the driving bake.
+            var culling = UnityEngine.Object.FindObjectsByType<NfsWorldDistanceCulling>(FindObjectsSortMode.None);
+            camera.transform.position = new Vector3(485f, 25f, -1087f);
+            camera.transform.LookAt(new Vector3(560f, 24f, -1080f));
+            foreach (var item in culling) item.Refresh();
+            Save(camera, Path.Combine(output, "route.png"));
+            camera.transform.position = new Vector3(510f, 27f, -1080f);
+            camera.transform.LookAt(new Vector3(527f, 27f, -1100f));
+            foreach (var item in culling) item.Refresh();
+            Save(camera, Path.Combine(output, "wall.png"));
+            Debug.Log("Rosewood connector art captures saved: " + output);
         }
 
         private static void Save(Camera camera, string path)
