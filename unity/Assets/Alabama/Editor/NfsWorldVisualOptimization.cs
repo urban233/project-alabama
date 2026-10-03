@@ -26,15 +26,17 @@ namespace Alabama.Editor
 
         public static void Run() => RunVariant(false);
         public static void RunArt() => RunVariant(true);
+        public static void RunArtDirection() => RunVariant(true, true);
 
-        private static void RunVariant(bool art)
+        private static void RunVariant(bool art, bool artDirection = false)
         {
-            DirectoryPath = NfsWorldSetup.BasePath + (art ? "/ArtPass/Optimized" : "/StylePreview/Optimized");
+            DirectoryPath = NfsWorldSetup.BasePath + (artDirection ? "/ArtDirection/Optimized" :
+                art ? "/ArtPass/Optimized" : "/StylePreview/Optimized");
             var artCandidates = new HashSet<string>();
             if (art)
             {
                 EditorSceneManager.OpenScene(NfsWorldStylePreview.LightingStudyScenePath);
-                artCandidates = NfsWorldArtPass.Prepare();
+                artCandidates = NfsWorldArtPass.Prepare(artDirection ? NfsWorldArtDirection.DirectoryPath : NfsWorldSetup.BasePath + "/ArtPass");
             }
             else NfsWorldStylePreview.Create();
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -193,12 +195,14 @@ namespace Alabama.Editor
             if (art) NfsWorldRenderOptimization.Configure(batchedPipeline, DirectoryPath);
             EditorUtility.SetDirty(batchedPipeline);
             new GameObject("Local map render settings").AddComponent<NfsWorldRenderSettings>().Configure(batchedPipeline, art ? 30 : 0);
-            if (art) NfsWorldExitClosures.Apply();
+            if (art) NfsWorldExitClosures.Apply(artDirection ? NfsWorldArtDirection.DirectoryPath + "/Exits" : null);
             AssetDatabase.SaveAssets();
-            EditorSceneManager.SaveScene(scene, art ? NfsWorldArtPass.ScenePath : NfsWorldStylePreview.ScenePath);
-            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/" + (art ? "art-batching.json" : "visual-batching.json"))),
+            EditorSceneManager.SaveScene(scene, artDirection ? NfsWorldArtDirection.ScenePath : art ? NfsWorldArtPass.ScenePath : NfsWorldStylePreview.ScenePath);
+            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/" +
+                (artDirection ? "art-direction-batching.json" : art ? "art-batching.json" : "visual-batching.json"))),
                 $"{{\"sourceVisibleMeshes\":{originals.Length},\"batchedMeshes\":{batches.Count},\"arrayMaterials\":{slots.Values.Select(s=>s.material).Distinct().Count()},\"originalTriangles\":{originalTriangles},\"reducedTriangles\":{reducedTriangles},\"chunkMetres\":256,\"collisionChanged\":false}}");
-            if (art) NfsWorldArtPass.SaveValidation(acceptedArtMeshes, rejectedArtMeshes, facetedArtMeshes);
+            if (art) NfsWorldArtPass.SaveValidation(acceptedArtMeshes, rejectedArtMeshes, facetedArtMeshes,
+                artDirection ? "art-direction-mesh-validation.json" : "art-validation.json");
             Debug.Log($"Optimized visual study: {originalTriangles} -> {reducedTriangles} triangles, {originals.Length} -> {batches.Count} renderers.");
         }
 

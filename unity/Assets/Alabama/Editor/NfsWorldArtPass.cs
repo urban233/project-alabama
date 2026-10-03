@@ -14,32 +14,34 @@ namespace Alabama.Editor
         private const string DirectoryPath = NfsWorldSetup.BasePath + "/ArtPass";
         [Serializable] private sealed class MeshRecord { public string name; public bool changed; }
         [Serializable] private sealed class MeshManifest { public bool collisionChanged; public bool finiteCoordinatesValidated; public MeshRecord[] meshes; }
-        [Serializable] private sealed class TextureRecord { public string source; public string file; public bool alpha; }
+        [Serializable] private sealed class TextureRecord { public string source; public string file; public string assetPath; public bool alpha; }
         [Serializable] private sealed class TextureManifest { public TextureRecord[] textures; }
         [Serializable] private sealed class Validation { public string[] acceptedMeshes; public string[] rejectedMeshes; public string[] exactFacetedMeshes; public int overriddenMaterials; public float boundaryToleranceMetres; public bool collisionChanged; }
         private static int overriddenMaterials;
 
-        public static HashSet<string> Prepare()
+        public static HashSet<string> Prepare(string directoryPath = DirectoryPath)
         {
             var manifest = JsonUtility.FromJson<MeshManifest>(File.ReadAllText(Path.GetFullPath(
                 Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/art-meshes.json"))));
             NfsWorldSetup.Require(manifest.finiteCoordinatesValidated && !manifest.collisionChanged,
                 "Generate and validate the separate Blender art meshes first.");
-            var textures = JsonUtility.FromJson<TextureManifest>(File.ReadAllText(DirectoryPath + "/textures.json"));
+            var textures = JsonUtility.FromJson<TextureManifest>(File.ReadAllText(directoryPath + "/textures.json"));
+            string TexturePath(TextureRecord entry) => string.IsNullOrEmpty(entry.assetPath)
+                ? directoryPath + "/Textures/" + entry.file : entry.assetPath;
             var replacements = new Dictionary<string, Texture2D>();
             var sizes = new Dictionary<string, int>();
             foreach (var entry in textures.textures)
             {
                 var source = AssetDatabase.LoadAssetAtPath<Texture2D>(NfsWorldSetup.BasePath + "/Textures/" + entry.source);
                 NfsWorldSetup.Require(source != null, "Unknown source texture: " + entry.source);
-                sizes.TryGetValue(entry.file, out int previous);
-                sizes[entry.file] = Mathf.Max(previous, Mathf.Max(source.width, source.height));
+                sizes.TryGetValue(TexturePath(entry), out int previous);
+                sizes[TexturePath(entry)] = Mathf.Max(previous, Mathf.Max(source.width, source.height));
             }
             var configured = new Dictionary<string, bool>();
             var importers = new Dictionary<string, TextureImporter>();
             foreach (var entry in textures.textures)
             {
-                string path = DirectoryPath + "/Textures/" + entry.file;
+                string path = TexturePath(entry);
                 var importer = AssetImporter.GetAtPath(path) as TextureImporter;
                 NfsWorldSetup.Require(importer != null, "Missing generated art texture: " + path);
                 var source = AssetDatabase.LoadAssetAtPath<Texture2D>(NfsWorldSetup.BasePath + "/Textures/" + entry.source);
@@ -52,12 +54,12 @@ namespace Alabama.Editor
                 // reports those as having no meaningful alpha; no mask is lost.
                 NfsWorldSetup.Require(!entry.alpha || importer.DoesSourceTextureHaveAlpha() ||
                     !sourceImporter.DoesSourceTextureHaveAlpha(), "Replacement lost a source cutout mask: " + entry.file);
-                if (configured.TryGetValue(entry.file, out bool alpha))
+                if (configured.TryGetValue(path, out bool alpha))
                     NfsWorldSetup.Require(alpha == entry.alpha, "Conflicting alpha settings: " + entry.file);
                 else
                 {
-                    configured.Add(entry.file, entry.alpha);
-                    importers.Add(entry.file, importer);
+                    configured.Add(path, entry.alpha);
+                    importers.Add(path, importer);
                 }
             }
             // Hundreds of source-sized bakes must import as one batch. Load the
@@ -93,8 +95,8 @@ namespace Alabama.Editor
             }
             finally { AssetDatabase.StopAssetEditing(); }
             foreach (var entry in textures.textures)
-                replacements.Add(entry.source, AssetDatabase.LoadAssetAtPath<Texture2D>(DirectoryPath + "/Textures/" + entry.file));
-            Directory.CreateDirectory(DirectoryPath + "/Materials");
+                replacements.Add(entry.source, AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath(entry)));
+            Directory.CreateDirectory(directoryPath + "/Materials");
             AssetDatabase.Refresh();
             var copies = new Dictionary<Material, Material>();
             overriddenMaterials = 0;
@@ -109,7 +111,7 @@ namespace Alabama.Editor
                     var original = renderer.sharedMaterial;
                     if (!copies.TryGetValue(original, out var copy))
                     {
-                        string path = DirectoryPath + "/Materials/" + original.name + ".mat";
+                        string path = directoryPath + "/Materials/" + original.name + ".mat";
                         copy = AssetDatabase.LoadAssetAtPath<Material>(path);
                         if (copy == null) { copy = new Material(original); AssetDatabase.CreateAsset(copy, path); }
                         else EditorUtility.CopySerialized(original, copy);
@@ -129,9 +131,10 @@ namespace Alabama.Editor
             return new HashSet<string>(manifest.meshes.Where(m => m.changed).Select(m => m.name));
         }
 
-        public static void SaveValidation(List<string> accepted, List<string> rejected, List<string> faceted)
+        public static void SaveValidation(List<string> accepted, List<string> rejected, List<string> faceted,
+            string reportName = "art-validation.json")
         {
-            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/art-validation.json")),
+            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/" + reportName)),
                 JsonUtility.ToJson(new Validation { acceptedMeshes = accepted.ToArray(), rejectedMeshes = rejected.ToArray(),
                     exactFacetedMeshes = faceted.ToArray(),
                     overriddenMaterials = overriddenMaterials, boundaryToleranceMetres = .02f, collisionChanged = false }, true));

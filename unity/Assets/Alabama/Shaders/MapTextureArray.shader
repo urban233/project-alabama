@@ -5,6 +5,11 @@ Shader "Alabama/Map Texture Array"
         _BaseArray("Source textures", 2DArray) = "" {}
         _BaseColor("Tint", Color) = (1,1,1,1)
         _Smoothness("Smoothness", Range(0,1)) = 0.06
+        _RoadDetailMap("Optional asphalt grain", 2D) = "gray" {}
+        _RoadDetailWeights("Asphalt layer weights", 2D) = "black" {}
+        _RoadDetailMean("Detail average", Float) = 0.5
+        _RoadDetailStrength("Detail contrast", Float) = 0.6
+        _RoadDetailScale("Detail repeats per metre", Float) = 0.25
     }
     SubShader
     {
@@ -15,9 +20,15 @@ Shader "Alabama/Map Texture Array"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         TEXTURE2D_ARRAY(_BaseArray);
         SAMPLER(sampler_BaseArray);
+        TEXTURE2D(_RoadDetailMap); SAMPLER(sampler_RoadDetailMap);
+        TEXTURE2D(_RoadDetailWeights); SAMPLER(sampler_RoadDetailWeights);
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
+            float4 _RoadDetailWeights_TexelSize;
             half _Smoothness;
+            half _RoadDetailMean;
+            half _RoadDetailStrength;
+            float _RoadDetailScale;
         CBUFFER_END
         struct Attributes
         {
@@ -51,7 +62,20 @@ Shader "Alabama/Map Texture Array"
         }
         half4 Albedo(Varyings input)
         {
-            return SAMPLE_TEXTURE2D_ARRAY(_BaseArray, sampler_BaseArray, input.uv, input.layerCutoff.x) * _BaseColor;
+            half4 colour = SAMPLE_TEXTURE2D_ARRAY(_BaseArray, sampler_BaseArray, input.uv, input.layerCutoff.x) * _BaseColor;
+            #if defined(_ROAD_DETAIL)
+                half layerWeight = SAMPLE_TEXTURE2D_LOD(_RoadDetailWeights, sampler_RoadDetailWeights,
+                    float2((input.layerCutoff.x + 0.5) * _RoadDetailWeights_TexelSize.x, 0.5), 0).r;
+                half luminance = dot(colour.rgb, half3(0.2126, 0.7152, 0.0722));
+                half chroma = max(colour.r, max(colour.g, colour.b)) - min(colour.r, min(colour.g, colour.b));
+                // Keep bright/coloured paint, curbs and vertical atlas regions exact.
+                half mask = layerWeight * smoothstep(0.55, 0.85, normalize(input.normalWS).y) *
+                    (1 - smoothstep(0.10, 0.24, luminance)) * (1 - smoothstep(0.02, 0.08, chroma));
+                half detail = SAMPLE_TEXTURE2D(_RoadDetailMap, sampler_RoadDetailMap,
+                    input.positionWS.xz * _RoadDetailScale).r;
+                colour.rgb *= 1 + (detail - _RoadDetailMean) * _RoadDetailStrength * mask;
+            #endif
+            return colour;
         }
         void Cutout(Varyings input)
         {
@@ -117,6 +141,7 @@ Shader "Alabama/Map Texture Array"
             Tags { "LightMode"="UniversalForward" }
             ZWrite On
             HLSLPROGRAM
+            #pragma shader_feature_local_fragment _ROAD_DETAIL
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Forward

@@ -33,6 +33,12 @@ namespace Alabama.Tests
             return CheckDriving("Assets/Alabama/Art/Maps/NfsWorld/Scenes/NfsWorldArtPass.unity");
         }
 
+        [UnityTest]
+        public IEnumerator MiddleDetailArtDirectionSupportsDrivingAndRecovery()
+        {
+            return CheckDriving("Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/NfsWorldArtDirection.unity");
+        }
+
         private IEnumerator CheckDriving(string path)
         {
             if (!File.Exists(path)) Assert.Ignore("Local NFS World prototype assets are absent.");

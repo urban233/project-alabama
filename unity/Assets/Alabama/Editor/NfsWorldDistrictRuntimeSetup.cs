@@ -26,7 +26,7 @@ namespace Alabama.Editor
         public const string FixtureUnsupported = DirectoryPath + "/FixtureUnsupported.unity";
         public static string[] BuildScenes => new[] { RuntimeScene, DowntownScene, FixtureA, FixtureB, FixtureDuplicate, FixtureUnsupported };
 
-        private static bool Shared(GameObject root) =>
+        internal static bool Shared(GameObject root) =>
             root.GetComponent<ArcadeCarController>() != null || root.GetComponent<Camera>() != null ||
             root.GetComponent<DemoBootstrap>() != null || root.GetComponent<DriveTelemetry>() != null ||
             root.GetComponent<NfsWorldRenderSettings>() != null || root.GetComponent<NfsWorldBenchmark>() != null ||
@@ -100,9 +100,11 @@ namespace Alabama.Editor
             EditorSceneManager.SaveScene(scene, path);
         }
 
-        public static void Verify()
+        public static void Verify() => Verify(RuntimeScene, DowntownScene);
+
+        public static void Verify(string runtimeScene, string downtownScene)
         {
-            var host = EditorSceneManager.OpenScene(RuntimeScene);
+            var host = EditorSceneManager.OpenScene(runtimeScene);
             NfsWorldSetup.Require(UnityEngine.Object.FindObjectsByType<ArcadeCarController>(FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<VehicleInput>(FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<ChaseCamera>(FindObjectsSortMode.None).Length == 1 &&
@@ -110,7 +112,7 @@ namespace Alabama.Editor
                 UnityEngine.Object.FindObjectsByType<NfsWorldRenderSettings>(FindObjectsSortMode.None).Length == 1 &&
                 UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Count(l => l.type == LightType.Directional) == 1,
                 "Runtime must have exactly one gameplay/shared rendering owner of each type.");
-            var scene = EditorSceneManager.OpenScene(DowntownScene, OpenSceneMode.Additive);
+            var scene = EditorSceneManager.OpenScene(downtownScene, OpenSceneMode.Additive);
             var descriptor = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<DistrictContent>()).Single();
             NfsWorldSetup.Require(descriptor.ValidateContract() == null, descriptor.ValidateContract());
             NfsWorldSetup.Require(descriptor.RecoveryPoses.All(descriptor.Supports), "Downtown recovery lacks collision support.");
@@ -119,10 +121,15 @@ namespace Alabama.Editor
         }
 
         private static double bakeDeadline;
-        public static void BakeOcclusion()
+        private static string bakingContentScene;
+        public static void BakeOcclusion() => BakeOcclusion(RuntimeScene, DowntownScene);
+
+        public static void BakeOcclusion(string runtimeScene, string downtownScene)
         {
-            Verify(); Camera.main.useOcclusionCulling = true;
-            foreach (var scene in new[] { SceneManager.GetActiveScene(), SceneManager.GetSceneByPath(DowntownScene) })
+            bakingContentScene = downtownScene;
+            Verify(runtimeScene, downtownScene); Camera.main.useOcclusionCulling = true;
+            NfsWorldOcclusion.ConfigureScene(SceneManager.GetSceneByPath(downtownScene));
+            foreach (var scene in new[] { SceneManager.GetActiveScene(), SceneManager.GetSceneByPath(downtownScene) })
                 EditorSceneManager.SaveScene(scene);
             StaticOcclusionCulling.smallestOccluder = 10; StaticOcclusionCulling.smallestHole = 4;
             StaticOcclusionCulling.backfaceThreshold = 100;
@@ -140,7 +147,7 @@ namespace Alabama.Editor
                 StaticOcclusionCulling.Cancel(); Debug.LogError("Runtime occlusion bake exceeded twenty minutes.");
                 if (Application.isBatchMode) EditorApplication.Exit(1); return;
             }
-            foreach (var scene in new[] { SceneManager.GetActiveScene(), SceneManager.GetSceneByPath(DowntownScene) })
+            foreach (var scene in new[] { SceneManager.GetActiveScene(), SceneManager.GetSceneByPath(bakingContentScene) })
                 EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             Debug.Log("Occlusion baked for runtime plus Downtown; a future neighbour requires a combined bake.");

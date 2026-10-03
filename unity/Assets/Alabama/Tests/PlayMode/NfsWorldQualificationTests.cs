@@ -52,9 +52,16 @@ namespace Alabama.Tests
 
         [UnityTest]
         public IEnumerator RepresentativeRoadsSupportHighSpeedWheelContact()
+            => CheckHighSpeedRoads(Scene);
+
+        [UnityTest]
+        public IEnumerator ArtDirectionRoadsSupportHighSpeedWheelContact()
+            => CheckHighSpeedRoads("Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/NfsWorldArtDirection.unity");
+
+        private IEnumerator CheckHighSpeedRoads(string scene)
         {
-            if (!File.Exists(Scene)) Assert.Ignore("Local converted map assets are absent.");
-            yield return EditorSceneManager.LoadSceneInPlayMode(Scene, new LoadSceneParameters(LoadSceneMode.Single));
+            if (!File.Exists(scene)) Assert.Ignore("Local converted map assets are absent.");
+            yield return EditorSceneManager.LoadSceneInPlayMode(scene, new LoadSceneParameters(LoadSceneMode.Single));
             var car = Object.FindFirstObjectByType<ArcadeCarController>();
             car.GetComponent<VehicleInput>().enabled = false;
             var wheels = car.GetComponentsInChildren<WheelCollider>();
@@ -104,9 +111,16 @@ namespace Alabama.Tests
 
         [UnityTest]
         public IEnumerator AllReviewedExitWallsStopThePrototypeCar()
+            => CheckExitWalls(Scene);
+
+        [UnityTest]
+        public IEnumerator ArtDirectionExitWallsStopThePrototypeCar()
+            => CheckExitWalls("Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/NfsWorldArtDirection.unity");
+
+        private IEnumerator CheckExitWalls(string scene)
         {
-            if (!File.Exists(Scene)) Assert.Ignore("Local converted map assets are absent.");
-            yield return EditorSceneManager.LoadSceneInPlayMode(Scene, new LoadSceneParameters(LoadSceneMode.Single));
+            if (!File.Exists(scene)) Assert.Ignore("Local converted map assets are absent.");
+            yield return EditorSceneManager.LoadSceneInPlayMode(scene, new LoadSceneParameters(LoadSceneMode.Single));
             var root = GameObject.Find("Downtown exit closures");
             Assert.That(root, Is.Not.Null); Assert.That(root.transform.childCount, Is.EqualTo(6));
             var car = Object.FindFirstObjectByType<ArcadeCarController>();

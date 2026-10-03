@@ -214,6 +214,7 @@ namespace Alabama.Driving
                 arguments.Contains("-nfs-style-benchmark") ? "player-style-benchmark.json" : "player-view-benchmark.json";
             if (diagnosticNoShadows || diagnosticHardShadows || scaleArgument >= 0) filename = "player-art-diagnostic-benchmark.json";
             if (runtime != null) filename = "player-runtime-benchmark.json";
+            if (arguments.Contains("-nfs-art-direction-benchmark")) filename = "player-art-direction-benchmark.json";
             if (driving) filename = filename.Replace(".json", "-driving.json");
             if (Application.targetFrameRate > 0) filename = filename.Replace(".json", "-cap" + Application.targetFrameRate + ".json");
             File.WriteAllText(Path.Combine(directory, filename), JsonUtility.ToJson(report, true));

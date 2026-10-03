@@ -12,7 +12,7 @@ namespace Alabama.Editor
     /// <summary>Visible low-poly walls at reviewed prototype road exits; source collision stays untouched.</summary>
     public static class NfsWorldExitClosures
     {
-        private const string DirectoryPath = NfsWorldSetup.BasePath + "/ArtPass/Exits";
+        private static string DirectoryPath = NfsWorldSetup.BasePath + "/ArtPass/Exits";
         [Serializable] private sealed class Closure { public string name; public float[] start; public float[] end; public float[] outward; }
         [Serializable] private sealed class Manifest { public bool reviewed; public bool sourceCollisionChanged; public Closure[] closures; }
         private static Vector3 Point(float[] value) => new Vector3(value[0], value[1], value[2]);
@@ -24,8 +24,9 @@ namespace Alabama.Editor
             EditorSceneManager.SaveScene(scene);
         }
 
-        public static void Apply()
+        public static void Apply(string directoryPath = null)
         {
+            DirectoryPath = directoryPath ?? NfsWorldSetup.BasePath + "/ArtPass/Exits";
             string manifestPath = NfsWorldSetup.BasePath + "/ArtPass/exits.json";
             if (!File.Exists(manifestPath)) return;
             var manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(manifestPath));

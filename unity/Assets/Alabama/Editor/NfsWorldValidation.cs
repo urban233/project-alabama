@@ -34,6 +34,7 @@ namespace Alabama.Editor
         public static void District() => Verify("District", NfsWorldSetup.DistrictScene);
         public static void Style() => Verify("Style", NfsWorldStylePreview.ScenePath);
         public static void Art() => Verify("Art", NfsWorldArtPass.ScenePath);
+        public static void ArtDirection() => Verify("ArtDirection", NfsWorldArtDirection.ScenePath);
         public static void RuntimeContent() => Verify("RuntimeContent", NfsWorldDistrictRuntimeSetup.DowntownScene);
 
         private static void Verify(string variant, string path)
@@ -155,6 +156,12 @@ namespace Alabama.Editor
         {
             Art();
             BuildVisualVariant(NfsWorldArtPass.ScenePath, "nfs-world-art");
+        }
+
+        public static void BuildArtDirection()
+        {
+            NfsWorldArtDirection.Verify();
+            BuildVisualVariant(NfsWorldArtDirection.ScenePath, "nfs-world-art-direction");
         }
 
         private static void BuildVisualVariant(string scenePath, string buildFolder)

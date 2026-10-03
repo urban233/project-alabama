@@ -17,6 +17,7 @@ namespace Alabama.Tests
     public sealed class DistrictLifetimeTests
     {
         private const string Root = "Assets/Alabama/Art/Maps/NfsWorld/Runtime/";
+        private const string ArtDirectionContent = "Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/Runtime/DowntownContent.unity";
         private EditorBuildSettingsScene[] previousScenes;
         private DistrictRuntime runtime;
         private ArcadeCarController car;
@@ -34,6 +35,7 @@ namespace Alabama.Tests
             previousScenes = EditorBuildSettings.scenes;
             EditorBuildSettings.scenes = previousScenes.Concat(new[] { "DowntownContent", "FixtureA", "FixtureB",
                 "FixtureDuplicate", "FixtureUnsupported" }.Select(n => new EditorBuildSettingsScene(Root + n + ".unity", true)))
+                .Concat(new[] { ArtDirectionContent }.Where(File.Exists).Select(p => new EditorBuildSettingsScene(p, true)))
                 .GroupBy(s => s.path).Select(g => g.Last()).ToArray();
             yield return EditorSceneManager.LoadSceneInPlayMode(Root + "FixtureRuntime.unity", new LoadSceneParameters(LoadSceneMode.Single));
             runtime = DistrictRuntime.Instance;
@@ -167,10 +169,18 @@ namespace Alabama.Tests
 
         [UnityTest]
         public IEnumerator RealDowntownReloadsAndSupportsDrivingWithoutRecreatingGameplay()
+            => CheckDowntownLifetime(Root + "DowntownContent.unity");
+
+        [UnityTest]
+        public IEnumerator ArtDirectionDowntownReloadsAndSupportsDrivingWithoutRecreatingGameplay()
+            => CheckDowntownLifetime(ArtDirectionContent);
+
+        private IEnumerator CheckDowntownLifetime(string content)
         {
+            if (!File.Exists(content)) Assert.Ignore("Generate the private art-direction content before this variant's qualification.");
             for (int cycle = 0; cycle < 2; cycle++)
             {
-                yield return runtime.LoadDistrict(Root + "DowntownContent.unity");
+                yield return runtime.LoadDistrict(content);
                 Assert.That(runtime.LastFailure, Is.Null); AssertOwners();
                 yield return runtime.UnloadDistrict("fixture-a", "downtown");
                 Assert.That(runtime.LastFailure, Is.Null);

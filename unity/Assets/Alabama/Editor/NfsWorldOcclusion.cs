@@ -11,11 +11,29 @@ namespace Alabama.Editor
     public static class NfsWorldOcclusion
     {
         private static double deadline;
+        private static string reportName;
 
-        public static void Run()
+        public static void Run() => Bake(NfsWorldArtPass.ScenePath);
+
+        public static void Bake(string scenePath, string report = "occlusion.json")
         {
-            var scene = EditorSceneManager.OpenScene(NfsWorldArtPass.ScenePath);
-            var root = GameObject.Find("Optimized district visuals");
+            reportName = report;
+            var scene = EditorSceneManager.OpenScene(scenePath);
+            ConfigureScene(scene);
+            Camera.main.useOcclusionCulling = true;
+            EditorSceneManager.SaveScene(scene);
+            StaticOcclusionCulling.smallestOccluder = 10;
+            StaticOcclusionCulling.smallestHole = 4;
+            StaticOcclusionCulling.backfaceThreshold = 100;
+            NfsWorldSetup.Require(StaticOcclusionCulling.Compute(), "Occlusion bake did not start.");
+            deadline = EditorApplication.timeSinceStartup + 1200;
+            EditorApplication.update += Update;
+        }
+
+        internal static void ConfigureScene(UnityEngine.SceneManagement.Scene scene)
+        {
+            var roots = scene.GetRootGameObjects();
+            var root = roots.SingleOrDefault(r => r.name == "Optimized district visuals");
             NfsWorldSetup.Require(root != null, "Generate the art scene first.");
             foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>())
             {
@@ -25,12 +43,13 @@ namespace Alabama.Editor
                 else flags |= StaticEditorFlags.OccluderStatic;
                 GameObjectUtility.SetStaticEditorFlags(renderer.gameObject, flags);
             }
-            var previous = GameObject.Find("District occlusion view volume");
-            if (previous != null) UnityEngine.Object.DestroyImmediate(previous);
-            var roads = GameObject.Find("RoadsPhysical").GetComponentsInChildren<MeshCollider>();
+            var roads = roots.Single(r => r.name == "RoadsPhysical").GetComponentsInChildren<MeshCollider>();
             var bounds = roads[0].bounds;
             foreach (var road in roads.Skip(1)) bounds.Encapsulate(road.bounds);
+            var previous = roots.SingleOrDefault(r => r.name == "District occlusion view volume");
+            if (previous != null) UnityEngine.Object.DestroyImmediate(previous);
             var volume = new GameObject("District occlusion view volume").AddComponent<OcclusionArea>();
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(volume.gameObject, scene);
             volume.center = bounds.center;
             volume.size = bounds.size + new Vector3(32, 30, 32);
             var volumeData = new SerializedObject(volume);
@@ -38,14 +57,6 @@ namespace Alabama.Editor
             NfsWorldSetup.Require(viewVolume != null, "Occlusion view-volume field is unavailable.");
             viewVolume.boolValue = true;
             volumeData.ApplyModifiedPropertiesWithoutUndo();
-            Camera.main.useOcclusionCulling = true;
-            EditorSceneManager.SaveScene(scene);
-            StaticOcclusionCulling.smallestOccluder = 10;
-            StaticOcclusionCulling.smallestHole = 4;
-            StaticOcclusionCulling.backfaceThreshold = 100;
-            NfsWorldSetup.Require(StaticOcclusionCulling.Compute(), "Occlusion bake did not start.");
-            deadline = EditorApplication.timeSinceStartup + 1200;
-            EditorApplication.update += Update;
         }
 
         private static void Update()
@@ -61,7 +72,7 @@ namespace Alabama.Editor
             }
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
             AssetDatabase.SaveAssets();
-            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/occlusion.json")),
+            File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/" + reportName)),
                 "{\"smallestOccluder\":10,\"smallestHole\":4,\"backfaceThreshold\":100,\"alphaCardsAreOccluders\":false,\"sourceGeometryChanged\":false}\n");
             Debug.Log("District occlusion bake completed.");
             if (Application.isBatchMode) EditorApplication.Exit(0);

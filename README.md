@@ -98,6 +98,26 @@ verified real district connection.
 The [B qualification record](docs/developer-b-runtime-status.md) records player
 timings, transition hitches, tests and the private contributor handoff.
 
+## Developer B art direction
+
+Developer B's next material pass follows every guide and reference set in
+`docs/art-direction`, prioritizing the balanced images. It adds a separate
+medium-detail Downtown review and additive runtime, with source-aligned concrete
+and brick, restrained road grain, and retained window/foliage atlases, lighting
+and collision. Restore the private contribution first; generation also needs the
+existing local Blender mesh report and lighting-study inputs. Keep editors closed:
+
+```powershell
+./tools/import-nfs-art-direction.ps1
+./tools/benchmark-nfs-world.ps1 -ArtDirection -Runtime -Driving -Visible -FrameRateCap 30
+```
+
+Open `Assets/Alabama/Art/Maps/NfsWorld/ArtDirection/Runtime/DistrictRuntime.unity`,
+or run `builds/nfs-world-art-direction-runtime/Alabama.exe`. Before/after review
+captures are under `artifacts/NfsWorld/Captures/ArtDirectionBefore` and
+`ArtDirection`. See [Developer B's art-direction record](docs/developer-b-art-direction-status.md)
+for measurements, private integration files and remaining visual scope.
+
 ## Toolchain
 
 - Unity 6.3 LTS, pinned to **6000.3.25f1**. Open the `unity/` folder as the project.
