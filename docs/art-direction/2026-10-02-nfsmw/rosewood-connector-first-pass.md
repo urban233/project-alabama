@@ -20,4 +20,6 @@ The captured result is the fidelity gate for this draft. Recipe values are start
 
 Blender 4.4.3 produced 256 triangles from the fitting's 280 source triangles across six accepted pieces. `ArtStudyVerify` in Unity 6000.6.4f1 confirmed that reduction and preserved boundary curves after FBX import. The three baked atlases retain 512×256, 256×256 and 256×256 dimensions, with opaque output alpha and mean RGB shifts of approximately +0.041, +0.055 and +0.046.
 
+The final combined visual batch reports 3,208,879 source triangles and 3,203,818 accepted triangles across 3,285 renderers. Compared with the first captured candidate, the accepted fitting removes exactly 24 additional visual triangles. The batching report retains the source collision geometry.
+
 The historical chase-camera view is the initial baseline. The first newly captured candidate and the controlled lighting sweep use the fixed study cameras; no fixed-camera capture of the untouched initial scene was obtained before regeneration. Keep that distinction when reviewing before/after images.
