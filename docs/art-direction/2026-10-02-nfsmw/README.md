@@ -4,6 +4,8 @@ This pack gives coding agents visual targets for adapting the already imported N
 
 Start with the [art style guide](ART-STYLE-GUIDE.md), then read the [existing-map adaptation guide](agent-reference-pack/ADAPTATION-GUIDE.md). The guides point to the current Blender/Unity pipeline and explain which geometry, UV regions, alpha masks and collision surfaces to preserve.
 
+For a new map built from original Blender assets, use the [original modular map kit](../2026-10-04-original-map-kit/README.md). It keeps the same visual targets and adds asset sheets, proposed dimensions and connector rules for new geometry and textures.
+
 ## Primary style targets
 
 The three balanced images define the working detail level. Supplementary images below provide closer material and environmental context.

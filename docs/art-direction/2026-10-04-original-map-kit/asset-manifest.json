@@ -1,0 +1,502 @@
+{
+  "version": "1.0",
+  "name": "Original map modular kit",
+  "units": "meters",
+  "status": "Proposed construction specifications for future modeling; references are not finished 3D assets.",
+  "coordinates": "Blender local X=right, Y=forward, Z=up. size_m values are X,Y,Z; runtime exporter remaps to engine convention.",
+  "design_rule": "Written dimensions, connectors and functional constraints take priority over illustrative image proportions.",
+  "source_policy": "Author new geometry and textures. Use franchise atmosphere and the shared style only; do not use Assetto Corsa/NFS World map files, UVs, topology or texture atlases.",
+  "material_families": [
+    "MAT_Asphalt",
+    "MAT_Concrete",
+    "MAT_Brick",
+    "MAT_MetalDark",
+    "MAT_PaintedMetal",
+    "MAT_GlassDark",
+    "MAT_Wood",
+    "MAT_DirtGrass",
+    "MAT_FoliageOchre",
+    "MAT_FoliageRusset"
+  ],
+  "families": [
+    {
+      "family": "roads",
+      "assets": [
+        {
+          "id": "RD_STRAIGHT_16",
+          "size_m": [
+            8,
+            16,
+            0.2
+          ],
+          "pivot": "entry center at road surface",
+          "notes": "2 x 3.5 m lanes + 2 x 0.5 m shoulder; sidewalks are separate"
+        },
+        {
+          "id": "RD_CURVE_L45_R32",
+          "angle_deg": 45,
+          "centerline_radius_m": 32,
+          "pivot": "entry center at road surface"
+        },
+        {
+          "id": "RD_CURVE_L90_R32",
+          "angle_deg": 90,
+          "centerline_radius_m": 32,
+          "pivot": "entry center at road surface"
+        },
+        {
+          "id": "RD_CURVE_L45_R64",
+          "angle_deg": 45,
+          "centerline_radius_m": 64,
+          "pivot": "entry center at road surface"
+        },
+        {
+          "id": "RD_JUNCTION_T24",
+          "size_m": [
+            24,
+            24,
+            0.2
+          ],
+          "pivot": "center of road surface",
+          "notes": "ports at west/east/north edge; 8 m carriageway per arm"
+        },
+        {
+          "id": "RD_JUNCTION_X24",
+          "size_m": [
+            24,
+            24,
+            0.2
+          ],
+          "pivot": "center of road surface",
+          "notes": "ports at cardinal edges"
+        },
+        {
+          "id": "RD_CURB_04",
+          "size_m": [
+            0.2,
+            4,
+            0.15
+          ],
+          "pivot": "start edge at road surface"
+        },
+        {
+          "id": "RD_SIDEWALK_04",
+          "size_m": [
+            2,
+            4,
+            0.2
+          ],
+          "pivot": "start inner edge; walk top is 0.15 m above road"
+        },
+        {
+          "id": "RD_DRIVEWAY_CURB_04",
+          "size_m": [
+            0.2,
+            4,
+            0.15
+          ],
+          "notes": "smooth curb drop to road without abrupt wheel-catching seam"
+        },
+        {
+          "id": "RD_SHOULDER_DIRT_04",
+          "size_m": [
+            2,
+            4,
+            0.1
+          ],
+          "notes": "simple asphalt-to-dirt verge blend"
+        },
+        {
+          "id": "ST_BRIDGE_DECK_16",
+          "size_m": [
+            10,
+            16,
+            1.2
+          ],
+          "notes": "8 m carriageway + 1 m safety margin each side; deck top Z = 0 local"
+        },
+        {
+          "id": "ST_BRIDGE_PIER",
+          "size_m": [
+            2,
+            3,
+            6
+          ],
+          "notes": "height is an assembly parameter; keep supporting pier separate"
+        },
+        {
+          "id": "ST_TUNNEL_PORTAL",
+          "size_m": [
+            12,
+            2,
+            7
+          ],
+          "notes": "minimum clear inner opening 8.4 m wide x 5.5 m tall"
+        },
+        {
+          "id": "ST_TUNNEL_SHELL_16",
+          "size_m": [
+            12,
+            16,
+            7
+          ],
+          "notes": "same clear inner opening as portal; modeled underside must exist"
+        },
+        {
+          "id": "ST_RETAINING_WALL_04",
+          "size_m": [
+            4,
+            0.6,
+            3
+          ],
+          "notes": "wall and end cap separate"
+        }
+      ]
+    },
+    {
+      "family": "buildings",
+      "assets": [
+        {
+          "id": "BLD_WAREHOUSE",
+          "size_m": [
+            24,
+            16,
+            7.5
+          ],
+          "bay_m": 4
+        },
+        {
+          "id": "BLD_WORKSHOP",
+          "size_m": [
+            16,
+            12,
+            6
+          ],
+          "bay_m": 4,
+          "notes": "garage opening 3.2 m wide x 3.2 m tall"
+        },
+        {
+          "id": "BLD_ROWHOUSE_SHOP",
+          "size_m": [
+            12,
+            10,
+            12
+          ],
+          "bay_m": 4,
+          "storey_m": 4
+        },
+        {
+          "id": "BLD_OFFICE_MIDRISE",
+          "size_m": [
+            24,
+            18,
+            24
+          ],
+          "bay_m": 4,
+          "storey_m": 4
+        },
+        {
+          "id": "BLD_PARKING_BLOCK",
+          "size_m": [
+            24,
+            16,
+            8
+          ],
+          "bay_m": 4,
+          "notes": "separate ramp; clear drivable opening width >= 8.4 m"
+        },
+        {
+          "id": "BLD_WALL_PLAIN_04",
+          "size_m": [
+            4,
+            0.3,
+            4
+          ]
+        },
+        {
+          "id": "BLD_WALL_WINDOW_04",
+          "size_m": [
+            4,
+            0.3,
+            4
+          ]
+        },
+        {
+          "id": "BLD_STOREFRONT_04",
+          "size_m": [
+            4,
+            0.3,
+            4
+          ]
+        },
+        {
+          "id": "BLD_GARAGE_BAY_04",
+          "size_m": [
+            4,
+            0.4,
+            4
+          ],
+          "notes": "opening is real geometry; optional door insert separate"
+        },
+        {
+          "id": "BLD_SERVICE_DOOR_04",
+          "size_m": [
+            4,
+            0.3,
+            4
+          ]
+        },
+        {
+          "id": "BLD_CORNER_CAP",
+          "size_m": [
+            0.4,
+            0.4,
+            4
+          ]
+        },
+        {
+          "id": "BLD_ROOF_BAY_04",
+          "size_m": [
+            4,
+            4,
+            0.3
+          ]
+        },
+        {
+          "id": "BLD_PARAPET_04",
+          "size_m": [
+            4,
+            0.3,
+            0.6
+          ]
+        }
+      ]
+    },
+    {
+      "family": "boundaries_lighting",
+      "assets": [
+        {
+          "id": "PR_JERSEY_BARRIER_03",
+          "size_m": [
+            3,
+            0.6,
+            0.9
+          ]
+        },
+        {
+          "id": "PR_GUARDRAIL_04",
+          "size_m": [
+            4,
+            0.3,
+            0.85
+          ]
+        },
+        {
+          "id": "PR_FENCE_04",
+          "size_m": [
+            4,
+            0.1,
+            2.4
+          ]
+        },
+        {
+          "id": "PR_GATE_04",
+          "size_m": [
+            4,
+            0.2,
+            2.4
+          ]
+        },
+        {
+          "id": "PR_STREETLIGHT_07",
+          "height_m": 7
+        },
+        {
+          "id": "PR_YARDLIGHT_04",
+          "height_m": 4
+        },
+        {
+          "id": "PR_TRAFFIC_MAST_05",
+          "height_m": 5
+        },
+        {
+          "id": "PR_SIGN_BLANK",
+          "size_m": [
+            1.2,
+            0.1,
+            0.8
+          ],
+          "notes": "blank panel plus separate post; create original lettering later"
+        },
+        {
+          "id": "PR_OVERHEAD_SIGN_FRAME",
+          "size_m": [
+            10,
+            0.4,
+            6
+          ]
+        },
+        {
+          "id": "PR_CHEVRON_BOARD",
+          "size_m": [
+            0.6,
+            0.1,
+            0.8
+          ]
+        },
+        {
+          "id": "PR_BOLLARD",
+          "size_m": [
+            0.18,
+            0.18,
+            0.9
+          ]
+        }
+      ]
+    },
+    {
+      "family": "street_industrial_props",
+      "assets": [
+        {
+          "id": "PR_BUS_SHELTER",
+          "size_m": [
+            4,
+            1.6,
+            2.8
+          ]
+        },
+        {
+          "id": "PR_BENCH",
+          "size_m": [
+            1.8,
+            0.6,
+            0.85
+          ]
+        },
+        {
+          "id": "PR_WHEELIE_BIN",
+          "size_m": [
+            0.6,
+            0.7,
+            1.1
+          ]
+        },
+        {
+          "id": "PR_UTILITY_BOX",
+          "size_m": [
+            0.8,
+            0.45,
+            1.4
+          ]
+        },
+        {
+          "id": "PR_HYDRANT",
+          "size_m": [
+            0.5,
+            0.45,
+            0.8
+          ]
+        },
+        {
+          "id": "PR_DUMPSTER",
+          "size_m": [
+            2,
+            1.2,
+            1.4
+          ]
+        },
+        {
+          "id": "PR_CONTAINER_06",
+          "size_m": [
+            6.1,
+            2.44,
+            2.59
+          ]
+        },
+        {
+          "id": "PR_DRUM",
+          "size_m": [
+            0.6,
+            0.6,
+            0.9
+          ]
+        },
+        {
+          "id": "PR_PALLET",
+          "size_m": [
+            1.2,
+            0.8,
+            0.15
+          ]
+        },
+        {
+          "id": "PR_CRATE",
+          "size_m": [
+            1.2,
+            1.2,
+            1.2
+          ]
+        },
+        {
+          "id": "PR_LOADING_PLATFORM",
+          "size_m": [
+            4,
+            3,
+            1.1
+          ]
+        },
+        {
+          "id": "PR_HVAC",
+          "size_m": [
+            2,
+            1.2,
+            1.1
+          ]
+        }
+      ]
+    },
+    {
+      "family": "nature",
+      "assets": [
+        {
+          "id": "NT_TREE_BROAD_09",
+          "height_m": 9,
+          "notes": "irregular canopy; sparse angular leaf clumps/cards; gaps remain visible"
+        },
+        {
+          "id": "NT_TREE_NARROW_07",
+          "height_m": 7
+        },
+        {
+          "id": "NT_SHRUB_01",
+          "height_m": 1
+        },
+        {
+          "id": "NT_ROCK_CLUSTER",
+          "size_m": [
+            4,
+            3,
+            2
+          ]
+        },
+        {
+          "id": "NT_BOULDER",
+          "size_m": [
+            1.5,
+            1.2,
+            1
+          ]
+        },
+        {
+          "id": "NT_TERRAIN_BERM",
+          "size_m": [
+            8,
+            4,
+            1.5
+          ],
+          "notes": "terrain assembly piece; boundary adapts to custom terrain; not a required fixed grid connector"
+        }
+      ]
+    }
+  ]
+}
