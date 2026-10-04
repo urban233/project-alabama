@@ -5,6 +5,8 @@ Shader "Alabama/Map Texture Array"
         _BaseArray("Source textures", 2DArray) = "" {}
         _BaseColor("Tint", Color) = (1,1,1,1)
         _Smoothness("Smoothness", Range(0,1)) = 0.06
+        _WindowWeights("Reviewed window layers", 2D) = "black" {}
+        _WindowSeparation("Window surface separation in metres", Float) = 0
         _RoadDetailMap("Optional asphalt grain", 2D) = "gray" {}
         _RoadDetailWeights("Asphalt layer weights", 2D) = "black" {}
         _RoadDetailMean("Detail average", Float) = 0.5
@@ -21,10 +23,13 @@ Shader "Alabama/Map Texture Array"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         TEXTURE2D_ARRAY(_BaseArray);
         SAMPLER(sampler_BaseArray);
+        TEXTURE2D(_WindowWeights); SAMPLER(sampler_WindowWeights);
         TEXTURE2D(_RoadDetailMap); SAMPLER(sampler_RoadDetailMap);
         TEXTURE2D(_RoadDetailWeights); SAMPLER(sampler_RoadDetailWeights);
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
+            float4 _WindowWeights_TexelSize;
+            float _WindowSeparation;
             float4 _RoadDetailWeights_TexelSize;
             half _Smoothness;
             half _RoadDetailMean;
@@ -52,7 +57,16 @@ Shader "Alabama/Map Texture Array"
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            VertexPositionInputs position = GetVertexPositionInputs(input.positionOS.xyz);
+            // Apply the same tiny pane separation in colour, depth and normal passes.
+            // This avoids competing facade depth without touching source/collision meshes.
+            float3 displaced = input.positionOS.xyz;
+            if (_WindowSeparation > 0)
+            {
+                float window = SAMPLE_TEXTURE2D_LOD(_WindowWeights, sampler_WindowWeights,
+                    float2((input.layerCutoff.x + 0.5) * _WindowWeights_TexelSize.x, 0.5), 0).r;
+                displaced += SafeNormalize(input.normalOS) * window * _WindowSeparation;
+            }
+            VertexPositionInputs position = GetVertexPositionInputs(displaced);
             output.positionCS = position.positionCS;
             output.positionWS = position.positionWS;
             output.normalWS = TransformObjectToWorldNormal(input.normalOS);
@@ -68,7 +82,7 @@ Shader "Alabama/Map Texture Array"
                 float2((input.layerCutoff.x + 0.5) * _RoadDetailWeights_TexelSize.x, 0.5), 0).r;
             half luminance = dot(colour, half3(0.2126, 0.7152, 0.0722));
             half chroma = max(colour.r, max(colour.g, colour.b)) - min(colour.r, min(colour.g, colour.b));
-            return layerWeight * smoothstep(0.55, 0.85, normalize(input.normalWS).y) *
+            return layerWeight * smoothstep(0.55, 0.85, SafeNormalize(float3(input.normalWS)).y) *
                 (1 - smoothstep(0.10, 0.24, luminance)) * (1 - smoothstep(0.02, 0.08, chroma));
         }
         half4 Albedo(Varyings input)
@@ -85,7 +99,10 @@ Shader "Alabama/Map Texture Array"
         }
         half3 SurfaceNormal(Varyings input)
         {
-            half3 normal = NormalizeNormalPerPixel(input.normalWS);
+            // Imported thin/degenerate faces can have zero normals. normalize(0)
+            // feeds non-finite lighting into bloom and causes intermittent flashes.
+            // Keep valid authored normals and make zero-length inputs finite.
+            half3 normal = SafeNormalize(float3(input.normalWS));
             #if defined(_ROAD_DETAIL)
                 half3 source = SAMPLE_TEXTURE2D_ARRAY(_BaseArray, sampler_BaseArray, input.uv, input.layerCutoff.x).rgb * _BaseColor.rgb;
                 float height = SAMPLE_TEXTURE2D(_RoadDetailMap, sampler_RoadDetailMap,
@@ -97,7 +114,7 @@ Shader "Alabama/Map Texture Array"
                     (abs(determinant) > 1e-8 ? determinant : 1e-8);
                 float fade = 1 - smoothstep(40, 110, distance(input.positionWS, GetCameraPositionWS()));
                 // Shallow aggregate relief only: no displacement of roads or paint edges.
-                normal = normalize(normal - clamp(gradient, -.16, .16) * RoadMask(input, source) * fade);
+                normal = SafeNormalize(float3(normal) - clamp(gradient, -.16, .16) * RoadMask(input, source) * fade);
             #endif
             return normal;
         }

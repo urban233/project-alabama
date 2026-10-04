@@ -23,6 +23,7 @@ namespace Alabama.Editor
 
         public static void Configure(UniversalRenderPipelineAsset pipeline, string directory)
         {
+            bool styled = directory.StartsWith(NfsWorldArtDirection.DirectoryPath + "/", System.StringComparison.Ordinal);
             // The scene's Lit/array materials never sample scene colour. AO still
             // requests its depth input, even without the pipeline's blanket copy.
             pipeline.supportsCameraOpaqueTexture = false;
@@ -53,6 +54,11 @@ namespace Alabama.Editor
             foreach (var feature in renderer.rendererFeatures)
             {
                 if (feature.GetType().Name != "ScreenSpaceAmbientOcclusion") continue;
+                // This gameplay renderer has FXAA, not temporal accumulation. Random
+                // half-resolution AO produces crawling grain on the flat car paint.
+                // Retain the authored sun/shadows and diffuse fill for depth instead.
+                if (styled)
+                    feature.SetActive(false);
                 var data = new SerializedObject(feature);
                 var settings = data.FindProperty("m_Settings");
                 settings.FindPropertyRelative("Source").intValue = 0; // Reconstruct from depth.
@@ -61,9 +67,9 @@ namespace Alabama.Editor
                 data.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(feature);
             }
-            // AO already requests a depth prepass. Reuse it to reject hidden
-            // opaque fragments before expensive lighting instead of shading
-            // layers that another surface will cover in the same frame.
+            // Reuse the depth prepass to reject hidden opaque fragments before
+            // expensive lighting. Repeated native captures ruled priming out as
+            // a sufficient fix for the flash; the shader handles zero normals.
             renderer.depthPrimingMode = DepthPrimingMode.Forced;
             var rendererData = new SerializedObject(renderer);
             var map = rendererData.FindProperty("m_RendererFeatureMap");
@@ -81,7 +87,9 @@ namespace Alabama.Editor
             EditorUtility.SetDirty(pipeline);
             AssetDatabase.SaveAssets();
             File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/render-optimization.json")),
-                "{\"renderScale\":0.75,\"upscaling\":\"FSR1\",\"sharpness\":0.5,\"opaqueCopy\":false,\"blanketDepthCopy\":false,\"depthPriming\":true,\"ao\":\"half-resolution high-quality depth reconstruction\",\"sunAndShadowsChanged\":false}\n");
+                "{\"renderScale\":0.75,\"upscaling\":\"FSR1\",\"sharpness\":0.5,\"opaqueCopy\":false,\"blanketDepthCopy\":false,\"depthPriming\":true,\"ao\":\"" +
+                (styled ? "disabled: stable vehicle paint without temporal AO" : "half-resolution high-quality depth reconstruction") +
+                "\",\"sunAndShadowsChanged\":false}\n");
         }
     }
 }

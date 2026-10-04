@@ -73,6 +73,10 @@ namespace Alabama.Editor
                         !NfsWorldVisualOptimization.PreservesBoundaryCurves(near, mesh, .02f, .001f))
                     { UnityEngine.Object.DestroyImmediate(mesh); rejected++; return near; }
                     string path = Assets + "/" + record.name + "." + level + ".asset";
+                    string layers = NfsWorldArtDirection.DirectoryPath + "/Optimized/Arrays/" +
+                        filter.GetComponent<Renderer>().sharedMaterial.name + ".layers.txt";
+                    NfsWorldVisualStability.ResolveWindowOverlaps(mesh, NfsWorldVisualStability.WindowLayers(layers));
+                    NfsWorldVisualStability.RemoveLayers(mesh, NfsWorldVisualStability.SuppressedLayers(layers));
                     var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
                     mesh.name = record.name + " " + level;
                     if (existing == null) AssetDatabase.CreateAsset(mesh, path);
@@ -124,7 +128,7 @@ namespace Alabama.Editor
             foreach (int index in triangles) writer.Write(index);
         }
 
-        private static Mesh ReadMesh(string path)
+        internal static Mesh ReadMesh(string path)
         {
             using var reader = new BinaryReader(File.OpenRead(path));
             NfsWorldSetup.Require(reader.ReadInt32() == 1, "Unknown LOD exchange format.");

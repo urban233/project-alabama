@@ -50,6 +50,9 @@ namespace Alabama.Editor
             var originals = scene.GetRootGameObjects().Where(root => root.name != "E46 driver car")
                 .SelectMany(root => root.GetComponentsInChildren<MeshRenderer>()).Where(r => r.enabled).ToArray();
             var slots = CreateArrays(originals, shader);
+            if (artDirection)
+                foreach (string layers in Directory.GetFiles(DirectoryPath + "/Arrays", "*.layers.txt"))
+                    NfsWorldVisualStability.ConfigureWindowSeparation(layers, NfsWorldVisualStability.WindowLayers(layers));
             var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
             var batches = new Dictionary<string, Batch>();
             var temporary = new List<Mesh>();
@@ -158,7 +161,7 @@ namespace Alabama.Editor
             var combinedRoot = new GameObject("Optimized district visuals");
             var targets = new List<Renderer>();
             var distances = new List<float>();
-            int batchedTriangles = 0;
+            int batchedTriangles = 0, reviewedRemovals = 0;
             AssetDatabase.StartAssetEditing();
             try
             {
@@ -167,6 +170,12 @@ namespace Alabama.Editor
                 var mesh = new Mesh { name = pair.Key, indexFormat = IndexFormat.UInt32 };
                 mesh.CombineMeshes(pair.Value.meshes.ToArray(), true, true, false);
                 mesh.RecalculateBounds();
+                if (artDirection)
+                {
+                    string layers = DirectoryPath + "/Arrays/" + pair.Value.material.name + ".layers.txt";
+                    reviewedRemovals += NfsWorldVisualStability.ResolveWindowOverlaps(mesh, NfsWorldVisualStability.WindowLayers(layers));
+                    reviewedRemovals += NfsWorldVisualStability.RemoveLayers(mesh, NfsWorldVisualStability.SuppressedLayers(layers));
+                }
                 batchedTriangles += mesh.triangles.Length / 3;
                 string path = DirectoryPath + "/Meshes/" + pair.Key + ".asset";
                 var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
@@ -184,7 +193,7 @@ namespace Alabama.Editor
             }
             finally { AssetDatabase.StopAssetEditing(); }
             foreach (var mesh in temporary) UnityEngine.Object.DestroyImmediate(mesh);
-            NfsWorldSetup.Require(batchedTriangles == reducedTriangles, "Spatial batching lost or duplicated visible triangles.");
+            NfsWorldSetup.Require(batchedTriangles + reviewedRemovals == reducedTriangles, "Spatial batching lost or duplicated visible triangles.");
             culling.Configure(targets.ToArray(), distances.ToArray());
             EditorUtility.SetDirty(culling);
             // Preserve the approved lighting/shadow/AA settings. This local copy

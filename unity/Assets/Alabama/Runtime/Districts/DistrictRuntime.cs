@@ -19,6 +19,7 @@ namespace Alabama.Districts
         private DistrictContent recoveryOwner;
         private float nextRecoveryUpdate;
         private bool busy;
+        private DistrictBoundaryGuard boundary;
         public static DistrictRuntime Instance { get; private set; }
         public ArcadeCarController Player => player;
         public ChaseCamera Chase => chase;
@@ -40,6 +41,9 @@ namespace Alabama.Districts
             if (player == null || chase == null || player.gameObject.scene != gameObject.scene || chase.gameObject.scene != gameObject.scene)
                 throw new InvalidOperationException("The runtime scene must own its player and chase camera.");
             Instance = this;
+            boundary = player.GetComponent<DistrictBoundaryGuard>();
+            if (boundary == null) boundary = player.gameObject.AddComponent<DistrictBoundaryGuard>();
+            boundary.Configure(this);
             SceneManager.sceneLoaded += SceneLoaded;
             SceneManager.sceneUnloaded += SceneUnloaded;
         }
@@ -149,6 +153,7 @@ namespace Alabama.Districts
                     player.Body.angularVelocity = Vector3.zero;
                     player.Body.isKinematic = true;
                     player.ResetToSpawn(); chase.SnapToTarget();
+                    boundary.ResetHistory();
                     player.Body.isKinematic = false;
                 }
                 Unregister(content);
@@ -166,6 +171,7 @@ namespace Alabama.Districts
             }
             if (recoveryOwner == null) { Ready = false; player.Body.isKinematic = true; return false; }
             player.Body.isKinematic = false; player.ResetToSpawn(); chase.SnapToTarget();
+            boundary.ResetHistory();
             Ready = true; return true;
         }
 
@@ -175,6 +181,13 @@ namespace Alabama.Districts
             foreach (var pose in content.RecoveryPoses)
                 if (content.Supports(pose))
                 { recoveryOwner = content; player.SetRecoveryPose(pose.position, pose.Rotation); return true; }
+            return false;
+        }
+
+        internal bool OwnsCollision(Scene scene)
+        {
+            foreach (var content in districts.Values)
+                if (content != null && content.gameObject.scene == scene) return true;
             return false;
         }
 

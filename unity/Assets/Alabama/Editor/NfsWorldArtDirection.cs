@@ -276,6 +276,7 @@ namespace Alabama.Editor
 
         public static void BuildRuntime() => BuildRuntimeAt("nfs-world-art-direction-runtime");
         public static void BuildGame() => BuildRuntimeAt("windows");
+        public static void BuildStabilityCandidate() => BuildRuntimeAt("windows-stability");
 
         private static void BuildRuntimeAt(string directory)
         {

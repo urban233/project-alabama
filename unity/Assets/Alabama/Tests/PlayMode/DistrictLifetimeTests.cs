@@ -80,6 +80,57 @@ namespace Alabama.Tests
         }
 
         [UnityTest]
+        public IEnumerator BoundaryStopsForwardReverseAndSidewaysEscapes()
+        {
+            input.enabled = false;
+            var content = runtime.LoadedDistricts.Single();
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var centre = content.RecoveryPoses[0].position;
+            foreach (var direction in new[] { Vector3.forward, Vector3.back, Vector3.right,
+                Vector3.left, new Vector3(1, 0, 1).normalized })
+            {
+                float edge = 50 / Mathf.Max(Mathf.Abs(direction.x), Mathf.Abs(direction.z));
+                car.Body.position = centre + direction * (edge - 4);
+                car.Body.rotation = Quaternion.identity;
+                car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+                car.SetCommand(default); Physics.SyncTransforms();
+                for (int i = 0; i < 10; i++) yield return new WaitForFixedUpdate();
+                int blocked = guard.BlockedMoves;
+                car.Body.linearVelocity = direction * 40;
+                for (int i = 0; i < 80; i++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    Assert.That(guard.ContainsFootprint(car.Body.position, car.Body.rotation,
+                        scene => scene == content.gameObject.scene), Is.True, "Escaped in direction " + direction);
+                }
+                Assert.That(guard.BlockedMoves, Is.GreaterThan(blocked));
+                Assert.That(car.SpeedMetresPerSecond, Is.LessThan(2));
+            }
+            runtime.Recover(); input.enabled = true;
+        }
+
+        [UnityTest]
+        public IEnumerator BoundaryIgnoresForeignGroundAndPermitsShortCrestJumps()
+        {
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var content = runtime.LoadedDistricts.Single();
+            var pose = content.RecoveryPoses[0];
+            Assert.That(guard.ContainsFootprint(pose.position + Vector3.up * 2, pose.Rotation,
+                scene => scene == content.gameObject.scene), Is.True);
+            Assert.That(guard.ContainsFootprint(pose.position, pose.Rotation, scene => false), Is.False);
+            // An overhead deck above empty space cannot count as ground beneath the car.
+            var roof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            SceneManager.MoveGameObjectToScene(roof, content.gameObject.scene);
+            var outside = pose.position + Vector3.right * 55;
+            roof.transform.position = outside + Vector3.up * 2;
+            roof.transform.localScale = new Vector3(8, .2f, 8); Physics.SyncTransforms();
+            Assert.That(guard.ContainsFootprint(outside, pose.Rotation,
+                scene => scene == content.gameObject.scene), Is.False);
+            Object.Destroy(roof);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RepeatedLoadsKeepOwnersAndRemoveAllRegistrations()
         {
             int added = 0, removed = 0;
