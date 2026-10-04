@@ -17,8 +17,13 @@ ignored by Git. No private storage service or GitHub asset upload is configured.
 | `base` | `1.0.0` | Existing reviewed car, original environment, sources and licenses | `docs/asset-pack.json`, `docs/asset-packs/base.lock.json` |
 | `nfs-world` | `0.1.0` | Local map scenes/models/materials/textures, editable Blender files, extracted map inputs and neighbouring roads | `docs/asset-packs/nfs-world.profile.json`, `docs/asset-packs/nfs-world.lock.json` |
 
-The base lock pins the original manifest without changing it. The existing
-`project-alabama-assets.zip` and original README commands remain compatible.
+The original base 1.0.0 lock pins the curated manifest without changing it.
+`project-alabama-assets.zip` and legacy commands remain available for older code revisions.
+The supplied-car replacement advances base to `1.0.1` through
+`base.profile.json`, which extends that curated selection. Current code requires
+`project-alabama-base-1.0.1.zip`; the original ZIP is retained for older revisions.
+The unchanged `nfs-world` 0.2.0 payload uses a compatible dependency pin to this
+base revision. Its ZIP, file identity and version stay unchanged.
 The NFS pack is a separate private prototype handoff; conversion does not establish
 redistribution rights. Neither ZIP belongs in Git, GitHub releases or public downloads.
 

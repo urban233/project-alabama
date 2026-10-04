@@ -20,6 +20,18 @@ namespace Alabama.Tests
             Assert.That(body, Is.Not.Null);
             for (int i = 0; i < 120; i++) yield return new WaitForFixedUpdate();
             Assert.That(body.position.y, Is.InRange(-.1f, .7f), "Car should settle on its four tyres.");
+            // An FBX can look correct in edit mode yet turn its wheel meshes flat
+            // when the controller applies WheelCollider poses in play mode.
+            foreach (var wheel in car.GetComponentsInChildren<Transform>())
+            {
+                if (!wheel.name.StartsWith("Wheel_")) continue;
+                var renderer = wheel.GetComponentInChildren<MeshRenderer>();
+                if (renderer == null) continue;
+                Assert.That(renderer.bounds.size.y, Is.GreaterThan(car.Tuning.WheelRadius * 1.5f),
+                    "The wheel visual must remain upright after applying the physics pose: " + wheel.name);
+                Assert.That(Vector3.Distance(renderer.bounds.center, wheel.position), Is.LessThan(.06f),
+                    "The wheel mesh must rotate around its measured axle: " + wheel.name);
+            }
             var start = body.position;
             car.SetCommand(new VehicleCommand(1, 0, 0, false));
             for (int i = 0; i < 360; i++) yield return new WaitForFixedUpdate();

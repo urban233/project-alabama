@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Open', 'Setup', 'Verify', 'EditTests', 'PlayTests', 'Build', 'VehicleSetup', 'VehicleVerify', 'VehicleCapture', 'VehicleBuild', 'StreetSetup', 'StreetVerify', 'StreetCapture', 'StreetBuild', 'HandlingSetup', 'HandlingVerify', 'HandlingBuild', 'LoopSetup', 'LoopVerify', 'LoopCapture', 'LoopBuild', 'LoopReleaseBuild')]
+    [ValidateSet('Open', 'Setup', 'Verify', 'EditTests', 'PlayTests', 'Build', 'VehicleSetup', 'VehicleVerify', 'VehicleCapture', 'VehicleBuild', 'SuppliedCarSetup', 'SuppliedCarVerify', 'SuppliedCarCapture', 'StreetSetup', 'StreetVerify', 'StreetCapture', 'StreetBuild', 'HandlingSetup', 'HandlingVerify', 'HandlingBuild', 'LoopSetup', 'LoopVerify', 'LoopCapture', 'LoopBuild', 'LoopReleaseBuild')]
     [string]$Action,
     [string]$EditorPath = $env:UNITY_EDITOR_PATH
 )
@@ -40,12 +40,15 @@ $taskArtifactPath = Join-Path $taskRoot "artifacts/$Action"
 New-Item -ItemType Directory -Path $taskArtifactPath -Force | Out-Null
 $taskLogPath = Join-Path $taskArtifactPath 'editor.log'
 $taskArguments = @('-batchmode', '-nographics', '-projectPath', $taskProjectPath, '-logFile', $taskLogPath)
-if ($Action -in @('VehicleCapture', 'StreetCapture', 'LoopCapture')) {
+if ($Action -in @('VehicleCapture', 'StreetCapture', 'LoopCapture', 'SuppliedCarCapture')) {
     $taskArguments = $taskArguments | Where-Object { $_ -ne '-nographics' }
 }
 $taskResultsPath = Join-Path $taskArtifactPath 'results.xml'
 
 switch ($Action) {
+    'SuppliedCarSetup' { $taskArguments += @('-quit', '-executeMethod', 'Alabama.Editor.SuppliedCarSetup.Install') }
+    'SuppliedCarVerify' { $taskArguments += @('-quit', '-executeMethod', 'Alabama.Editor.SuppliedCarSetup.Verify') }
+    'SuppliedCarCapture' { $taskArguments += @('-executeMethod', 'Alabama.Editor.SuppliedCarCapture.Run') }
     'VehicleBuild' { $taskArguments += @('-quit', '-executeMethod', 'Alabama.Editor.ProjectBuild.BuildVehicleReview') }
     'VehicleSetup' { $taskArguments += @('-quit', '-executeMethod', 'Alabama.Editor.VehicleAssetSetup.Setup') }
     'VehicleVerify' { $taskArguments += @('-quit', '-executeMethod', 'Alabama.Editor.VehicleAssetSetup.Verify') }

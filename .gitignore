@@ -13,6 +13,10 @@ local-asset-handoff.json
 # Supplied NFS World source archive stays local.
 /asw-nfs-world.7z
 
+# User-supplied replacement car originals are private artwork.
+/bmw-m3-need-for-speed-most-wanted.zip
+/bmw_m3_need_for_speed_most_wanted.glb
+
 # Artwork is distributed separately; restore it with tools/asset_pack.py.
 /source-art/
 /unity/Assets/Alabama/Art/

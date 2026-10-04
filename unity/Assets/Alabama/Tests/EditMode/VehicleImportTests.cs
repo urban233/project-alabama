@@ -10,5 +10,11 @@ namespace Alabama.Tests.EditMode
         {
             Assert.DoesNotThrow(VehicleAssetSetup.Verify);
         }
+
+        [Test]
+        public void ReplacementWheelGeometryMatchesDrivingReferencesAndPhysics()
+        {
+            Assert.DoesNotThrow(SuppliedCarSetup.Verify);
+        }
     }
 }

@@ -69,10 +69,6 @@
           "sha256": "0b4dce9b3f41d8dea523c1c743f5d7d95fec76c0d1d29c83124110f8ba424de8"
         },
         {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Alloy.mat",
-          "sha256": "80fa370b8e2e7e2ee1d78d249dc99a13518018ca3ce084d4bbed581b0ca033ad"
-        },
-        {
           "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Amber.mat",
           "sha256": "af76bcb576c70a8939824667fe5291eaa411c789ec54b4f0083f6d97f1e8bbea"
         },
@@ -81,72 +77,16 @@
           "sha256": "41caec3836f44b5bab2d85821e72cf99eefa0ebc5128debc897b5ee349ae3c18"
         },
         {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Brake.mat",
-          "sha256": "dfb9f726acafdbd98400929c3f8fac41c964a6da4a105c894f3fe98a203e5df0"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Caliper.mat",
-          "sha256": "acc4a8f1bfaaa03b41cc1c204c5429d40a8c971e3e6fb1276476e01d4ddae700"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Drive.prefab",
-          "sha256": "cfbf823934ea5bd4d80c34974e7cb537039fa4313fd48591b47945f046e6453c"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Glass.mat",
-          "sha256": "e9deb2bef9f4476c0cf29f3c339a9dae162552242861abf550f07c5904c5464c"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Lens.mat",
-          "sha256": "f53f0c3fa1a9196bfe63fc2f7e51b8472c96483551dd7d2b3a6ad628dd225a4e"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Materials.json",
-          "sha256": "305c360588d28e989f621fe865e05e0f1dfd7ebe88dc1e80d123262fc5c89b54"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Paint.mat",
-          "sha256": "a07cbc6f3567909ccb79d0a9ef315b084d9d0aed2062670c556bb28ff416f3e6"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Paint.png",
-          "sha256": "d4f561599d20fd7d2ec9313e5da1177ec0ffd2a4b25aed6b9785959ac4a712c5"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Race.fbx",
-          "sha256": "7473282e7f244d3177bd52da4c8c7a988524df9c2dcb2d01479b3c10b7a30ca3"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Race.prefab",
-          "sha256": "28e6f0bfb812255cc87a9c8d6b267d8308dfffb525e675bac48bd235b91c5f3c"
-        },
-        {
           "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_RedLight.mat",
           "sha256": "5e309f22f69791400340914a8d58c22b765684ff65711ea7237d37cc528d1953"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Rubber.mat",
-          "sha256": "f9c3cae5f6278f48a903b06f8d2c97d3e3d2d10987035aa926ddc8450587b21e"
         },
         {
           "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Silver.mat",
           "sha256": "7f2b5b708e40759e2970da7fbb944880144399020f3caf5480d6b9cb6a6e5328"
         },
         {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_TailLens.mat",
-          "sha256": "9e30d835de189853c949f4947940834d1bc392bee8f99f0e0fff43403dd01ec9"
-        },
-        {
           "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_TailLens.png",
           "sha256": "8e7590c096469fb0d35dd395d97229e5da0e0bb4af75c7a7d75f93f9f11fe120"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Trim.mat",
-          "sha256": "939f6d4d812f57f74964d10d92a0dd28a3e47f420daf4271240f6ae636b9f3e5"
-        },
-        {
-          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_WhiteLight.mat",
-          "sha256": "135cf9585091dae84ed18d1ab474ea90463a6e9dea579108200e8342485c44a5"
         },
         {
           "path": "unity/Assets/Alabama/Art/Vehicles/E46/LICENSE.md",
@@ -155,7 +95,7 @@
       ],
       "triangles": 60311,
       "sourceEvaluatedTriangles": 816368,
-      "purpose": "Static visual review; detailed GTR match and driving remain pending"
+      "purpose": "Preserved earlier BlenderCentral source and unused materials; superseded as player car by supplied-e46-player."
     },
     {
       "id": "polyhaven-vehicle-review",
@@ -480,6 +420,233 @@
       ],
       "compositeScenePath": "unity/Assets/Alabama/Scenes/DistrictLoop.unity",
       "purpose": "Continuous physics road and markings for the 917 metre playable route"
+    },
+    {
+      "id": "supplied-e46-player",
+      "title": "Supplied E46 player car, balanced art direction",
+      "creator": "memoov; adaptation by Project Alabama contributors",
+      "originalUrl": "https://sketchfab.com/3d-models/bmw-m3-need-for-speed-most-wanted-b6a04764e3ea42cc9021327fdccd45ab",
+      "license": "CC-BY-4.0 (declaration embedded in supplied GLB)",
+      "licenseEvidence": "source-art/vehicles/supplied-e46/LICENSE.md",
+      "generator": "tools/blender/build_supplied_car.py",
+      "updatedOn": "2026-10-04",
+      "sourceArchiveSha256": "cab9e032dbb6dde49752287facccb164d4d637bdc60f485f828f1f344ce2dc74",
+      "sourceArchiveRedistributed": false,
+      "sourceTriangles": 80757,
+      "triangles": 40696,
+      "modifications": [
+        "Selective body, rim, tyre, grille, lamp, trim and brake reduction; silhouette and UVs retained",
+        "Metre scale and independent wheel pivots",
+        "Repaired textures and restrained URP materials",
+        "AI-assisted paint-atlas cleanup; source and prompt retained privately"
+      ],
+      "files": [
+        {
+          "path": "source-art/vehicles/supplied-e46/adaptation-report.json",
+          "sha256": "7b50719dd2f1426cf3f751a58bf690a6a9297776ca98aee9b586897ffdb5c323"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/source/lp.fbx",
+          "sha256": "bbead0a8c581696324a8969bd0cb692ede51f483aaa043503152b12ecbfaf372"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/531.png",
+          "sha256": "84e9b4cc0205231173caaadef0b7fba310df7029a2688aa686d913c9165a1c5b"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/BMWM3GTRE46_KIT00_BRAKELIGHT_OFF.jpg",
+          "sha256": "5fcfcd5c6b86c3698b184603a216dea0dd6939aeb672a31c78b54581cd87120f"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/BMWM3GTRE46_KIT00_HEADLIGHT_ON.jpg",
+          "sha256": "0c45c7cffe3f5f9129d0499e31f5f7f7b42d0776d19e486c3731764220318868"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/interior_2.png",
+          "sha256": "c1c47e96e351016fdfcbe461078843e978e269492dd7ade460f526c71321bd5f"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/Material.016_Base_color.png",
+          "sha256": "2a026b00cc60d4300c6bbb9f9bd2948004a9e3e92a19a206c8ab52161e2cc96e"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/Material.016_Metallic.png",
+          "sha256": "8be3ca10df6ee0b87651a483949252bb9b2a002a38158f5a448ce7a36d270857"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/Material.016_Normal_OpenGL.png",
+          "sha256": "5bfe3d87db7868b6448c768f60f461aaa8b81effba4f2d564f0efd05e33aa1c4"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/Material.016_Roughness.png",
+          "sha256": "d7cf03c8b0ea15a40804ff47e35b19e88032a5ee8adb6ffb12ac25997275106d"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/misc2.png",
+          "sha256": "b1436950cc0e15ddf9882ba5723c31683d12c463acc5ea85986caf8d687420ec"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/normal_interor.png",
+          "sha256": "fe330de08c89e4067ff3d413c18eebefe0ee195130ce0f57a4bda2650a012d27"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/NORMAL_PLACA.png",
+          "sha256": "304249f19ce904d356d0724effec144ece56698cf5754ce2e6cc5fe7a85206aa"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/input/textures/R_(1).png",
+          "sha256": "54fa09243225f374c6a20b63be035e1d1794c79f41b5e41d70ae9cb7348421fa"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/LICENSE.md",
+          "sha256": "02c6316c07ee8fa8a19eb190f1cefb03a8c41457cd90cf6b806494a870357d1b"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/chase.png",
+          "sha256": "abfc8a99f63b4860792e565a5dde1667202f72ee76f8efdc3d075a5a4bb0a34a"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/downtown-chase.png",
+          "sha256": "cba43d7fa525c3e006c4695235bcebe8f5069eb28b9b42c54583d67ba0e0e518"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/downtown-front.png",
+          "sha256": "31c02227e181701a09141194e5b57ed909ce761c190a7c049b4724d6c12cf59a"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/downtown-rear.png",
+          "sha256": "4f20ea97855037ee59762458dde8c0d769ae0b14fd683dc3561aed0f13bc9a45"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/downtown-side.png",
+          "sha256": "932c889eb61874b4d77df7168b441b3fb621c7ecce52d63d1cf31fdb943e6965"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/environment.png",
+          "sha256": "43be27aa73fe74f78d66c724322dc457879c99e7b3630581fc9e840ee798e975"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/front.png",
+          "sha256": "83881ae6c02fb9bef0527f2cf4cf4d473a7c1bdcffdd34802fea1c7257b64451"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/rear.png",
+          "sha256": "d4fccfc208b50b52e08c3bb193f22cd524c07c4451cc8a8d325bd236f45b7b2a"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/review.txt",
+          "sha256": "7052c6be633c73e4bd6cb30b06faac0e644c96d596bf4fbbe31c68b248838f16"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/review/side.png",
+          "sha256": "2db7d7694d3b1a0b1d9ddd9970cb75272c19aeb43eaa18f436750e903fad982a"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/style/E46_Paint.png",
+          "sha256": "d18c6473cd09b0898e10008f5fc49f4501975efdd0f31769d2585abf1a20f0fb"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/style/prompt.json",
+          "sha256": "8c215d624c35821801cbe971687303913839ea0b43efca88ff73e5810e0870e9"
+        },
+        {
+          "path": "source-art/vehicles/supplied-e46/Supplied_E46_Adapted.blend",
+          "sha256": "17f01e1d88f9bf22f12c5247ac5a5a580b515ad280193f38aa587306c328d61c"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Alloy.mat",
+          "sha256": "61e6e82ece4f7138f1877cd622ee594f0595247742612da50adb1b938b4c50b1"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Brake.mat",
+          "sha256": "08607a5f5ba98a91c14b9030d358e32838bb4e23480a68cc87c3b2a0893593a2"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Caliper.mat",
+          "sha256": "35a1f8eceec9ba809b26626fed9ec05e372905a3b5730ad461ed807303a7a40d"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Detail.mat",
+          "sha256": "14a8c568dcfbae492aefbfa416c3d4b6fe2fda6dfd5f80c310b05f90b0f017c9"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Detail.png",
+          "sha256": "b1436950cc0e15ddf9882ba5723c31683d12c463acc5ea85986caf8d687420ec"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Drive.prefab",
+          "sha256": "9f3ce28df3982b7f5865c2417a4207e5ffef6bc01451be0230d754e2fd86106b"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Glass.mat",
+          "sha256": "4fbd2f395c5ea67c1da8ffddeda3fab7afb4ec3cf74d3905a85898d623411b45"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Interior.mat",
+          "sha256": "97131bd46f65306eca4f71d9c23a48a3c5b8cfaeaa92fcbcfa3cd48bf484640f"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Interior.png",
+          "sha256": "c1c47e96e351016fdfcbe461078843e978e269492dd7ade460f526c71321bd5f"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Lens.mat",
+          "sha256": "295462d5315d4abc8bef1860c2ed9962c8ff916e5ab1fcc0d533f68b557455a5"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Materials.json",
+          "sha256": "59b703f7a29d802287ef17dc27252e93379798f5d0e30fa1454e39fccd6076b7"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Paint.mat",
+          "sha256": "2c86849952a842b52ad2dcc23c4f87288f2f28c1d9cf8c56af1fc1359c203260"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Paint.png",
+          "sha256": "d18c6473cd09b0898e10008f5fc49f4501975efdd0f31769d2585abf1a20f0fb"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Plate.mat",
+          "sha256": "a6a6d08c7ed47b0834cf03216ea45fb114bb515f6cc1f6d23f6243309dd318ef"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Plate.png",
+          "sha256": "54fa09243225f374c6a20b63be035e1d1794c79f41b5e41d70ae9cb7348421fa"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Race.fbx",
+          "sha256": "4cfd5ee35d531a233e39848ab9673a3a3697a9ce7ea474cda0371eb5bcf9838e"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Race.prefab",
+          "sha256": "28e6f0bfb812255cc87a9c8d6b267d8308dfffb525e675bac48bd235b91c5f3c"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Rubber.mat",
+          "sha256": "0f4fc91b02f5d5eaa435498c32db5914460288152119ae17d3c15896d9714669"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_TailLens.jpg",
+          "sha256": "5fcfcd5c6b86c3698b184603a216dea0dd6939aeb672a31c78b54581cd87120f"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_TailLens.mat",
+          "sha256": "0dd661a09ff4ab8b8b42f05db613dc0624ec649a6f928487393524a940aab273"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_Trim.mat",
+          "sha256": "52c44bac1cd5230a567c53c779c04db06f399086fe9a5bd379a02001683c6a6f"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_WhiteLight.jpg",
+          "sha256": "0c45c7cffe3f5f9129d0499e31f5f7f7b42d0776d19e486c3731764220318868"
+        },
+        {
+          "path": "unity/Assets/Alabama/Art/Vehicles/E46/E46_WhiteLight.mat",
+          "sha256": "8d9ac8445f314b3ce6bf653c5ca2a613228dbe0d252ee5933fbf66a39f9170e9"
+        }
+      ],
+      "purpose": "Replaces the current player BMW in existing prefab-linked scenes; artwork remains private."
     }
   ]
 }

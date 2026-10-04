@@ -26,6 +26,11 @@ namespace Alabama.Editor
         [MenuItem("Alabama/Vehicle/Set Up")]
         public static void Setup()
         {
+            SetupAssets(true);
+        }
+
+        internal static void SetupAssets(bool createReviewScene)
+        {
             var contract = JsonUtility.FromJson<MaterialSet>(File.ReadAllText(DirectoryPath + "/E46_Materials.json"));
             var importer = AssetImporter.GetAtPath(ModelPath) as ModelImporter;
             Require(importer != null, "Export the E46 from Blender first.");
@@ -43,11 +48,16 @@ namespace Alabama.Editor
                 material.SetColor("_BaseColor", new Color(c[0], c[1], c[2], c[3]).gamma);
                 material.SetFloat("_Metallic", definition.metallic);
                 material.SetFloat("_Smoothness", definition.smoothness);
+                // A previously textured material may now be an authored solid family.
+                material.SetTexture("_BaseMap", null);
                 if (!string.IsNullOrEmpty(definition.texture))
                 {
                     var texturePath = DirectoryPath + "/" + definition.texture;
                     var textureImporter = (TextureImporter)AssetImporter.GetAtPath(texturePath);
                     textureImporter.sRGBTexture = true;
+                    textureImporter.mipmapEnabled = true;
+                    textureImporter.filterMode = FilterMode.Trilinear;
+                    textureImporter.anisoLevel = 4;
                     textureImporter.wrapMode = TextureWrapMode.Clamp;
                     textureImporter.SaveAndReimport();
                     material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath));
@@ -96,7 +106,7 @@ namespace Alabama.Editor
             finally { UnityEngine.Object.DestroyImmediate(root); }
             AssetDatabase.SaveAssets();
             Verify();
-            VehicleReviewScene.Create();
+            if (createReviewScene) VehicleReviewScene.Create();
         }
 
         [MenuItem("Alabama/Vehicle/Verify")]

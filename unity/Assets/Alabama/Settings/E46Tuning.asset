@@ -15,7 +15,7 @@ MonoBehaviour:
   mass: 1450
   centreOfMass: {x: 0, y: 0.38, z: 0}
   aerodynamicDownforce: 0.45
-  wheelRadius: 0.33
+  wheelRadius: 0.32736424
   suspensionDistance: 0.18
   spring: 35000
   damper: 4500
