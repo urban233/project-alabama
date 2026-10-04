@@ -2,11 +2,15 @@
 
 An open-source arcade racing game built with Unity, developed by two contributors while learning professional game development. The first delivery is a BMW in a compact industrial city area, inspired by the atmosphere of Need for Speed: Most Wanted (2005).
 
+## Safehouse Micro-Slice
+
+The [safehouse Micro-Slice guide](docs/micro-slice/README.md) describes a self-contained 1.14 km demo circuit with a workshop courtyard, hillside descent, four-lane avenue, bridge, escape alley and resettable breakable props. Run `tools/micro-slice.ps1 -Action Setup` with the pinned editor to generate its original kit and scene, then use `Build` to create the Windows player. Its environment and calibration car are generated independently and require no private map or vehicle pack.
+
 ## Restore the separate assets first
 
-This public repository contains code, scenes, settings, asset manifests, tools, and the [art-direction reference pack](docs/art-direction/2026-10-02-nfsmw/README.md). **Runtime artwork is excluded from the public Git history.** The reference pack's screenshots, generated concepts, guides and prompt records are included at the project owner's request. The playable scenes require the separately shared `project-alabama-assets.zip`; request that ZIP from the project owner. It contains the exported art, editable Blender sources, original Unity `.meta` files, and license records. Sharing the ZIP does not change the licenses: the adapted E46 is CC-BY-SA 3.0, while the original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
+This public repository contains code, scenes, settings, asset manifests, tools, and the [art-direction reference pack](docs/art-direction/2026-10-02-nfsmw/README.md). **Runtime artwork is excluded from the public Git history.** The reference pack's screenshots, generated concepts, guides and prompt records are included at the project owner's request. The earlier DistrictLoop and imported-map scenes require the separately shared `project-alabama-assets.zip`; request that ZIP from the project owner. It contains the exported art, editable Blender sources, original Unity `.meta` files, and license records. Sharing the ZIP does not change the licenses: the adapted E46 is CC-BY-SA 3.0, while the original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
 
-The [original modular map kit reference library](docs/art-direction/2026-10-04-original-map-kit/README.md) provides 12 asset sheets, three style anchors, 57 proposed asset definitions and a Blender handoff for authoring a new map with original geometry and textures. The sheets are design references; completed meshes and runtime texture maps still need to be authored.
+The [original modular map kit reference library](docs/art-direction/2026-10-04-original-map-kit/README.md) provides 12 asset sheets, three style anchors, 57 proposed asset definitions and a Blender handoff for authoring a new map with original geometry and textures. The sheets are design references. The Micro-Slice generates a prototype subset; most of the full library still needs final mesh and texture authoring.
 
 Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place the privately received ZIP directly in the project root. Keep Unity closed until the asset import finishes. From the repository root:
 

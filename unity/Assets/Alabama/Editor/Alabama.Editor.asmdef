@@ -3,6 +3,9 @@
   "rootNamespace": "Alabama.Editor",
   "references": [
     "Alabama.Runtime",
+    "Unity.Splines",
+    "Unity.Mathematics",
+    "Unity.ProBuilder",
     "Unity.RenderPipelines.Universal.Runtime",
     "Unity.RenderPipelines.Core.Runtime"
   ],

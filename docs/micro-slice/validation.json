@@ -1,0 +1,75 @@
+{
+  "verifiedAtUtc": "2026-10-04T19:21:49.4560805Z",
+  "editorVersion": "6000.3.25f1",
+  "renderPipeline": "URP 17.3.0",
+  "geometry": {
+    "routeMetres": 1143.567,
+    "maximumGrade": 0.181,
+    "targetLapSeconds": 90,
+    "originalKitPrefabs": 13
+  },
+  "tests": {
+    "suite": "Alabama.Tests.MicroSliceTests",
+    "result": "Passed",
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "completedUtc": "2026-10-04 19:12:58Z"
+  },
+  "windowsBuild": {
+    "target": "StandaloneWindows64",
+    "backend": "Mono",
+    "options": [
+      "Development",
+      "StrictMode"
+    ],
+    "result": "Succeeded",
+    "errors": 0
+  },
+  "physicsLaps": {
+    "main": {
+      "passed": true,
+      "seconds": 56.74166488647461,
+      "lapSeconds": 51.82500076293945,
+      "routeMetres": 1143.5665283203125,
+      "maximumOffsetMetres": 2.144697904586792,
+      "maximumAirborneSeconds": 0.21666674315929413,
+      "physicsSteps": 6810,
+      "nextCheckpoint": 1,
+      "position": {
+        "x": -52.77159881591797,
+        "y": 24.99060821533203,
+        "z": 83.98287963867188
+      },
+      "routeDistanceMetres": 48.19997787475586
+    },
+    "shortcut": {
+      "passed": true,
+      "seconds": 49.4666633605957,
+      "lapSeconds": 47.991668701171875,
+      "routeMetres": 1025.50634765625,
+      "maximumOffsetMetres": 3.338223695755005,
+      "maximumAirborneSeconds": 0.20000006258487701,
+      "physicsSteps": 5937,
+      "nextCheckpoint": 1,
+      "position": {
+        "x": -53.22371292114258,
+        "y": 24.988964080810547,
+        "z": 84.92748260498047
+      },
+      "routeDistanceMetres": 1022.6619262695312
+    }
+  },
+  "screenshots": [
+    "garage-courtyard.png",
+    "hillside-descent.png",
+    "course-overview.png"
+  ],
+  "importedMapOrCarArtworkRequired": false,
+  "notes": [
+    "90 seconds is the design target. These are measured automatic laps with the calibration coupe, not a guaranteed player lap time.",
+    "The probes drive the actual WheelCollider vehicle through ordered gates; they do not teleport through the course.",
+    "Runtime artwork and player output remain generated locally; all original construction recipes are public.",
+    "This is an authored greybox for handling calibration, not final environment-art acceptance or a frame-rate benchmark."
+  ]
+}
