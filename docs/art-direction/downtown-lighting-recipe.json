@@ -1,0 +1,16 @@
+{
+  "recipe": "balanced-downtown-lighting-v1",
+  "references": [
+    "2026-10-02-nfsmw/ART-STYLE-GUIDE.md",
+    "2026-10-02-nfsmw/agent-reference-pack/ADAPTATION-GUIDE.md"
+  ],
+  "intent": "Separately demonstrated lighting adjustment after the material pass: readable cool shadows, warm diffuse sunlight and blue-gray atmospheric depth throughout the imported map.",
+  "sunColour": [1.0, 0.88, 0.72],
+  "sunIntensity": 1.6,
+  "ambientSky": [0.67, 0.72, 0.78],
+  "ambientEquator": [0.52, 0.55, 0.60],
+  "ambientGround": [0.34, 0.33, 0.30],
+  "diffuseFill": [0.52, 0.56, 0.62],
+  "fogColour": [0.53, 0.59, 0.65],
+  "preserve": ["sun direction", "shadow settings", "fog density", "post-processing profile", "source layout", "source collision"]
+}

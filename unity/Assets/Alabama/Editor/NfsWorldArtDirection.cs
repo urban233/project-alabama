@@ -19,7 +19,13 @@ namespace Alabama.Editor
         public const string ScenePath = DirectoryPath + "/NfsWorldArtDirection.unity";
         public const string RuntimeScene = DirectoryPath + "/Runtime/DistrictRuntime.unity";
         public const string ContentScene = DirectoryPath + "/Runtime/DowntownContent.unity";
-        [System.Serializable] private sealed class MaterialRecipe { public string[] roadDetailSources; }
+        [System.Serializable] private sealed class MaterialRecipe
+        {
+            public string[] roadDetailSources;
+            public float roadDetailStrength = .8f;
+            public float roadDetailScale = .25f;
+            public float roadReliefMetres;
+        }
         [System.Serializable] private sealed class DetailRecipe { public float mean; public float strength; public float repeatsPerMetre; }
 
         [MenuItem("Alabama/NFS World/Generate Middle Detail Art Direction")]
@@ -32,8 +38,8 @@ namespace Alabama.Editor
             ConfigureVehicleMaterials();
             var target = SceneManager.GetActiveScene();
             var targetCulling = Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
-            // Keep reviewed lighting/shadows fixed during geometry and material
-            // comparisons. Source collision and cutout masks retain their identity.
+            // Reuse source shadow geometry and cutout masks. The separate lighting
+            // recipe is applied only after assembling geometry and materials.
             var baseline = EditorSceneManager.OpenScene(NfsWorldArtPass.ScenePath, OpenSceneMode.Additive);
             NfsWorldSetup.Require(CollisionSignatures(target).SequenceEqual(CollisionSignatures(baseline)),
                 "Art direction must retain every source collision mesh, exit collider and transform.");
@@ -57,6 +63,7 @@ namespace Alabama.Editor
             foreach (var group in groups) targetCulling.AddTargets(group.Value.ToArray(), group.Key);
             EditorSceneManager.CloseScene(baseline, true);
             SceneManager.SetActiveScene(target);
+            NfsWorldArtDirectionLighting.ConfigureActiveScene();
             Camera.main.useOcclusionCulling = false; // A fresh bake targets the new renderers.
             EditorUtility.SetDirty(targetCulling);
             AssetDatabase.SaveAssets();
@@ -152,14 +159,15 @@ namespace Alabama.Editor
                 if (existing == null) AssetDatabase.CreateAsset(weights, weightsPath);
                 else { EditorUtility.CopySerialized(weights, existing); Object.DestroyImmediate(weights); weights = existing; }
                 material.SetTexture("_RoadDetailMap", detail); material.SetTexture("_RoadDetailWeights", weights);
-                material.SetFloat("_RoadDetailMean", recipe.mean); material.SetFloat("_RoadDetailStrength", recipe.strength);
-                material.SetFloat("_RoadDetailScale", recipe.repeatsPerMetre); material.EnableKeyword("_ROAD_DETAIL");
+                material.SetFloat("_RoadDetailMean", recipe.mean); material.SetFloat("_RoadDetailStrength", profile.roadDetailStrength);
+                material.SetFloat("_RoadDetailScale", profile.roadDetailScale);
+                material.SetFloat("_RoadRelief", profile.roadReliefMetres); material.EnableKeyword("_ROAD_DETAIL");
                 EditorUtility.SetDirty(material); arrays++; layers += colours.Count(c => c == Color.white);
             }
             NfsWorldSetup.Require(layers > 0, "No reviewed road layers received the detail material.");
             AssetDatabase.SaveAssets();
             File.WriteAllText(Path.Combine(root, "artifacts/NfsWorld/DeveloperBArt/road-detail.json"),
-                $"{{\"arrayMaterials\":{arrays},\"roadLayers\":{layers},\"strength\":{recipe.strength},\"repeatsPerMetre\":{recipe.repeatsPerMetre},\"sourceUvsChanged\":false,\"paintMasked\":true}}\n");
+                $"{{\"arrayMaterials\":{arrays},\"roadLayers\":{layers},\"strength\":{profile.roadDetailStrength},\"repeatsPerMetre\":{profile.roadDetailScale},\"reliefMetres\":{profile.roadReliefMetres},\"sourceUvsChanged\":false,\"paintMasked\":true}}\n");
         }
 
         public static void Verify()
@@ -174,14 +182,18 @@ namespace Alabama.Editor
                 Light Sun(Scene scene) => scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Light>())
                     .Single(l => l.type == LightType.Directional);
                 var before = Sun(baseline); var after = Sun(target);
-                NfsWorldSetup.Require(before.color == after.color && before.intensity == after.intensity &&
-                    before.transform.rotation == after.transform.rotation && before.shadows == after.shadows,
-                    "Art direction must preserve the reviewed sunlight.");
+                var recipe = NfsWorldArtDirectionLighting.Read();
+                NfsWorldSetup.Require(after.color == NfsWorldArtDirectionLighting.Colour(recipe.sunColour) &&
+                    after.intensity == recipe.sunIntensity && before.transform.rotation == after.transform.rotation &&
+                    before.shadows == after.shadows, "Styled lighting must match its recipe and preserve source shadow direction.");
+                NfsWorldSetup.Require(target.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<NfsWorldRenderSettings>())
+                    .Single().UsesDiffuseFill(NfsWorldArtDirectionLighting.Colour(recipe.diffuseFill)),
+                    "Runtime diffuse fill must match the separately demonstrated lighting recipe.");
                 Volume Atmosphere(Scene scene) => scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Volume>()).Single();
                 NfsWorldSetup.Require(Atmosphere(target).sharedProfile == Atmosphere(baseline).sharedProfile,
                     "Art direction must preserve the reviewed atmosphere profile.");
                 File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../../artifacts/NfsWorld/DeveloperBArt/scene-validation.json")),
-                    "{\"sourceAndExitCollisionExact\":true,\"sunlightUnchanged\":true,\"atmosphereProfileUnchanged\":true}\n");
+                    "{\"sourceAndExitCollisionExact\":true,\"sunDirectionAndShadowsUnchanged\":true,\"lightingRecipeApplied\":true,\"runtimeDiffuseFillConfigured\":true,\"atmosphereProfileUnchanged\":true}\n");
             }
             finally { EditorSceneManager.CloseScene(baseline, true); SceneManager.SetActiveScene(target); }
         }

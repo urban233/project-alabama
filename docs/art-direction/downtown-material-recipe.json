@@ -1,6 +1,9 @@
 {
   "schemaVersion": 2,
   "recipe": "balanced-downtown-v2",
+  "roadDetailStrength": 3.0,
+  "roadDetailScale": 0.12,
+  "roadReliefMetres": 0.018,
   "references": [
     "2026-10-02-nfsmw/ART-STYLE-GUIDE.md",
     "2026-10-02-nfsmw/agent-reference-pack/ADAPTATION-GUIDE.md"

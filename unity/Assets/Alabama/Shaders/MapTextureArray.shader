@@ -10,6 +10,7 @@ Shader "Alabama/Map Texture Array"
         _RoadDetailMean("Detail average", Float) = 0.5
         _RoadDetailStrength("Detail contrast", Float) = 0.6
         _RoadDetailScale("Detail repeats per metre", Float) = 0.25
+        _RoadRelief("Asphalt relief in metres", Float) = 0
     }
     SubShader
     {
@@ -29,6 +30,7 @@ Shader "Alabama/Map Texture Array"
             half _RoadDetailMean;
             half _RoadDetailStrength;
             float _RoadDetailScale;
+            float _RoadRelief;
         CBUFFER_END
         struct Attributes
         {
@@ -60,22 +62,44 @@ Shader "Alabama/Map Texture Array"
             output.vertexLighting = VertexLighting(position.positionWS, output.normalWS);
             return output;
         }
+        half RoadMask(Varyings input, half3 colour)
+        {
+            half layerWeight = SAMPLE_TEXTURE2D_LOD(_RoadDetailWeights, sampler_RoadDetailWeights,
+                float2((input.layerCutoff.x + 0.5) * _RoadDetailWeights_TexelSize.x, 0.5), 0).r;
+            half luminance = dot(colour, half3(0.2126, 0.7152, 0.0722));
+            half chroma = max(colour.r, max(colour.g, colour.b)) - min(colour.r, min(colour.g, colour.b));
+            return layerWeight * smoothstep(0.55, 0.85, normalize(input.normalWS).y) *
+                (1 - smoothstep(0.10, 0.24, luminance)) * (1 - smoothstep(0.02, 0.08, chroma));
+        }
         half4 Albedo(Varyings input)
         {
             half4 colour = SAMPLE_TEXTURE2D_ARRAY(_BaseArray, sampler_BaseArray, input.uv, input.layerCutoff.x) * _BaseColor;
             #if defined(_ROAD_DETAIL)
-                half layerWeight = SAMPLE_TEXTURE2D_LOD(_RoadDetailWeights, sampler_RoadDetailWeights,
-                    float2((input.layerCutoff.x + 0.5) * _RoadDetailWeights_TexelSize.x, 0.5), 0).r;
-                half luminance = dot(colour.rgb, half3(0.2126, 0.7152, 0.0722));
-                half chroma = max(colour.r, max(colour.g, colour.b)) - min(colour.r, min(colour.g, colour.b));
                 // Keep bright/coloured paint, curbs and vertical atlas regions exact.
-                half mask = layerWeight * smoothstep(0.55, 0.85, normalize(input.normalWS).y) *
-                    (1 - smoothstep(0.10, 0.24, luminance)) * (1 - smoothstep(0.02, 0.08, chroma));
+                half mask = RoadMask(input, colour.rgb);
                 half detail = SAMPLE_TEXTURE2D(_RoadDetailMap, sampler_RoadDetailMap,
                     input.positionWS.xz * _RoadDetailScale).r;
                 colour.rgb *= 1 + (detail - _RoadDetailMean) * _RoadDetailStrength * mask;
             #endif
             return colour;
+        }
+        half3 SurfaceNormal(Varyings input)
+        {
+            half3 normal = NormalizeNormalPerPixel(input.normalWS);
+            #if defined(_ROAD_DETAIL)
+                half3 source = SAMPLE_TEXTURE2D_ARRAY(_BaseArray, sampler_BaseArray, input.uv, input.layerCutoff.x).rgb * _BaseColor.rgb;
+                float height = SAMPLE_TEXTURE2D(_RoadDetailMap, sampler_RoadDetailMap,
+                    input.positionWS.xz * _RoadDetailScale).r * _RoadRelief;
+                float3 dx = ddx(input.positionWS), dy = ddy(input.positionWS);
+                float3 rx = cross(dy, normal), ry = cross(normal, dx);
+                float determinant = dot(dx, rx);
+                float3 gradient = (ddx(height) * rx + ddy(height) * ry) /
+                    (abs(determinant) > 1e-8 ? determinant : 1e-8);
+                float fade = 1 - smoothstep(40, 110, distance(input.positionWS, GetCameraPositionWS()));
+                // Shallow aggregate relief only: no displacement of roads or paint edges.
+                normal = normalize(normal - clamp(gradient, -.16, .16) * RoadMask(input, source) * fade);
+            #endif
+            return normal;
         }
         void Cutout(Varyings input)
         {
@@ -91,7 +115,7 @@ Shader "Alabama/Map Texture Array"
             #endif
             InputData lighting = (InputData)0;
             lighting.positionWS = input.positionWS;
-            lighting.normalWS = NormalizeNormalPerPixel(input.normalWS);
+            lighting.normalWS = SurfaceNormal(input);
             lighting.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
             lighting.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
             lighting.fogCoord = InitializeInputDataFog(float4(input.positionWS,1), input.fog);
@@ -113,7 +137,7 @@ Shader "Alabama/Map Texture Array"
         half4 Normals(Varyings input) : SV_Target
         {
             Cutout(input);
-            float3 normal = NormalizeNormalPerPixel(input.normalWS);
+            float3 normal = SurfaceNormal(input);
             #if defined(_GBUFFER_NORMALS_OCT)
                 return half4(PackFloat2To888(saturate(PackNormalOctQuadEncode(normal) * .5 + .5)),0);
             #else
@@ -189,6 +213,7 @@ Shader "Alabama/Map Texture Array"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Normals
+            #pragma shader_feature_local_fragment _ROAD_DETAIL
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
             ENDHLSL

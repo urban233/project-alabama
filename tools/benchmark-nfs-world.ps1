@@ -1,11 +1,15 @@
 [CmdletBinding()]
-param([switch]$Visible, [switch]$Style, [switch]$Art, [switch]$Runtime, [switch]$ArtDirection, [switch]$Driving, [ValidateRange(0,240)][int]$FrameRateCap = 0,
+param([switch]$Visible, [switch]$RequireMains, [switch]$Style, [switch]$Art, [switch]$Runtime, [switch]$ArtDirection, [switch]$Game, [switch]$Driving, [ValidateRange(0,240)][int]$FrameRateCap = 0,
       [switch]$DiagnosticNoShadows, [switch]$DiagnosticHardShadows,
       [ValidateRange(0,1)][float]$DiagnosticRenderScale = 0,
       [ValidateSet('Default','D3D11','D3D12')][string]$GraphicsApi = 'Default')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
+if ($Game) {
+    if ($Art -or $Style) { throw 'The default styled game uses its additive runtime.' }
+    $Runtime = $true; $ArtDirection = $true
+}
 if (-not $Visible) { throw 'Rendered Windows benchmarks require -Visible; hidden players can skip camera rendering and GPU timing.' }
 if (@($Art, $Style, $Runtime | Where-Object { $_ }).Count -gt 1) { throw 'Choose one art, style or additive-runtime variant.' }
 if ($ArtDirection -and $Style) { throw 'ArtDirection supports only standalone or runtime art.' }
@@ -14,7 +18,7 @@ if ($ArtDirection -and -not ($Art -or $Runtime)) { $Art = $true }
 if ($Runtime -and ($DiagnosticNoShadows -or $DiagnosticHardShadows -or $DiagnosticRenderScale -gt 0)) { throw 'Runtime comparisons preserve the approved rendering settings.' }
 if ($Driving -and -not ($Art -or $Runtime)) { throw 'The high-speed corridors require the art or additive-runtime scene.' }
 if ($GraphicsApi -ne 'Default' -and $DiagnosticRenderScale -eq 0) { throw 'Select an explicit diagnostic render scale for graphics-API comparisons.' }
-$taskPlayer = Join-Path $taskRoot $(if ($ArtDirection -and $Runtime) { 'builds/nfs-world-art-direction-runtime/Alabama.exe' } elseif ($ArtDirection) { 'builds/nfs-world-art-direction/Alabama.exe' } elseif ($Runtime) { 'builds/nfs-world-runtime/Alabama.exe' } elseif ($Art) { 'builds/nfs-world-art/Alabama.exe' } elseif ($Style) { 'builds/nfs-world-style/Alabama.exe' } else { 'builds/nfs-world/Alabama.exe' })
+$taskPlayer = Join-Path $taskRoot $(if ($Game) { 'builds/windows/Alabama.exe' } elseif ($ArtDirection -and $Runtime) { 'builds/nfs-world-art-direction-runtime/Alabama.exe' } elseif ($ArtDirection) { 'builds/nfs-world-art-direction/Alabama.exe' } elseif ($Runtime) { 'builds/nfs-world-runtime/Alabama.exe' } elseif ($Art) { 'builds/nfs-world-art/Alabama.exe' } elseif ($Style) { 'builds/nfs-world-style/Alabama.exe' } else { 'builds/nfs-world/Alabama.exe' })
 $taskOutput = Join-Path $taskRoot 'artifacts/NfsWorld'
 if (-not (Test-Path -LiteralPath $taskPlayer)) { throw 'Build the local NFS World player first.' }
 $taskName = if ($Runtime) { 'player-runtime-benchmark' } elseif ($Art) { 'player-art-benchmark' } elseif ($Style) { 'player-style-benchmark' } else { 'player-view-benchmark' }
@@ -24,7 +28,6 @@ if ($Driving) { $taskName += '-driving' }
 if ($FrameRateCap -gt 0) { $taskName += "-cap$FrameRateCap" }
 $taskLog = Join-Path $taskOutput ($taskName + '.log')
 $taskReport = Join-Path $taskOutput ($taskName + '.json')
-if (Test-Path -LiteralPath $taskReport) { Remove-Item -LiteralPath $taskReport }
 # No batch mode: the report requires camera renders and nonzero GPU timings.
 $taskArguments = @('-nfs-benchmark', '-screen-fullscreen', '0', '-screen-width', '1920', '-screen-height', '1080', '-logFile', $taskLog)
 if ($Style) { $taskArguments += '-nfs-style-benchmark' }
@@ -49,6 +52,10 @@ function Read-TaskPower {
         powerScheme = ($taskScheme -join ' ') }
 }
 $taskPowerBefore = Read-TaskPower
+if ($RequireMains -and (-not $taskPowerBefore.statusKnown -or $taskPowerBefore.acLineStatus -ne 1)) {
+    throw 'Mains qualification requires connected AC power before launching the player.'
+}
+if (Test-Path -LiteralPath $taskReport) { Remove-Item -LiteralPath $taskReport }
 $taskWindowStyle = if ($Visible) { 'Normal' } else { 'Hidden' }
 $taskProcess = Start-Process -FilePath $taskPlayer -ArgumentList $taskArguments -WindowStyle $taskWindowStyle -PassThru
 if (-not $taskProcess.WaitForExit(600000)) {
@@ -61,8 +68,12 @@ if ($taskProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $taskReport)) {
 }
 $taskData = Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json
 $taskData | Add-Member -NotePropertyName powerBefore -NotePropertyValue $taskPowerBefore
-$taskData | Add-Member -NotePropertyName powerAfter -NotePropertyValue (Read-TaskPower)
+$taskPowerAfter = Read-TaskPower
+$taskData | Add-Member -NotePropertyName powerAfter -NotePropertyValue $taskPowerAfter
 $taskData | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $taskReport -Encoding utf8
+if ($RequireMains -and (-not $taskPowerAfter.statusKnown -or $taskPowerAfter.acLineStatus -ne 1)) {
+    throw 'AC power was lost during measurement; this report cannot qualify mains performance.'
+}
 if ($taskData.cameraRenders -lt 2400 -or @($taskData.views | Where-Object { $_.gpuSamples -le 0 }).Count -gt 0) {
     throw 'The run did not verify actual camera rendering and GPU measurements.'
 }

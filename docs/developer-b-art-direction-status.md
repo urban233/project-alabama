@@ -1,5 +1,10 @@
 # Developer B Downtown art direction
 
+This records the qualified geometry-v4 pass. The subsequent district survey,
+pavement response, additional prop shaping and separately demonstrated lighting
+are recorded in [the whole-map follow-up](art-direction/downtown-whole-map-review.md).
+The measurements and ZIP below apply to v4, not the follow-up.
+
 Prepared on 3–4 October 2026 from updated `main` / `origin/main` at `fe2e19f`,
 on `codex/developer-b-art-direction`. The current playable Downtown game uses
 Developer B's derived geometry, materials and distance LODs by default.
@@ -107,7 +112,7 @@ show the angular bin/box forms. They are an adaptation of the repository's
 medium-detail direction, not an exact recreation of the concept compositions.
 
 Private images are under `artifacts/NfsWorld/Captures/ArtDirectionBefore/` and
-`ArtDirection/`. `DeveloperBArt/game-style-comparison.jpg` is the compact four-view
+`ArtDirectionPrevious/` (preserved v4 captures). `DeveloperBArt/game-style-comparison.jpg` is the compact four-view
 comparison; `before-after.jpg` contains the full comparison. Earlier material-only
 measurements and rejected geometry captures are historical diagnostics, not
 qualification of these final assets.

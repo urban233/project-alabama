@@ -50,6 +50,7 @@ namespace Alabama.Driving
             public string upscaling;
             public int cameraRenders;
             public int meshLodTargets, staticBatchLodTargets, reducedLodTargets;
+            public bool diffuseFillConfigured, diffuseFillActive;
             public long allocatedMemoryBytes;
             public View[] views;
             public string method;
@@ -190,6 +191,7 @@ namespace Alabama.Driving
             }
             RenderPipelineManager.endCameraRendering -= CountRender;
             var meshLods = FindObjectsByType<NfsWorldMeshLods>(FindObjectsSortMode.None);
+            var renderSettings = FindFirstObjectByType<NfsWorldRenderSettings>();
             var report = new Report
             {
                 graphicsDevice = SystemInfo.graphicsDeviceName, processor = SystemInfo.processorType,
@@ -198,6 +200,8 @@ namespace Alabama.Driving
                 meshLodTargets = meshLods.Sum(lod => lod.TargetCount),
                 staticBatchLodTargets = meshLods.Sum(lod => lod.StaticBatchTargetCount),
                 reducedLodTargets = meshLods.Sum(lod => lod.ReducedTargetCount),
+                diffuseFillConfigured = renderSettings != null && renderSettings.DiffuseFillConfigured,
+                diffuseFillActive = renderSettings != null && renderSettings.DiffuseFillActive,
                 allocatedMemoryBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong(), views = views.ToArray(),
                 renderingCountersAvailable = drawCalls.Valid && triangles.Valid && setPass.Valid,
                 scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
@@ -227,7 +231,8 @@ namespace Alabama.Driving
             Application.Quit(cameraRenders >= 2400 && views.All(v => v.gpuSamples > 0) &&
                 report.staticBatchLodTargets == 0 &&
                 (!arguments.Contains("-nfs-art-direction-benchmark") ||
-                 (report.meshLodTargets > 0 && report.reducedLodTargets > 0)) ? 0 : 1);
+                 (report.meshLodTargets > 0 && report.reducedLodTargets > 0 &&
+                  report.diffuseFillConfigured && report.diffuseFillActive)) ? 0 : 1);
         }
 
         private void CountRender(ScriptableRenderContext context, Camera camera) { if (camera == Camera.main) cameraRenders++; }

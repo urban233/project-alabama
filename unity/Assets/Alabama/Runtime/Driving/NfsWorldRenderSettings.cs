@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 namespace Alabama.Driving
 {
@@ -9,6 +10,11 @@ namespace Alabama.Driving
     {
         [SerializeField] private RenderPipelineAsset pipeline;
         [SerializeField] private int targetFrameRate;
+        [SerializeField] private bool useDiffuseFill;
+        [SerializeField] private Color diffuseFill;
+        private SphericalHarmonicsL2 previousProbe, appliedProbe;
+        private bool probeApplied;
+        private AmbientMode previousAmbientMode;
         private RenderPipelineAsset previous;
         private int previousAntialiasing;
         private int previousFrameRate;
@@ -17,6 +23,10 @@ namespace Alabama.Driving
 
         public void Configure(RenderPipelineAsset value, int frameRate = 0)
         { pipeline = value; targetFrameRate = frameRate; }
+        public void ConfigureDiffuseFill(Color colour) { useDiffuseFill = true; diffuseFill = colour; }
+        public bool UsesDiffuseFill(Color colour) => useDiffuseFill && diffuseFill == colour;
+        public bool DiffuseFillConfigured => useDiffuseFill;
+        public bool DiffuseFillActive => probeApplied && RenderSettings.ambientProbe.Equals(appliedProbe);
         private void OnEnable() { if (Application.isPlaying) Apply(); }
 
         private void Start()
@@ -31,6 +41,20 @@ namespace Alabama.Driving
 
         public void Apply()
         {
+            if (useDiffuseFill && !probeApplied)
+            {
+                previousProbe = RenderSettings.ambientProbe;
+                previousAmbientMode = RenderSettings.ambientMode;
+                appliedProbe = new SphericalHarmonicsL2();
+                appliedProbe.AddAmbientLight(diffuseFill);
+                // Trilight/Skybox regeneration can replace a manually assigned
+                // probe after loading. Custom mode gives this host ownership.
+                RenderSettings.ambientMode = AmbientMode.Custom;
+                RenderSettings.ambientProbe = appliedProbe;
+                probeApplied = true;
+                SceneManager.sceneLoaded += SceneLoaded;
+                SceneManager.activeSceneChanged += ActiveSceneChanged;
+            }
             if (applied || pipeline == null) return;
             previous = QualitySettings.renderPipeline;
             previousAntialiasing = QualitySettings.antiAliasing;
@@ -38,8 +62,28 @@ namespace Alabama.Driving
             applied = true;
         }
 
+        private void RefreshDiffuseFill()
+        {
+            if (!probeApplied || SceneManager.GetActiveScene() != gameObject.scene) return;
+            RenderSettings.ambientMode = AmbientMode.Custom;
+            RenderSettings.ambientProbe = appliedProbe;
+        }
+        private void SceneLoaded(Scene scene, LoadSceneMode mode) => RefreshDiffuseFill();
+        private void ActiveSceneChanged(Scene previousScene, Scene nextScene) => RefreshDiffuseFill();
+
         public void Restore()
         {
+            if (probeApplied)
+            {
+                SceneManager.sceneLoaded -= SceneLoaded;
+                SceneManager.activeSceneChanged -= ActiveSceneChanged;
+                if (RenderSettings.ambientProbe.Equals(appliedProbe))
+                {
+                    RenderSettings.ambientProbe = previousProbe;
+                    if (RenderSettings.ambientMode == AmbientMode.Custom) RenderSettings.ambientMode = previousAmbientMode;
+                }
+                probeApplied = false;
+            }
             if (frameRateApplied)
             {
                 if (Application.targetFrameRate == targetFrameRate) Application.targetFrameRate = previousFrameRate;

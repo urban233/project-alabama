@@ -24,14 +24,25 @@ namespace Alabama.Editor
         public static void ArtDirectionBefore() => Start("ArtDirectionBefore", NfsWorldArtPass.ScenePath);
         public static void ArtDirection() => Start("ArtDirection", NfsWorldArtDirection.ScenePath);
         public static void ArtDirectionNear() => Start("ArtDirectionNear", NfsWorldArtDirection.ScenePath);
+        public static void ArtDirectionMap() => Start("ArtDirectionMap", NfsWorldArtDirection.ScenePath);
+        public static void ArtDirectionSurface()
+        {
+            NfsWorldArtDirection.ConfigureRoadDetails();
+            Start("ArtDirectionSurface", NfsWorldArtDirection.ScenePath);
+        }
+        public static void ArtDirectionLighting() => Start("ArtDirectionLighting", NfsWorldArtDirection.ScenePath);
         public static void LightingStudy() => Start("LightingStudy", NfsWorldStylePreview.LightingStudyScenePath);
 
         private static void Start(string name, string scene)
         {
             variant = name;
             propPoses = Array.Empty<(string name, Vector3 position, Vector3 target)>();
-            if (variant.StartsWith("ArtDirection") && variant != "ArtDirectionNear") PreparePropPoses();
+            if (variant.StartsWith("ArtDirection") && variant != "ArtDirectionNear" && variant != "ArtDirectionMap") PreparePropPoses();
             EditorSceneManager.OpenScene(scene);
+            if (variant == "ArtDirectionLighting")
+            {
+                NfsWorldArtDirectionLighting.ConfigureActiveScene();
+            }
             rendering = UnityEngine.Object.FindFirstObjectByType<NfsWorldRenderSettings>();
             if (rendering != null) rendering.Apply();
             frames = 0;
@@ -53,6 +64,12 @@ namespace Alabama.Editor
                 // Fixed visual comparisons must not include differences from a new visibility bake.
                 if (variant.StartsWith("ArtDirection")) camera.useOcclusionCulling = false;
                 var culling = UnityEngine.Object.FindFirstObjectByType<NfsWorldDistanceCulling>();
+                if (variant == "ArtDirectionMap")
+                {
+                    CaptureMap(camera, culling, output);
+                    Finish(null);
+                    return;
+                }
                 if (variant == "ArtExits")
                 {
                     CaptureExits(camera, culling, output);
@@ -130,13 +147,55 @@ namespace Alabama.Editor
             VehicleCapture.Save(camera, path);
         }
 
+        private static void CaptureMap(Camera camera, NfsWorldDistanceCulling culling, string output)
+        {
+            var roads = UnityEngine.Object.FindObjectsByType<MeshCollider>(FindObjectsSortMode.None)
+                .Where(c => c.transform.root.name == "RoadsPhysical").OrderBy(c => c.name).ToArray();
+            var bounds = roads[0].bounds;
+            foreach (var road in roads) bounds.Encapsulate(road.bounds);
+            var used = new System.Collections.Generic.HashSet<int>();
+            var poses = new System.Collections.Generic.List<CapturePose>();
+            var car = UnityEngine.Object.FindFirstObjectByType<ArcadeCarController>();
+            car.gameObject.SetActive(false);
+            // Survey the entire physical district on a regular grid, not only its spawn block.
+            for (float z = bounds.min.z + 250; z < bounds.max.z; z += 650)
+            for (float x = bounds.min.x + 250; x < bounds.max.x; x += 650)
+            {
+                var probe = new Vector3(x, bounds.center.y, z);
+                foreach (var road in roads.OrderBy(r => r.bounds.SqrDistance(probe)).Take(12))
+                {
+                    if (used.Contains(road.GetInstanceID())) continue;
+                    if (!road.Raycast(new Ray(road.bounds.center + Vector3.up * 150, Vector3.down), out var hit, 400)
+                        || hit.normal.y < .7f) continue;
+                    if (Vector2.Distance(new Vector2(hit.point.x, hit.point.z), new Vector2(x, z)) > 500) continue;
+                    used.Add(road.GetInstanceID());
+                    for (int heading = 0; heading < 4; heading++)
+                    {
+                        camera.transform.position = hit.point + Vector3.up * 2;
+                        camera.transform.rotation = Quaternion.Euler(2, heading * 90, 0);
+                        culling?.Refresh();
+                        string name = "sector-" + used.Count.ToString("D2") + "-" + heading;
+                        Save(camera, Path.Combine(output, name + ".png"));
+                        poses.Add(new CapturePose { road = road.name, position = camera.transform.position,
+                            eulerAngles = camera.transform.eulerAngles });
+                    }
+                    break;
+                }
+            }
+            File.WriteAllText(Path.Combine(output, "poses.json"), JsonUtility.ToJson(new MapPoses { poses = poses.ToArray() }, true));
+            Debug.Log($"Whole-map visual survey: {used.Count} road locations, {poses.Count} views.");
+        }
+
+        [Serializable] private sealed class MapPoses { public CapturePose[] poses; }
+
         private static void PreparePropPoses()
         {
             // Locate real instances in the unchanged source scene. Both comparison
             // variants use these poses even after individual visuals are batched.
             EditorSceneManager.OpenScene(NfsWorldStylePreview.LightingStudyScenePath);
             var probes = new[] { ("barrel", "Props_00061"), ("hydrant", "Props_00050"),
-                ("newspaper-box", "Props_00021"), ("waste-bin", "Props_00065") };
+                ("newspaper-box", "Props_00021"), ("waste-bin", "Props_00065"),
+                ("crash-barrel", "Props_00062"), ("round-bin", "Props_00063") };
             var roads = UnityEngine.Object.FindObjectsByType<MeshCollider>(FindObjectsSortMode.None)
                 .Where(c => c.transform.root.name == "RoadsPhysical").ToArray();
             propPoses = probes.Select(probe =>

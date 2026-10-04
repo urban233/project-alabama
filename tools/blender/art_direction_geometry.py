@@ -11,7 +11,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simplify_nfs_world import bounds, simplify_planes, verify_bounds_reader, verify_planar_reduction
-from nfs_primitives import coarse_solids, verify_coarse_solids, verify_coarse_uv_guard, verify_solid_projection
+from nfs_primitives import coarse_solids, facet_round_props, verify_round_props, verify_coarse_solids, verify_coarse_uv_guard, verify_solid_projection
 from uv_layout import preserves_uv_layout, verify_uv_layout
 
 
@@ -22,8 +22,10 @@ def main():
     verify_coarse_uv_guard()
     verify_uv_layout()
     verify_solid_projection()
+    verify_round_props()
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True, type=Path)
+    parser.add_argument('--category', choices=('Buildings', 'Props', 'Trees', 'Terrain', 'Panorama'))
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     root = args.root.resolve()
     base = root / 'unity/Assets/Alabama/Art/Maps/NfsWorld'
@@ -37,9 +39,13 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     sources.mkdir(parents=True, exist_ok=True)
     records = []
+    if args.category:
+        records = [r for r in json.loads((output/'geometry.json').read_text())['meshes'] if r['category'] != args.category]
     for part in contract['parts']:
         category = part['category']
         if category not in ('Buildings', 'Props', 'Trees', 'Terrain', 'Panorama'):
+            continue
+        if args.category and category != args.category:
             continue
         source_path = root / f'source-art/maps/nfs-world/blender/District/{category}.blend'
         source_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
@@ -67,6 +73,7 @@ def main():
                 (rock and not material['alphaClip']))
             primitives = 0
             reshaped = 0
+            radial = 0
             changed = False
             if candidate:
                 reduced = original.copy()
@@ -75,6 +82,9 @@ def main():
                 # Rebuild only closed genus-zero components; holes and cards stay open.
                 if category == 'Props' or trunk:
                     reshaped = coarse_solids(reduced, .08, .001, preserve_topology=True)
+                    if obj.name in ('Props_00050', 'Props_00062', 'Props_00063'):
+                        radial = facet_round_props(reduced, sides=12, maximum_displacement=.015)
+                        reshaped += radial
                 elif category == 'Buildings':
                     primitives = coarse_solids(reduced, .08 if category == 'Props' else .10, .001,
                                                maximum_uv_error=.0002)
@@ -111,6 +121,7 @@ def main():
                                 before=before, after=len(obj.data.loop_triangles), changed=changed,
                                 primitiveComponents=primitives if changed else 0, boundaryToleranceMetres=.02,
                                 reshapedComponents=reshaped if changed else 0,
+                                radialComponents=radial if changed else 0,
                                 sourceBlendSha256=source_hash))
             if index % 250 == 0:
                 print(category, index, flush=True)
@@ -119,10 +130,11 @@ def main():
                                 global_scale=1, apply_unit_scale=True, apply_scale_options='FBX_SCALE_UNITS',
                                 axis_forward='-Z', axis_up='Y', use_mesh_modifiers=False,
                                 mesh_smooth_type='OFF', bake_anim=False, add_leaf_bones=False)
-    report = dict(schemaVersion=1, recipe='balanced-downtown-geometry-v4',
+    report = dict(schemaVersion=1, recipe='balanced-downtown-geometry-v5',
                   method='UV-preserving closed prop/trunk form projection, guarded coplanar retopology and 1 mm seam welding',
                   hullUvTolerance=.0002,
                   maximumPropDisplacementMetres=.08,
+                  maximumRadialDisplacementMetres=.015, roundPropSides=12,
                   meshes=records, collisionChanged=False, finiteCoordinatesValidated=True,
                   sourceTriangles=sum(m['before'] for m in records), candidateTriangles=sum(m['after'] for m in records))
     (output / 'geometry.json').write_text(json.dumps(report, indent=2) + '\n')
