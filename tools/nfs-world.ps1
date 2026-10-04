@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('SampleSetup', 'Setup', 'SampleCapture', 'Capture', 'SampleVerify', 'Verify', 'Build', 'DrivingTest', 'QualificationTest', 'StylePreview', 'StyleCapture', 'LightingCapture', 'StyleOptimize', 'StyleVerify', 'StyleBuild', 'StyleAntialiasing', 'RestoreProjectAntialiasing', 'ArtOptimize', 'ArtRenderOptimize', 'ArtExits', 'ArtVerify', 'ArtCapture', 'ArtExitCapture', 'ArtOcclusion', 'ArtShadowPartition', 'ArtBuild', 'RuntimeSetup', 'RuntimeVerify', 'RuntimeOcclusion', 'RuntimeBuild', 'RuntimeTest', 'ArtDirectionSetup', 'ArtDirectionDetail', 'ArtDirectionVerify', 'ArtDirectionBeforeCapture', 'ArtDirectionCapture', 'ArtDirectionOcclusion', 'ArtDirectionBuild', 'ArtDirectionRuntimeSetup', 'ArtDirectionRuntimeVerify', 'ArtDirectionRuntimeOcclusion', 'ArtDirectionRuntimeBuild', 'ArtDirectionLodExport', 'ArtDirectionLodImport', 'GameSetup', 'ArtDirectionVehicle', 'ArtDirectionNearCapture', 'ArtDirectionMapCapture', 'ArtDirectionSurfaceCapture', 'ArtDirectionLightingCapture', 'ArtDirectionLighting', 'ArtDirectionStability', 'ArtDirectionReadabilityBuild')]
+    [ValidateSet('SampleSetup', 'Setup', 'SampleCapture', 'Capture', 'SampleVerify', 'Verify', 'Build', 'DrivingTest', 'QualificationTest', 'StylePreview', 'StyleCapture', 'LightingCapture', 'StyleOptimize', 'StyleVerify', 'StyleBuild', 'StyleAntialiasing', 'RestoreProjectAntialiasing', 'ArtOptimize', 'ArtRenderOptimize', 'ArtExits', 'ArtVerify', 'ArtCapture', 'ArtExitCapture', 'ArtOcclusion', 'ArtShadowPartition', 'ArtBuild', 'RuntimeSetup', 'RuntimeVerify', 'RuntimeOcclusion', 'RuntimeBuild', 'RuntimeTest', 'ArtDirectionSetup', 'ArtDirectionDetail', 'ArtDirectionVerify', 'ArtDirectionBeforeCapture', 'ArtDirectionCapture', 'ArtDirectionOcclusion', 'ArtDirectionBuild', 'ArtDirectionRuntimeSetup', 'ArtDirectionRuntimeVerify', 'ArtDirectionRuntimeOcclusion', 'ArtDirectionRuntimeBuild', 'ArtDirectionLodExport', 'ArtDirectionLodImport', 'GameSetup', 'ArtDirectionVehicle', 'ArtDirectionNearCapture', 'ArtDirectionMapCapture', 'ArtDirectionSurfaceCapture', 'ArtDirectionLightingCapture', 'ArtDirectionLighting', 'ArtDirectionStability', 'ArtDirectionReadabilityBuild', 'ArtDirectionCollisionReview')]
     [string]$Action = 'Setup',
     [string]$EditorPath = 'C:/Program Files/Unity/Hub/Editor/6000.3.25f1/Editor/Unity.exe'
 )
@@ -64,6 +64,7 @@ $taskMethods = @{
     ArtDirectionLighting = 'Alabama.Editor.NfsWorldArtDirectionLighting.Apply'
     ArtDirectionStability = 'Alabama.Editor.NfsWorldVisualStability.Apply'
     ArtDirectionReadabilityBuild = 'Alabama.Editor.NfsWorldStabilityReview.BuildReadabilityGame'
+    ArtDirectionCollisionReview = 'Alabama.Editor.NfsWorldCollisionReview.Prepare'
 }
 $taskOutput = Join-Path $taskRoot ('artifacts/NfsWorld/' + $Action)
 New-Item -ItemType Directory -Path $taskOutput -Force | Out-Null

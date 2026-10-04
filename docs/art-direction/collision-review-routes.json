@@ -1,0 +1,324 @@
+{
+    "routes": [
+        {
+            "label": "sign-1",
+            "position": {
+                "x": -306.0509338378906,
+                "y": 3.8406565189361574,
+                "z": 361.55841064453127
+            },
+            "direction": {
+                "x": -0.9584399461746216,
+                "y": 0.0,
+                "z": 0.28529438376426699
+            },
+            "maximumProgress": 8.397626876831055,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "sign-2",
+            "position": {
+                "x": -366.67376708984377,
+                "y": 4.472119331359863,
+                "z": 354.48834228515627
+            },
+            "direction": {
+                "x": 0.6458585858345032,
+                "y": 0.0,
+                "z": -0.7634571194648743
+            },
+            "maximumProgress": 8.397218704223633,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "sign-3",
+            "position": {
+                "x": -272.0920715332031,
+                "y": 4.753243446350098,
+                "z": 363.0601806640625
+            },
+            "direction": {
+                "x": 0.9813275337219238,
+                "y": 0.0,
+                "z": -0.19234393537044526
+            },
+            "maximumProgress": 8.394439697265625,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "building-1",
+            "position": {
+                "x": 577.2648315429688,
+                "y": 14.145926475524903,
+                "z": 365.08013916015627
+            },
+            "direction": {
+                "x": -0.7380392551422119,
+                "y": 0.0,
+                "z": 0.6747578382492065
+            },
+            "maximumProgress": 8.400002479553223,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "building-2",
+            "position": {
+                "x": -535.45361328125,
+                "y": 17.433164596557618,
+                "z": -414.2132873535156
+            },
+            "direction": {
+                "x": 0.30935680866241457,
+                "y": 0.0,
+                "z": 0.950946033000946
+            },
+            "maximumProgress": 8.399998664855957,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "building-3",
+            "position": {
+                "x": -279.43316650390627,
+                "y": 4.789368152618408,
+                "z": 384.2290954589844
+            },
+            "direction": {
+                "x": 0.9434122443199158,
+                "y": 0.0,
+                "z": 0.3316221535205841
+            },
+            "maximumProgress": 6.252104759216309,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "tree-1",
+            "position": {
+                "x": -594.4374389648438,
+                "y": -2.123143196105957,
+                "z": 20.085247039794923
+            },
+            "direction": {
+                "x": 0.7140263319015503,
+                "y": 0.0,
+                "z": -0.700118899345398
+            },
+            "maximumProgress": 8.366735458374024,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "tree-2",
+            "position": {
+                "x": 394.38916015625,
+                "y": 8.873899459838868,
+                "z": -219.3080596923828
+            },
+            "direction": {
+                "x": 0.4224207401275635,
+                "y": 0.0,
+                "z": -0.9063998460769653
+            },
+            "maximumProgress": 8.399999618530274,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "tree-3",
+            "position": {
+                "x": -560.653564453125,
+                "y": -2.8951125144958498,
+                "z": -46.370819091796878
+            },
+            "direction": {
+                "x": 0.7472842931747437,
+                "y": 0.0,
+                "z": -0.6645044088363648
+            },
+            "maximumProgress": 8.038686752319336,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "prop-1",
+            "position": {
+                "x": 720.5595092773438,
+                "y": 16.40899658203125,
+                "z": 303.28021240234377
+            },
+            "direction": {
+                "x": -0.8909258246421814,
+                "y": 0.0,
+                "z": 0.4541488289833069
+            },
+            "maximumProgress": 6.792242050170898,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "prop-2",
+            "position": {
+                "x": 182.61888122558595,
+                "y": 5.070150852203369,
+                "z": 157.08132934570313
+            },
+            "direction": {
+                "x": -0.9833359718322754,
+                "y": 0.0,
+                "z": -0.1817978471517563
+            },
+            "maximumProgress": 7.403326034545898,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "prop-3",
+            "position": {
+                "x": 657.6790771484375,
+                "y": 16.408981323242189,
+                "z": 248.76278686523438
+            },
+            "direction": {
+                "x": -0.891096293926239,
+                "y": 0.0,
+                "z": 0.4538143277168274
+            },
+            "maximumProgress": 6.791632175445557,
+            "boundary": false,
+            "reverse": false
+        },
+        {
+            "label": "edge-1",
+            "position": {
+                "x": 1410.0113525390625,
+                "y": 0.16433364152908326,
+                "z": 547.83349609375
+            },
+            "direction": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": false
+        },
+        {
+            "label": "edge-2",
+            "position": {
+                "x": 1505.2275390625,
+                "y": 22.95698356628418,
+                "z": 896.5278930664063
+            },
+            "direction": {
+                "x": 0.7071068286895752,
+                "y": 0.0,
+                "z": 0.7071067094802856
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": false
+        },
+        {
+            "label": "edge-3",
+            "position": {
+                "x": 1383.5836181640625,
+                "y": 1.2705777883529664,
+                "z": 563.079345703125
+            },
+            "direction": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": false
+        },
+        {
+            "label": "edge-4",
+            "position": {
+                "x": 1361.83984375,
+                "y": 25.821643829345704,
+                "z": 454.201904296875
+            },
+            "direction": {
+                "x": -8.742277657347586e-8,
+                "y": 0.0,
+                "z": -1.0
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": false
+        },
+        {
+            "label": "edge-5",
+            "position": {
+                "x": 1332.205078125,
+                "y": -2.15733003616333,
+                "z": 424.7220458984375
+            },
+            "direction": {
+                "x": -8.742277657347586e-8,
+                "y": 0.0,
+                "z": -1.0
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": false
+        },
+        {
+            "label": "edge-6",
+            "position": {
+                "x": 1289.8621826171875,
+                "y": -4.3766303062438969,
+                "z": 380.4293212890625
+            },
+            "direction": {
+                "x": -8.742277657347586e-8,
+                "y": 0.0,
+                "z": -1.0
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": false
+        },
+        {
+            "label": "sign-reverse",
+            "position": {
+                "x": -306.0509338378906,
+                "y": 3.8406565189361574,
+                "z": 361.55841064453127
+            },
+            "direction": {
+                "x": -0.9584399461746216,
+                "y": 0.0,
+                "z": 0.28529438376426699
+            },
+            "maximumProgress": 8.397626876831055,
+            "boundary": false,
+            "reverse": true
+        },
+        {
+            "label": "edge-reverse",
+            "position": {
+                "x": 1410.0113525390625,
+                "y": 0.16433364152908326,
+                "z": 547.83349609375
+            },
+            "direction": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "maximumProgress": 9.0,
+            "boundary": true,
+            "reverse": true
+        }
+    ]
+}

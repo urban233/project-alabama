@@ -16,6 +16,7 @@ namespace Alabama.Districts
         [SerializeField] private ChaseCamera chase;
         [SerializeField] private string[] initialDistrictScenes = Array.Empty<string>();
         private readonly Dictionary<string, DistrictContent> districts = new Dictionary<string, DistrictContent>();
+        private readonly HashSet<int> visibleGroundScenes = new HashSet<int>();
         private DistrictContent recoveryOwner;
         private float nextRecoveryUpdate;
         private bool busy;
@@ -69,6 +70,14 @@ namespace Alabama.Districts
             if (!content.RecoveryPoses.Any(content.Supports))
             { LastFailure = "District has no supported recovery pose: " + content.Id; return; }
             districts.Add(content.Id, content);
+            var coverage = content.gameObject.scene.GetRootGameObjects()
+                .SelectMany(r => r.GetComponentsInChildren<DistrictGroundCoverage>()).ToArray();
+            if (coverage.Length != 0)
+            {
+                visibleGroundScenes.Add(content.gameObject.scene.handle);
+                var vehicle = player.GetComponentsInChildren<Collider>();
+                foreach (var ground in coverage) ground.IgnoreVehicle(vehicle);
+            }
             DistrictRegistered?.Invoke(content);
             if (recoveryOwner == null) SetRecovery(content);
         }
@@ -77,6 +86,7 @@ namespace Alabama.Districts
         {
             if (!districts.TryGetValue(content.Id ?? "", out var current) || current != content) return;
             districts.Remove(content.Id);
+            visibleGroundScenes.Remove(content.gameObject.scene.handle);
             foreach (var culling in content.Culling) culling.ShowAll();
             if (recoveryOwner == content)
             {
@@ -191,6 +201,8 @@ namespace Alabama.Districts
             return false;
         }
 
+        internal bool RequiresVisibleGround(Scene scene) => visibleGroundScenes.Contains(scene.handle);
+
         private void Update()
         {
             if (!Ready || busy || Time.unscaledTime < nextRecoveryUpdate) return;
@@ -235,7 +247,7 @@ namespace Alabama.Districts
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= SceneLoaded; SceneManager.sceneUnloaded -= SceneUnloaded;
-            districts.Clear(); if (Instance == this) Instance = null;
+            districts.Clear(); visibleGroundScenes.Clear(); if (Instance == this) Instance = null;
         }
     }
 }

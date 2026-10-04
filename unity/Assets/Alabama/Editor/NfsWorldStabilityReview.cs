@@ -15,6 +15,7 @@ namespace Alabama.Editor
     {
         public static void BuildReadabilityGame()
         {
+            NfsWorldSceneryCollision.Apply();
             NfsWorldVisualStability.Apply();
             NfsWorldArtDirection.VerifyRuntime();
             VerifyReadabilityAssets();

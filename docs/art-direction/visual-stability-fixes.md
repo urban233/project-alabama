@@ -199,3 +199,74 @@ averaged 69.0–106.3 FPS; one stationary frame exceeded 40 ms. These are local
 battery results, not a controlled comparison with the earlier mains run.
 The final report is `performance-readability-final.json`; the earlier diagnostic
 run is preserved separately because geometry auditing was still active then.
+
+## Scenery collision and visible map edges (4 October collision follow-up)
+
+The next screenshot shows an exposed road with no surrounding terrain. The
+source contract also explains the drive-through scenery: only three of 2,752
+building meshes have collision, and the 96 prop and 92 tree mesh groups have
+none. These counts describe source mesh groups, not individual objects.
+
+`NfsWorldSceneryCollision` generates a separate persistent collision root from
+full-resolution source geometry. It is independent of visual culling and LODs.
+Buildings, roadside signs, poles, props and woody tree geometry receive static
+mesh collision from both sides. Effect cards and transparent leaf rectangles
+are excluded. Alpha masks are sampled to avoid transparent cutout regions. The original
+driving collision and six existing exit barriers remain intact and are checked
+against their previous signatures during runtime verification.
+
+The supplement contains 807 obstacle chunks with 5,530,294 triangles,
+including reverse faces. It covers 2,633 building, 95 prop
+and 41 woody tree mesh groups. Another 386 chunks hold 129,754 visible ground
+triangles. Generated meshes and scenes remain in the private art asset folder;
+the public repository contains their generation and verification code.
+
+Visible ground coverage is used for boundary queries. It ignores collisions with
+the chassis and wheels, including in standalone review scenes, so original
+source road collision continues to provide suspension contact. The runtime
+requires visible and physical ground at matching heights under each chassis
+corner. Invisible source collision beyond an exposed road cannot extend the
+playable area, and distant lower ground cannot validate a fall from a bridge.
+Movement checks include predicted yaw and a 15 cm margin for impulses applied
+by the physics simulation after the guard's update.
+
+`ArtDirectionReadabilityBuild` regenerates the supplement before verification
+and the Windows build. `ArtDirectionCollisionReview` prepares native impact and
+exposed-edge routes. Launch the visible player with
+`-nfs-collision-probe <absolute-route-json> -nfs-stability-output <absolute-output-directory>`
+to drive the real car into scenery and toward unsupported ground. The probe
+records physical contacts, progress, boundary interventions, chassis support
+and screenshots. It runs only with the explicit flag. Local evidence is stored
+under `artifacts/NfsWorld/Stability/`.
+
+The collision follow-up passed all 27 PlayMode tests and 23 EditMode tests.
+After adding the physics margin and yaw prediction, all ten district boundary,
+recovery and lifetime tests passed again. The Windows build passed scene,
+source-collision and sign-layer verification; its runtime assembly was updated
+at 22:29 Berlin time.
+
+Early automatic edge candidates included city floor triangles beneath building
+stairs. The original start did not satisfy the final chassis margin; moving it
+inward spawned the car inside the stairs. Those diagnostic captures are retained
+in `native-collision-final`, `native-collision-validated` and
+`native-collision-margin-final`. Final route selection requires the runtime's
+margin and a clear scenery approach. The saved routes sample this imported map;
+the supplied bend has not been positively matched to a world coordinate.
+
+The final native run passed all 20 cases across 2,400 measured physics steps.
+Thirteen impacts covered signs/poles, buildings, woody trees and props, including
+reverse travel. Each recorded physical contact and stopped before its planned
+penetration limit. Six exposed-edge approaches and one reverse approach recorded
+boundary interventions; maximum progress was 2.37–5.21 metres. Every case kept
+the chassis footprint over matching visible and physical ground throughout its
+measured steps. A separate distance check rejected recovery to a different part
+of the map. Evidence is in `native-collision-final-20`; the routes are retained
+in `collision-review-routes.json`.
+
+The final rendered benchmark recorded 4,933 camera renders and 3,053 GPU timing
+samples. All nine high-speed drives travelled 69.1–71.1 metres with source-road
+wheel support on every measured frame, and no driving frame exceeded 40 ms.
+Driving averaged 64.8–90.4 FPS with 12.12–16.66 ms p95 frame times. AC power was
+connected before and after this run with the Power saver scheme active. This is
+a local machine check, without controlled attribution against earlier runs.
+The report is `performance-collision-final.json`.

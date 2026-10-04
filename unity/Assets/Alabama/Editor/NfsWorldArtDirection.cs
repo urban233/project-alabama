@@ -199,7 +199,8 @@ namespace Alabama.Editor
         }
 
         private static string[] CollisionSignatures(Scene scene) => scene.GetRootGameObjects()
-            .Where(r => !NfsWorldDistrictRuntimeSetup.Shared(r)).SelectMany(r => r.GetComponentsInChildren<Collider>())
+            .Where(r => !NfsWorldDistrictRuntimeSetup.Shared(r) && r.name != NfsWorldSceneryCollision.RootName)
+            .SelectMany(r => r.GetComponentsInChildren<Collider>())
             .Select(c => c is MeshCollider mesh ? "mesh:" + AssetDatabase.GetAssetPath(mesh.sharedMesh) + ":" +
                 mesh.sharedMesh.name + ":" + mesh.convex + ":" + c.enabled + ":" + c.transform.localToWorldMatrix.ToString("R") :
                 c is BoxCollider box ? "box:" + box.center.ToString("R") + ":" + box.size.ToString("R") + ":" +
@@ -212,6 +213,11 @@ namespace Alabama.Editor
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Directory.CreateDirectory(DirectoryPath + "/Runtime"); AssetDatabase.Refresh();
             var scene = EditorSceneManager.OpenScene(ScenePath);
+            if (!scene.GetRootGameObjects().Any(r => r.name == NfsWorldSceneryCollision.RootName))
+            {
+                NfsWorldSceneryCollision.Generate(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
             NfsWorldOcclusion.ConfigureScene(scene);
             var car = Object.FindFirstObjectByType<ArcadeCarController>();
             var pose = new DistrictRecoveryPose { id = "source-pit", position = car.transform.position,
@@ -248,6 +254,7 @@ namespace Alabama.Editor
         {
             NfsWorldDistrictRuntimeSetup.Verify(RuntimeScene, ContentScene);
             var content = SceneManager.GetSceneByPath(ContentScene);
+            NfsWorldSceneryCollision.Verify(content);
             var visuals = content.GetRootGameObjects().Single(r => r.name == "Optimized district visuals");
             var lods = visuals.GetComponent<NfsWorldMeshLods>();
             NfsWorldSetup.Require(lods != null && lods.TargetsBelongTo(content),

@@ -131,6 +131,38 @@ namespace Alabama.Tests
         }
 
         [UnityTest]
+        public IEnumerator BoundaryRejectsInvisibleCollisionBeyondVisibleRoadAndDeepLowerGround()
+        {
+            var content = runtime.LoadedDistricts.Single();
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var pose = content.RecoveryPoses[0];
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            SceneManager.MoveGameObjectToScene(ground, content.gameObject.scene);
+            ground.transform.position = pose.position + Vector3.down * .34f;
+            ground.transform.localScale = new Vector3(8, .2f, 12);
+            var coverage = ground.AddComponent<DistrictGroundCoverage>();
+            coverage.IgnoreVehicle(car.GetComponentsInChildren<Collider>());
+            Physics.SyncTransforms();
+            Assert.That(guard.ContainsFootprint(pose.position, Quaternion.identity,
+                scene => scene == content.gameObject.scene, true), Is.True);
+            ground.transform.position += Vector3.down;
+            Physics.SyncTransforms();
+            Assert.That(guard.ContainsFootprint(pose.position, Quaternion.identity,
+                scene => scene == content.gameObject.scene, true), Is.False, "Visible and physical ground must agree in height.");
+            ground.transform.position += Vector3.up;
+            Physics.SyncTransforms();
+            var outside = pose.position + Vector3.right * 8;
+            Assert.That(guard.ContainsFootprint(outside, Quaternion.identity,
+                scene => scene == content.gameObject.scene), Is.True, "Fixture's invisible ground still exists.");
+            Assert.That(guard.ContainsFootprint(outside, Quaternion.identity,
+                scene => scene == content.gameObject.scene, true), Is.False, "Invisible ground cannot extend the playable road.");
+            Assert.That(guard.ContainsFootprint(pose.position + Vector3.up * 5, Quaternion.identity,
+                scene => scene == content.gameObject.scene), Is.False, "A lower road must not validate a fall into a gap.");
+            Object.Destroy(ground);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RepeatedLoadsKeepOwnersAndRemoveAllRegistrations()
         {
             int added = 0, removed = 0;
