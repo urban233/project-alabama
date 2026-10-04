@@ -10,6 +10,7 @@ namespace Alabama.Driving
         private float nextUpdate;
         private Bounds[] cachedBounds;
         private bool[] hidden;
+        private readonly NfsWorldCameraMotion motion = new NfsWorldCameraMotion();
         private System.Collections.Generic.Dictionary<Renderer, float> distanceLookup;
 
         public int TargetCount => renderers == null ? 0 : System.Array.FindAll(renderers, r => r != null).Length;
@@ -75,13 +76,20 @@ namespace Alabama.Driving
         private void LateUpdate()
         {
             if (Time.unscaledTime < nextUpdate || Camera.main == null) return;
-            nextUpdate = Time.unscaledTime + .2f;
+            nextUpdate = Time.unscaledTime + .05f;
             Refresh();
         }
 
         public void Refresh()
         {
             if (renderers == null || Camera.main == null) return;
+            var position = Camera.main.transform.position;
+            Refresh(position, motion.Predict(position));
+        }
+
+        public void Refresh(Vector3 position, Vector3 predictedPosition)
+        {
+            if (renderers == null) return;
             // Only stationary map geometry is registered here. Cache native
             // bounds and update renderer state only when visibility changes.
             if (cachedBounds == null || cachedBounds.Length != renderers.Length)
@@ -91,11 +99,13 @@ namespace Alabama.Driving
                     if (renderers[index] != null)
                     { cachedBounds[index] = renderers[index].bounds; hidden[index] = renderers[index].forceRenderingOff; }
             }
-            var position = Camera.main.transform.position;
             for (int index = 0; index < renderers.Length; index++)
                 if (renderers[index] != null)
                 {
-                    bool off = cachedBounds[index].SqrDistance(position) > distances[index] * distances[index];
+                    float band = Mathf.Clamp(distances[index] * .03f, 1, 8);
+                    float limit = distances[index] + band * (hidden[index] ? 1 : 2);
+                    bool off = Mathf.Min(cachedBounds[index].SqrDistance(position),
+                        cachedBounds[index].SqrDistance(predictedPosition)) > limit * limit;
                     if (hidden[index] == off) continue;
                     renderers[index].forceRenderingOff = off; hidden[index] = off;
                 }
@@ -104,6 +114,7 @@ namespace Alabama.Driving
         public void ShowAll()
         {
             cachedBounds = null;
+            motion.Reset();
             if (renderers == null) return;
             foreach (var renderer in renderers)
                 if (renderer != null) renderer.forceRenderingOff = false;

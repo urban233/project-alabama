@@ -15,6 +15,8 @@ namespace Alabama.Driving
         [SerializeField, Range(0, 20)] private float speedFieldOfViewGain = 8;
 
         private Camera cameraComponent;
+        private readonly RaycastHit[] cameraHits = new RaycastHit[64];
+        private int snappedFrame = -1;
 
         private void Awake()
         {
@@ -26,18 +28,24 @@ namespace Alabama.Driving
 
         public void SnapToTarget()
         {
-            transform.position = ResolveCollision(target.transform.TransformPoint(followOffset));
-            transform.rotation = Quaternion.LookRotation(target.transform.TransformPoint(lookOffset) - transform.position, Vector3.up);
+            // Transform interpolation may still expose the pre-recovery pose this frame.
+            var position = target.Body.position; var rotation = target.Body.rotation;
+            transform.position = ResolveCollision(position + rotation*followOffset,
+                position + rotation*new Vector3(0,1.3f,0));
+            transform.rotation = Quaternion.LookRotation(position + rotation*lookOffset - transform.position, Vector3.up);
             cameraComponent.fieldOfView = baseFieldOfView;
+            snappedFrame = Time.frameCount;
         }
 
         private void LateUpdate()
         {
             float dt = Time.unscaledDeltaTime;
-            if (dt <= 0) return;
-            var desired = ResolveCollision(target.transform.TransformPoint(followOffset));
+            if (dt <= 0 || Time.frameCount == snappedFrame) return;
+            var desired = target.transform.TransformPoint(followOffset);
             float follow = 1 - Mathf.Exp(-followSharpness * dt);
-            transform.position = Vector3.Lerp(transform.position, desired, follow);
+            // Protect the actual smoothed camera position, which trails further behind at speed.
+            transform.position = ResolveCollision(Vector3.Lerp(transform.position, desired, follow),
+                target.transform.TransformPoint(new Vector3(0,1.3f,0)));
             var direction = target.transform.TransformPoint(lookOffset) - transform.position;
             if (direction.sqrMagnitude > .01f)
                 transform.rotation = Quaternion.Slerp(transform.rotation,
@@ -46,13 +54,18 @@ namespace Alabama.Driving
             cameraComponent.fieldOfView = Mathf.Lerp(cameraComponent.fieldOfView, fov, follow);
         }
 
-        private Vector3 ResolveCollision(Vector3 desired)
+        private Vector3 ResolveCollision(Vector3 desired, Vector3 origin)
         {
-            var origin = target.transform.TransformPoint(new Vector3(0, 1.3f, 0));
             var delta = desired - origin;
-            if (Physics.SphereCast(origin, .24f, delta.normalized, out var hit, delta.magnitude,
-                    ~0, QueryTriggerInteraction.Ignore) && !hit.collider.transform.IsChildOf(target.transform))
-                return origin + delta.normalized * Mathf.Max(.5f, hit.distance - .18f);
+            if (delta.sqrMagnitude < .001f) return desired;
+            int count = Physics.SphereCastNonAlloc(origin,.24f,delta.normalized,cameraHits,delta.magnitude,
+                ~0,QueryTriggerInteraction.Ignore);
+            float nearest = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+                if (!cameraHits[i].collider.transform.IsChildOf(target.transform))
+                    nearest = Mathf.Min(nearest,cameraHits[i].distance);
+            if (float.IsFinite(nearest))
+                return origin + delta.normalized*Mathf.Max(.5f,nearest-.18f);
             return desired;
         }
     }

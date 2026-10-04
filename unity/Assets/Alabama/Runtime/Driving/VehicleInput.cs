@@ -65,8 +65,13 @@ namespace Alabama.Driving
             if (pause.WasPressedThisFrame()) Time.timeScale = Time.timeScale == 0 ? 1 : 0;
             if (reset.WasPressedThisFrame())
             {
-                controller.ResetToSpawn();
-                if (route != null) route.ResetProgress();
+                var runtime = Alabama.Districts.DistrictRuntime.Instance;
+                if (runtime != null && runtime.Player == controller) runtime.RecoverNearby();
+                else
+                {
+                    controller.ResetToSpawn();
+                    if (route != null) route.ResetProgress();
+                }
             }
             controller.SetCommand(Time.timeScale == 0 ? default :
                 new VehicleCommand(throttle.ReadValue<float>(), brake.ReadValue<float>(),

@@ -185,6 +185,13 @@ namespace Alabama.Districts
             Ready = true; return true;
         }
 
+        public bool RecoverNearby()
+        {
+            if (Ready && !busy && boundary.TryRestoreNearby())
+            { chase.SnapToTarget(); return true; }
+            return Recover();
+        }
+
         private bool SetRecovery(DistrictContent content)
         {
             if (player == null) return false;

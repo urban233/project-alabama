@@ -31,6 +31,7 @@ namespace Alabama.Tests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            Debug.Log("District lifetime test: " + TestContext.CurrentContext.Test.Name);
             Assert.That(File.Exists(Root + "FixtureRuntime.unity"), Is.True, "Run RuntimeSetup with the pinned private assets.");
             previousScenes = EditorBuildSettings.scenes;
             EditorBuildSettings.scenes = previousScenes.Concat(new[] { "DowntownContent", "FixtureA", "FixtureB",
@@ -107,6 +108,114 @@ namespace Alabama.Tests
                 Assert.That(car.SpeedMetresPerSecond, Is.LessThan(2));
             }
             runtime.Recover(); input.enabled = true;
+        }
+
+        [UnityTest]
+        public IEnumerator CarCanReverseAndTurnAfterStoppingWhereOnlyTheMarginLeavesTheRoad()
+        {
+            input.enabled = false;
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            car.Body.position = centre + Vector3.right * 47.65f;
+            car.Body.rotation = Quaternion.Euler(0, 90, 0);
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            guard.ResetHistory(); car.SetCommand(default); Physics.SyncTransforms();
+            for (int i = 0; i < 20; i++) yield return new WaitForFixedUpdate();
+            var stopped = car.Body.position;
+            Assert.That(stopped.x-centre.x, Is.GreaterThan(45), "Guard must not send the car to the start.");
+            car.SetCommand(new VehicleCommand(0, 1, .35f, false));
+            for (float elapsed = 0; elapsed < 2; elapsed += Time.fixedDeltaTime)
+                yield return new WaitForFixedUpdate();
+            Assert.That(stopped.x-car.Body.position.x, Is.GreaterThan(2), "Reverse must escape the edge without resetting.");
+            Assert.That(Quaternion.Angle(car.Body.rotation, Quaternion.Euler(0,90,0)), Is.GreaterThan(5), "Steering must remain usable.");
+            Assert.That(Vector3.Distance(car.Body.position, stopped), Is.LessThan(20), "Recovery must stay near the crash.");
+            car.SetCommand(default);
+        }
+
+        [UnityTest]
+        public IEnumerator RecoveryUsesRecentClearRoadRatherThanDistrictStart()
+        {
+            input.enabled = false;
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            car.Body.position = centre + new Vector3(20,0,10); car.Body.rotation = Quaternion.identity;
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            guard.ResetHistory(); car.SetCommand(new VehicleCommand(0,0,0,true)); Physics.SyncTransforms();
+            for (int i = 0; i < 60; i++) yield return new WaitForFixedUpdate();
+            var recent = car.Body.position;
+            car.Body.position = recent + Vector3.up;
+            car.Body.rotation = Quaternion.Euler(0,0,90); Physics.SyncTransforms();
+            Assert.That(runtime.RecoverNearby(), Is.True);
+            Assert.That(Vector3.Distance(car.Body.position, recent), Is.LessThan(2));
+            Assert.That(Vector3.Distance(car.Body.position, centre), Is.GreaterThan(15));
+            Assert.That(Vector3.Dot(car.transform.up, Vector3.up), Is.GreaterThan(.99f));
+        }
+
+        [UnityTest]
+        public IEnumerator CameraSnapUsesCurrentBodyPoseAfterRepositioning()
+        {
+            input.enabled = false;
+            car.Body.position += Vector3.right*20;
+            car.Body.rotation = Quaternion.Euler(0,90,0);
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            Physics.SyncTransforms();
+            var offset = new SerializedObject(chase).FindProperty("followOffset").vector3Value;
+            var expected = car.Body.position + car.Body.rotation*offset;
+            chase.SnapToTarget();
+            Assert.That(Vector3.Distance(chase.transform.position,expected), Is.LessThan(.05f));
+            yield return null;
+            Assert.That(Vector3.Distance(chase.transform.position,expected), Is.LessThan(.1f),
+                "Interpolation must not pull a snapped camera back to the old district pose.");
+        }
+
+        [UnityTest]
+        public IEnumerator RecoveryWithoutRecordedHistoryFindsNearbyRoadInsteadOfTheStart()
+        {
+            input.enabled = false;
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            car.Body.position = centre + new Vector3(20,1,10);
+            car.Body.rotation = Quaternion.Euler(0,0,90);
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            guard.ResetHistory(); Physics.SyncTransforms();
+            Assert.That(guard.RecoveryPoseCount, Is.Zero);
+            Assert.That(runtime.RecoverNearby(), Is.True);
+            Assert.That(Vector3.Distance(car.Body.position,centre+new Vector3(20,0,10)), Is.LessThan(2));
+            Assert.That(Vector3.Dot(car.transform.up,Vector3.up), Is.GreaterThan(.99f));
+            for (int i = 0; i < 90; i++) yield return new WaitForFixedUpdate();
+            Assert.That(car.GetComponentsInChildren<WheelCollider>().Count(w=>w.GetGroundHit(out _)), Is.EqualTo(4));
+        }
+
+        [UnityTest]
+        public IEnumerator HighCentredCarAutomaticallyRecoversNearTheCrashWhenTryingToDrive()
+        {
+            input.enabled = false;
+            var content = runtime.LoadedDistricts.Single();
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var centre = content.RecoveryPoses[0].position;
+            car.Body.position = centre + Vector3.right * 20;
+            car.Body.rotation = Quaternion.identity;
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            guard.ResetHistory(); car.SetCommand(new VehicleCommand(0,0,0,true)); Physics.SyncTransforms();
+            for (int i = 0; i < 90; i++) yield return new WaitForFixedUpdate();
+            var road = car.Body.position;
+            var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            SceneManager.MoveGameObjectToScene(post, content.gameObject.scene);
+            post.transform.position = road + new Vector3(0,.65f,3);
+            post.transform.localScale = new Vector3(.5f,1,.6f);
+            car.Body.position = road + new Vector3(0,1,3);
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            Physics.SyncTransforms();
+            int recovered = guard.LocalRecoveries;
+            for (float elapsed = 0; elapsed < 3; elapsed += Time.fixedDeltaTime)
+            {
+                car.SetCommand(new VehicleCommand(0,1,0,false));
+                yield return new WaitForFixedUpdate();
+            }
+            Assert.That(guard.LocalRecoveries, Is.GreaterThan(recovered), "Drive input must release a car with its driven wheels off the road.");
+            Assert.That(Vector3.Distance(car.Body.position, road), Is.LessThan(10));
+            Assert.That(Vector3.Distance(car.Body.position, centre), Is.GreaterThan(15), "Recovery must preserve the crash location.");
+            Object.Destroy(post); car.SetCommand(default);
         }
 
         [UnityTest]

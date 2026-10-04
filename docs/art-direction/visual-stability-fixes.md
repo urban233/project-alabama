@@ -270,3 +270,102 @@ Driving averaged 64.8–90.4 FPS with 12.12–16.66 ms p95 frame times. AC power
 connected before and after this run with the Power saver scheme active. This is
 a local machine check, without controlled attribution against earlier runs.
 The report is `performance-collision-final.json`.
+
+## Fast travel and crash recovery (5 October motion follow-up)
+
+The custom visibility and mesh-detail controllers previously updated every
+0.2 seconds, with one threshold for switching in either direction. At 126 km/h
+that interval covers seven metres. Camera movement around a threshold could
+also repeatedly hide geometry or change its detail mesh. Visibility now checks
+every 0.05 seconds, while the 146 spatial detail targets update each rendered
+frame. Both use bounded camera-motion lookahead (0.35 seconds, at most 30 metres)
+and different approach/departure thresholds. Teleports and long pauses clear
+the motion estimate. Collision stays independent of those visual states.
+
+The boundary guard previously rejected the car's current pose when its 15 cm
+safety margin reached unsupported ground. Repeatedly restoring that pose and
+zeroing velocity could block reverse as well as the original outward movement.
+It now validates the exact chassis first and permits supported inward movement
+until the full margin fits again. An unsafe turn can be cancelled independently
+of a safe reverse movement. Invalid physical poses still roll back; outward
+movement still stops, with the same visible/physical ground requirements.
+Extreme or non-finite crash impulses cannot create an unbounded probe loop.
+
+Moving-camera capture also exposed a separate repositioning problem: the camera
+snap used the car's interpolated Transform, which could still contain its old
+pose. The camera then travelled through geometry while catching up. Snapping now
+uses the current Rigidbody pose and skips interpolation for that rendered frame.
+Camera obstruction checks protect the actual smoothed position and inspect all
+hits while excluding the player's own colliders. The previous nearest-hit-only
+check could miss a wall when its first hit belonged to the car.
+
+A bounded history records road-aligned poses with tyre contact and clearance
+from scenery. Recovery revalidates support and occupancy before using a pose
+within 25 horizontal metres of the car. R and fall recovery use that history.
+If no recorded pose remains usable, recovery searches nearby real road surfaces,
+matching visible/physical support and checking full chassis clearance.
+A car that remains nearly stationary for two seconds while the player tries
+to drive, and is tipped, overlapping scenery, continuously contacting an
+obstacle, repeatedly blocked at a boundary or has no driven-wheel support,
+automatically returns to a nearby clear road pose. Recovery reserves 35 cm of
+horizontal clearance and moves a trapped car at least two metres. The check runs
+before boundary rollback branches, so they cannot bypass it. Drive input wakes
+the rigidbody. Initial district startup and explicit district transfers retain
+the original supported spawn contract; the district spawn is also the emergency
+fallback if no supported, clear local road position can be found.
+
+All 32 PlayMode tests and 23 EditMode tests passed. The new checks exercise
+threshold jitter, approach lookahead, simultaneous reversing/steering at an
+edge, nearby recovery away from the district start, and a physically high-centred
+car with its driven wheels off the road. The first full attempt stalled during
+real-map loading and was stopped; its log is retained as
+`artifacts/PlayTests/stalled-editor.log`. The final complete run passed.
+After extending local search, all 14 district tests passed again. Five focused
+boundary/recovery tests passed after the clearance and rollback corrections;
+the final camera/recovery group also passed all five, including the new camera
+snap regression. In total, 34 distinct PlayMode tests have been exercised across
+these runs. Native crash qualification passed all 20 saved cases: 13 physical
+scenery impacts and seven forward/reverse exposed-edge stops. All cases retained
+support through the impact phase and drove more than two metres afterward.
+Six trapped cases used automatic local recovery. Subsequent resets moved
+0.02–2.84 metres, with none returning to the district start. Evidence is retained
+in `native-motion-qualified`; earlier motion collision/recovery folders preserve
+the failures that led to the corrections.
+
+Native recovery review adds `-nfs-collision-recovery` to the existing collision
+probe command. It tries to back away and steer after each impact or boundary
+stop, counts physical travel separately from recovery teleports, and checks a
+subsequent local reset. Escape review allows five seconds and chooses forward or
+reverse from the car's orientation after the impact; steering starts after the
+first second. Wheels are braked during initial settling so each case starts
+without RPM carried over from the previous drive.
+`-nfs-fast-review -nfs-stability-output <absolute-directory>` records first and
+repeat passes through three high-speed corridors. Its fixed
+30 FPS visual time and screenshot capture are for inspecting geometry, not
+performance measurement. Use the rendered benchmark separately with
+`-Visible -Game -Driving -FrameRateCap 30`. Normal gameplay retains its 60 FPS
+cap, allowing higher rates on hardware with sufficient headroom.
+
+The final moving-camera review passed all six first/repeat drives, travelling
+69–72 metres per pass. All 360 recorded frames retained chassis support. The
+90 captures show the road, car and nearby scenery from the first frame, without
+the camera travelling through the map after repositioning. Reviewed corridors
+showed no missing geometry or repeated visibility flashes. This samples three
+routes; it does not establish that every intermittent rendering issue throughout
+the map is gone. Evidence is in `fast-motion-camera-final`. Earlier
+`fast-motion-qualified` captures retain the initial camera interpolation failure.
+
+The final rendered benchmarks used the AMD Radeon integrated GPU / Ryzen 7 5700U,
+1920×1080 output with 1440×810 internal rendering and FSR. AC power was connected
+with the Power saver scheme active. At a 30 FPS cap, eight of nine drives held
+approximately 30 FPS with 33.34–33.39 ms p95 frame times. One repeated drive had
+a brief spike: 29.68 FPS average, 46.10 ms p95 and four frames above 40 ms.
+The uncapped check then averaged 59.86–81.15 FPS while driving, with
+15.68–19.20 ms p95 frame times and no driving frame above 40 ms. Every driving
+frame in both reports retained source-road wheel support. These are local
+machine measurements; the isolated capped-run spike has no proven attribution.
+Reports are `performance-motion-camera-final-cap30.json` and
+`performance-motion-camera-final-uncapped.json` under
+`artifacts/NfsWorld/Stability/`. The strict Windows build passed; the final
+`builds/windows/Alabama_Data/Managed/Alabama.Runtime.dll` was updated at
+01:38:34 Berlin time on 5 October.

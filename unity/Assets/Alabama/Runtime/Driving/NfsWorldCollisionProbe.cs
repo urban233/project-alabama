@@ -25,6 +25,12 @@ namespace Alabama.Driving
             public int blockedMoves, contacts;
             public bool supported, passed;
             public Vector3 finalPosition, firstUnsupportedPosition;
+            public float escapeProgress, escapeDrivenMetres, escapeTurnDegrees, localResetDistance;
+            public float escapeDisplacement;
+            public float maximumRecoveryStep;
+            public int localRecoveries, recoveryPoses;
+            public string wheelContacts;
+            public bool escaped;
         }
         [Serializable] private sealed class Report { public Result[] results; public bool passed; }
         private int contacts;
@@ -50,11 +56,13 @@ namespace Alabama.Driving
                 Destroy(gameObject); yield break;
             }
             var args = Environment.GetCommandLineArgs();
+            bool checkRecovery = args.Contains("-nfs-collision-recovery");
             string Argument(string key) => args[Array.IndexOf(args, key)+1];
             var plan = JsonUtility.FromJson<Plan>(File.ReadAllText(Argument("-nfs-collision-probe")));
             string output = Argument("-nfs-stability-output"); Directory.CreateDirectory(output);
             var runtime = DistrictRuntime.Instance; var car = runtime.Player;
             var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var wheels = car.GetComponentsInChildren<WheelCollider>();
             car.GetComponent<VehicleInput>().enabled = false; car.SetCommand(default);
             Application.runInBackground = true; Application.targetFrameRate = 60;
             Screen.SetResolution(1920, 1080, FullScreenMode.Windowed);
@@ -64,7 +72,13 @@ namespace Alabama.Driving
                 car.Body.position = route.position; car.Body.rotation = Quaternion.LookRotation(route.reverse ? -route.direction : route.direction);
                 car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
                 guard.ResetHistory(); Physics.SyncTransforms(); runtime.Chase.SnapToTarget();
-                for (int i = 0; i < 12; i++) yield return new WaitForFixedUpdate();
+                // Remove wheel RPM/suspension state left by the previous escape drive.
+                car.enabled = false;
+                foreach (var wheel in wheels) { wheel.motorTorque = 0; wheel.brakeTorque = 10000; }
+                for (float elapsed = 0; elapsed < .5f; elapsed += Time.fixedDeltaTime)
+                    yield return new WaitForFixedUpdate();
+                foreach (var wheel in wheels) wheel.brakeTorque = 0;
+                car.enabled = true;
                 var start = car.Body.position;
                 contacts = 0; probeActive = true; int blocked = guard.BlockedMoves;
                 var result = new Result { label = route.label, supported = true };
@@ -85,6 +99,41 @@ namespace Alabama.Driving
                 result.passed = result.supported && result.maximumProgress > .5f &&
                     result.maximumProgress < route.maximumProgress &&
                     (route.boundary ? result.blockedMoves > 0 : result.contacts > 0);
+                if (checkRecovery)
+                {
+                    var crash = car.Body.position; var heading = car.Body.rotation;
+                    var previous = crash; int recovered = guard.LocalRecoveries;
+                    for (float elapsed = 0; elapsed < 5; elapsed += Time.fixedDeltaTime)
+                    {
+                        // Back away first, then steer. Reapply input after an automatic unwedging.
+                        // Impacts can spin the car: choose the gear that moves away from the approach.
+                        bool forwardAway = Vector3.Dot(car.transform.forward,route.direction) < 0;
+                        car.SetCommand(new VehicleCommand(forwardAway ? 1 : 0, forwardAway ? 0 : 1,
+                            elapsed < 1 ? 0 : .3f, false));
+                        yield return new WaitForFixedUpdate();
+                        float travelled = Vector3.Distance(previous, car.Body.position);
+                        if (travelled < 1) result.escapeDrivenMetres += travelled; // Exclude recovery teleports.
+                        else result.maximumRecoveryStep = Mathf.Max(result.maximumRecoveryStep, travelled);
+                        previous = car.Body.position;
+                    }
+                    car.SetCommand(default);
+                    result.escapeProgress = Vector3.Dot(crash-car.Body.position, route.direction);
+                    result.escapeDisplacement = Vector3.Distance(crash,car.Body.position);
+                    result.escapeTurnDegrees = Quaternion.Angle(heading, car.Body.rotation);
+                    result.localRecoveries = guard.LocalRecoveries-recovered;
+                    result.recoveryPoses = guard.RecoveryPoseCount;
+                    result.wheelContacts = string.Join(";", car.GetComponentsInChildren<WheelCollider>().Select(w =>
+                        w.GetGroundHit(out var hit) ? hit.collider.name : "airborne"));
+                    result.escaped = result.escapeDisplacement > 2 && result.escapeDrivenMetres > 2 &&
+                        result.maximumRecoveryStep < 25 &&
+                        guard.ContainsFootprint(car.Body.position, car.Body.rotation,
+                            scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene));
+                    var beforeReset = car.Body.position;
+                    bool reset = runtime.RecoverNearby();
+                    result.localResetDistance = Vector3.Distance(beforeReset, car.Body.position);
+                    result.escaped &= reset && result.localResetDistance < 10;
+                    result.passed &= result.escaped;
+                }
                 results.Add(result);
                 yield return new WaitForEndOfFrame();
                 var capture = ScreenCapture.CaptureScreenshotAsTexture();

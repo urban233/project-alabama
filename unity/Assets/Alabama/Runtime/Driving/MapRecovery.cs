@@ -15,7 +15,7 @@ namespace Alabama.Driving
             var runtime = Alabama.Districts.DistrictRuntime.Instance;
             if (runtime != null && runtime.Player == controller)
             {
-                if (controller.Body.position.y < runtime.MinimumRecoveryHeight) runtime.Recover();
+                if (controller.Body.position.y < runtime.MinimumRecoveryHeight) runtime.RecoverNearby();
             }
             else if (controller.Body.position.y < minimumHeight) controller.ResetToSpawn();
         }

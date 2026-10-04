@@ -30,6 +30,7 @@ namespace Alabama.Driving
         public float SteerAngle => frontLeft == null ? 0 : frontLeft.steerAngle;
         public Rigidbody Body => body;
         public VehicleTuning Tuning => tuning;
+        public bool HasDriveInput => command.Throttle > .1f || command.Brake > .1f;
 
         private void Awake()
         {
@@ -61,6 +62,7 @@ namespace Alabama.Driving
 
         private void FixedUpdate()
         {
+            if (command.Throttle > .1f || command.Brake > .1f) body.WakeUp();
             float signedSpeed = SignedForwardSpeed;
             IsReversing = command.Brake > .1f && signedSpeed < 1.2f && command.Throttle < .1f;
             float serviceBrake = IsReversing ? 0 : command.Brake * tuning.ServiceBrakeTorque;

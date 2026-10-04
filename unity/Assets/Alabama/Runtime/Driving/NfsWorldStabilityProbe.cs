@@ -13,7 +13,8 @@ namespace Alabama.Driving
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Create()
         {
-            if (!Application.isEditor && Environment.GetCommandLineArgs().Contains("-nfs-stability-probe"))
+            if (!Application.isEditor && Environment.GetCommandLineArgs().Any(a =>
+                a == "-nfs-stability-probe" || a == "-nfs-fast-review"))
                 new GameObject("Visual stability probe").AddComponent<NfsWorldStabilityProbe>();
         }
 
@@ -24,6 +25,8 @@ namespace Alabama.Driving
             if (outputIndex < 0 || outputIndex + 1 >= args.Length || !Path.IsPathRooted(args[outputIndex + 1]))
                 throw new ArgumentException("Stability capture needs an absolute -nfs-stability-output directory.");
             string output = args[outputIndex + 1];
+            if (args.Contains("-nfs-fast-review"))
+            { yield return ReviewFastDriving(output); yield break; }
             var runtime = Alabama.Districts.DistrictRuntime.Instance;
             while (runtime != null && !runtime.Ready)
             {
@@ -103,6 +106,69 @@ namespace Alabama.Driving
                 "Five native variants; current and current-repeat use the built renderer settings. Physics acceleration from rest and real chase camera; fixed simulation step. Not a performance benchmark." :
                 "Five native variants; eight stationary frames then 6.4 metres of scripted camera/car motion. Not a physics or performance benchmark.");
             Application.Quit();
+        }
+
+        private IEnumerator ReviewFastDriving(string output)
+        {
+            Application.runInBackground = true; Application.targetFrameRate = 30;
+            var runtime = Alabama.Districts.DistrictRuntime.Instance;
+            while (runtime == null || !runtime.Ready)
+            { yield return null; runtime = Alabama.Districts.DistrictRuntime.Instance; }
+            Screen.SetResolution(1920,1080,FullScreenMode.Windowed);
+            var car = runtime.Player; var guard = car.GetComponent<Alabama.Districts.DistrictBoundaryGuard>();
+            car.GetComponent<VehicleInput>().enabled = false;
+            var lods = FindObjectsByType<NfsWorldMeshLods>(FindObjectsSortMode.None);
+            var roads = FindObjectsByType<MeshCollider>(FindObjectsSortMode.None)
+                .Where(c => c.transform.root.name == "RoadsPhysical").ToArray();
+            var routes = new[] { new Vector3(542.82843f,-3.94928f,765.09351f),
+                new Vector3(273.88864f,26.03149f,1120.71887f), new Vector3(-89.19291f,22.263f,-551.47f) };
+            var headings = new[] { 310f,115f,80f };
+            // Fixed visual time keeps capture overhead out of the motion. Performance is measured separately.
+            Time.captureDeltaTime = 1f/30;
+            bool passed = true; Directory.CreateDirectory(output);
+            using var poses = new StreamWriter(Path.Combine(output,"poses.csv"));
+            poses.WriteLine("pass,route,frame,carX,carY,carZ,speed,reducedMeshes,supported");
+            for (int pass = 0; pass < 2; pass++)
+                for (int route = 0; route < routes.Length; route++)
+                {
+                    var direction = Quaternion.Euler(0,headings[route],0)*Vector3.forward;
+                    car.Body.position = routes[route] + Vector3.up*.24f;
+                    car.Body.rotation = Quaternion.LookRotation(direction);
+                    car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+                    guard.ResetHistory(); car.SetCommand(new VehicleCommand(0,0,0,true));
+                    Physics.SyncTransforms(); runtime.Chase.SnapToTarget();
+                    for (int i = 0; i < 12; i++) yield return new WaitForFixedUpdate();
+                    var ahead = routes[route] + direction*2;
+                    var ray = new Ray(ahead + Vector3.up*3,Vector3.down);
+                    foreach (var road in roads)
+                        if (road.Raycast(ray,out var hit,6)) { ahead = hit.point; break; }
+                    car.Body.linearVelocity = (ahead-routes[route]).normalized*35;
+                    car.SetCommand(new VehicleCommand(.4f,0,0,false));
+                    var start = car.Body.position; int supported = 0;
+                    string folder = Path.Combine(output,$"pass-{pass}-route-{route}"); Directory.CreateDirectory(folder);
+                    for (int frame = 0; frame < 60; frame++)
+                    {
+                        yield return new WaitForEndOfFrame();
+                        bool onMap = guard.ContainsFootprint(car.Body.position,car.Body.rotation,
+                            scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene));
+                        if (onMap) supported++;
+                        var p = car.Body.position;
+                        poses.WriteLine(FormattableString.Invariant($"{pass},{route},{frame},{p.x},{p.y},{p.z},{car.SpeedMetresPerSecond},{lods.Sum(l=>l.ReducedTargetCount)},{onMap}"));
+                        if (frame % 4 == 0)
+                        {
+                            var capture = ScreenCapture.CaptureScreenshotAsTexture();
+                            File.WriteAllBytes(Path.Combine(folder,frame.ToString("D3")+".png"),capture.EncodeToPNG());
+                            Destroy(capture);
+                        }
+                        yield return null;
+                    }
+                    float distance = Vector3.Dot(car.Body.position-start,direction);
+                    bool valid = distance > 45 && supported == 60;
+                    passed &= valid;
+                    Debug.Log($"Fast visual review pass {pass}, route {route}: {distance:F1}m, {supported}/60 supported frames, passed={valid}");
+                }
+            File.WriteAllText(Path.Combine(output,"complete.txt"),$"passed={passed}; six first/repeat high-speed drives; 90 captures at 30 FPS visual time. Not a performance benchmark.");
+            Application.Quit(passed ? 0 : 1);
         }
     }
 }
