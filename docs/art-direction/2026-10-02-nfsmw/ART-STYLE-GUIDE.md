@@ -18,10 +18,10 @@ Use the balanced images for shape, composition and material relationships. Prese
 | Buildings | Simple solid masses with moderate openings, seams and texture-only masonry | Individually modeled bricks, bolts, elaborate trim | Featureless boxes with only flat color bands |
 | Roads | Matte rough surface, a few broad repairs and legible markings | Dense tiny cracks, pebbles and highly photographic noise | Large contrasting polygon patches or angular road bends |
 | Trees | Irregular crowns of smaller angular clumps, branch gaps and natural silhouettes | Detailed individual modeled leaves everywhere | A few giant crystalline crown blocks |
-| Vehicle | Smooth main body shape, simpler supporting detail and modest reflections | Promotional gloss, intricate rims and mechanical microdetail | Box-shaped silhouette and plain disc wheels |
+| Vehicle | Recognizable body proportions with broad faceted chassis panels, simpler supporting detail and modest reflections | Smooth dense chassis, promotional gloss, intricate rims and mechanical microdetail | Box-shaped silhouette and plain disc wheels |
 | Lighting | Natural cloudy sky, warm diffuse key, cool shadows and modest haze | Cinematic glow, heavy grading and dazzling reflections | Flat polygon clouds and uniformly flat unlit surfaces |
 
-Allocate geometry to silhouette, structural openings and route readability. Allocate modest texture detail to material recognition. The car can be somewhat smoother and more detailed than its environment without becoming glossy or photorealistic.
+Allocate geometry to silhouette, structural openings and route readability. Allocate modest texture detail to material recognition. Following the 4 October chassis review, the car must show deliberate low-poly planes rather than retaining a dense body behind smooth normals. Preserve the BMW M3 GTR E46 roofline, kidney grille, wide arches, hood vents and rear wing while simplifying its surfaces.
 
 ## Additional references for the imported NFS World map
 
@@ -38,7 +38,7 @@ The [agent adaptation guide](agent-reference-pack/ADAPTATION-GUIDE.md) connects 
 ## Geometry and surface rules
 
 - Use box-based building masses and simple roof planes. Model a feature when it changes silhouette, casts an important shadow, frames the route or supports collision. Put shallow brick joints, stains and minor surface wear into textures.
-- Keep man-made planar faces clean. Use hard edges at structural corners; reserve smooth shading for vehicle panels, tires and appropriate rounded objects. Avoid random triangulation on every flat wall.
+- Keep man-made planar faces clean. Use hard edges at structural corners and broad authored facets on the vehicle chassis; reserve controlled smoothing for tires and appropriate rounded supporting objects. Avoid random triangulation on every flat wall.
 - Use visibly faceted rock meshes with broad planes. Begin tower cylinders at roughly 12-16 sides and judge the silhouette at gameplay distance; this is a proposed modeling starting point, not a measured property of the source.
 - Trees need irregular clustered crowns with gaps, ochre/russet color groups and readable trunks. Avoid perfect spheres, uniform lollipop trees and detailed individual leaf geometry everywhere.
 - Reuse modules but vary assembly, roof height, opening pattern and material tone. Break repetition at landmarks rather than adding random clutter to every bay.

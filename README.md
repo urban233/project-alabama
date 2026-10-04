@@ -6,7 +6,7 @@ An open-source arcade racing game built with Unity, developed by two contributor
 
 This public repository contains code, scenes, settings, asset manifests, tools, and the [art-direction reference pack](docs/art-direction/2026-10-02-nfsmw/README.md). **Runtime artwork is excluded from the public Git history.** The reference pack's screenshots, generated concepts, guides and prompt records are included at the project owner's request. Playable scenes require the private ZIP versions pinned in `docs/asset-packs/`; the [handoff helper](docs/asset-versioning.md) restores exported art, editable Blender sources, original Unity `.meta` files and license records. The supplied player E46 declares CC-BY-4.0; the preserved BlenderCentral study uses CC-BY-SA 3.0, and original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
 
-Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place `project-alabama-base-1.0.1.zip` and `project-alabama-nfs-world-0.2.0.zip` directly in the project root. Keep Unity and Blender closed until the asset import finishes. From the repository root:
+Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place `project-alabama-base-1.0.2.zip` and `project-alabama-nfs-world-0.2.0.zip` directly in the project root. Keep Unity and Blender closed until the asset import finishes. From the repository root:
 
 ```powershell
 python ./tools/asset_handoff.py receive
@@ -42,7 +42,7 @@ Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer wi
 
 Named asset releases add
 checked-in version locks, status/verification, safe upgrades and rollback. The
-current player-car pack is pinned as `base` **1.0.1**. The separate private
+current player-car pack is pinned as `base` **1.0.2**. The separate private
 `nfs-world` **0.2.0** pack includes Downtown, Rosewood, their combined runtime and editable sources;
 it is excluded from the original shared pack and must remain private.
 
@@ -167,7 +167,7 @@ See the [tech demo plan](docs/tech-demo-plan.md), [foundation design](docs/found
 
 ## E46 visual review
 
-The player BMW now uses the supplied memoov E46, adapted to the balanced art direction. The editable source is `source-art/vehicles/supplied-e46/Supplied_E46_Adapted.blend`. Selective mesh reduction preserves the silhouette and livery while simplifying body panels, wheels, grilles, lamps, trim and brakes. Existing prefab identities connect it to the driving scenes. See [replacement and private handoff](docs/first-car-replacement.md).
+The player BMW now uses the supplied memoov E46, adapted to the balanced art direction and the user's faceted-chassis review. The editable source is `source-art/vehicles/supplied-e46/Supplied_E46_Adapted.blend`. Strong body reduction and explicit flat normals make the chassis visibly angular while preserving its silhouette and livery. The complete car has 14,166 triangles. Existing prefab identities connect it to the driving scenes. See [replacement and private handoff](docs/first-car-replacement.md).
 
 ```powershell
 ./tools/unity.ps1 VehicleSetup

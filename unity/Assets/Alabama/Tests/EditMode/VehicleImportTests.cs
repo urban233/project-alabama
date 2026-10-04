@@ -12,7 +12,7 @@ namespace Alabama.Tests.EditMode
         }
 
         [Test]
-        public void ReplacementWheelGeometryMatchesDrivingReferencesAndPhysics()
+        public void ReplacementChassisFacetsAndWheelGeometryMatchDrivingPrefab()
         {
             Assert.DoesNotThrow(SuppliedCarSetup.Verify);
         }

@@ -10,7 +10,51 @@ namespace Alabama.Editor
     /// <summary>Update the existing prefab identities without rebuilding authored scenes.</summary>
     public static class SuppliedCarSetup
     {
-        [Serializable] private sealed class Report { public float wheelRadius; public int triangles; }
+        [Serializable] private sealed class Report
+        {
+            public float wheelRadius;
+            public int triangles;
+            public int bodyTriangles;
+            public int paintTriangles;
+            public int geometryRevision;
+        }
+
+        private static void VerifyChassis(GameObject car, Report report)
+        {
+            if (report.geometryRevision != 2 || report.bodyTriangles > 10000 || report.paintTriangles > 3500)
+                throw new InvalidOperationException("Restore the faceted chassis revision of the private base pack.");
+            var body = car.GetComponentsInChildren<MeshFilter>().Single(m => m.name == "Body_Mesh");
+            var mesh = body.sharedMesh;
+            var materials = body.GetComponent<MeshRenderer>().sharedMaterials;
+            int paintSlot = Array.FindIndex(materials, m => m.name == "E46_Paint");
+            if (paintSlot < 0 || mesh.triangles.Length / 3 > 10000)
+                throw new InvalidOperationException("Replacement chassis material or geometry budget is invalid.");
+            var indices = mesh.GetTriangles(paintSlot);
+            if (indices.Length / 3 > 3500 || Mathf.Abs(indices.Length / 3 - report.paintTriangles) > 10)
+                throw new InvalidOperationException("Painted chassis does not match the reduced export.");
+            var vertices = mesh.vertices;
+            var normals = mesh.normals;
+            int faces = 0, flatFaces = 0;
+            for (int i = 0; i < indices.Length; i += 3)
+            {
+                int a = indices[i], b = indices[i + 1], c = indices[i + 2];
+                var face = Vector3.Cross(vertices[b] - vertices[a], vertices[c] - vertices[a]);
+                // Mesh-local coordinates retain FBX unit conversion. Unity's
+                // Vector3.Normalize cutoff can zero a valid small triangle;
+                // normalize explicitly before comparing imported normals.
+                if (face.sqrMagnitude < 1e-24f) continue;
+                face /= Mathf.Sqrt(face.sqrMagnitude);
+                faces++;
+                // Require constant vertex normals instead of interpolation;
+                // allow a small alignment error in tiny imported triangles.
+                if (Vector3.Dot(normals[a], normals[b]) > .999f && Vector3.Dot(normals[a], normals[c]) > .999f &&
+                    Vector3.Dot(face, normals[a]) > .95f) flatFaces++;
+            }
+            if (faces == 0 || flatFaces < faces * .98f)
+                throw new InvalidOperationException($"Painted chassis must retain flat panel normals: {flatFaces}/{faces} faces.");
+            Debug.Log($"Faceted chassis: {mesh.triangles.Length / 3} body triangles, {indices.Length / 3} painted triangles, " +
+                $"{flatFaces}/{faces} painted faces retain flat normals.");
+        }
 
         private static Report LoadReport()
         {
@@ -35,6 +79,7 @@ namespace Alabama.Editor
                 // that loss while rejecting the larger, superseded car mesh.
                 if (triangles > report.triangles || triangles < report.triangles * .99f)
                     throw new InvalidOperationException("Drive prefab is not using the measured replacement geometry.");
+                VerifyChassis(car, report);
                 var controller = car.GetComponent<ArcadeCarController>();
                 if (controller == null) throw new InvalidOperationException("Existing drive controller missing.");
                 var serialized = new SerializedObject(controller);
@@ -71,6 +116,7 @@ namespace Alabama.Editor
                 int triangles = car.GetComponentsInChildren<MeshFilter>().Sum(m => m.sharedMesh.triangles.Length / 3);
                 if (triangles > report.triangles || triangles < report.triangles * .99f)
                     throw new InvalidOperationException("Drive prefab is not using the measured replacement geometry.");
+                VerifyChassis(car, report);
                 var controller = car.GetComponent<ArcadeCarController>();
                 var serialized = new SerializedObject(controller);
                 foreach (string field in new[] { "frontLeft", "frontRight", "rearLeft", "rearRight" })

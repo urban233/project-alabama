@@ -6,6 +6,7 @@ pass --install only with Unity closed, after reviewing the staged model.
 import argparse
 import hashlib
 import json
+import math
 import shutil
 import sys
 import zipfile
@@ -32,7 +33,7 @@ MATERIALS = {
     'E46_Alloy': ((.30,.32,.34,1), .40,.72, None),
     'E46_Brake': ((.12,.13,.14,1), .45,.72, None),
     'E46_Caliper': ((.15,.035,.022,1), .12,.73, None),
-    'E46_Glass': ((.045,.063,.078,.55), .05,.34, None),
+    'E46_Glass': ((.045,.063,.078,.80), .05,.34, None),
     'E46_Lens': ((.35,.40,.44,.12), .02,.32, None),
     'E46_WhiteLight': ((.72,.72,.69,1), .15,.52, 'BMWM3GTRE46_KIT00_HEADLIGHT_ON.jpg'),
     'E46_Interior': ((.40,.40,.40,1), 0,.86, 'interior_2.png'),
@@ -42,18 +43,33 @@ MATERIALS = {
 WHEEL_PARTS = {'KIT00_FRONT_TIRE_A.001','KIT00_FRONT_TIRE_A.003','KIT00_FRONT_TIRE_A.005',
                'brake_disk_1_metal_1_brake_disk_0.001','brake_disk_1_metal_1_brake_disk_0.002',
                'brembo.001','caliper front'}
-REDUCE = {'brake_disk_1_metal_1_brake_disk_0.001':.14,
-          'brake_disk_1_metal_1_brake_disk_0.002':.14,
-          'caliper front':.08, 'brembo.001':.22, 'Sphere':.12,
-          'KIT00_FRONT_TIRE_A.003':.45,
-          'KIT00_FRONT_TIRE_A.001':.75,
-          'KIT00_BODY_A.040':.72,
-          'KIT00_BODY_A.027':.40,
-          'KIT00_BODY_A.030':.50,
-          'KIT00_BODY_A.012':.45,
-          'KIT00_BODY_A.050':.60,
-          'KIT00_LEFT_HEADLIGHT_A':.65,
-          'KIT00_LEFT_BRAKELIGHT_A':.65}
+REDUCE = {'brake_disk_1_metal_1_brake_disk_0.001':.035,
+          'brake_disk_1_metal_1_brake_disk_0.002':.035,
+          'caliper front':.018, 'brembo.001':.10, 'Sphere':.05,
+          'KIT00_FRONT_TIRE_A.003':.22,
+          'KIT00_FRONT_TIRE_A.001':.45,
+          'KIT00_BODY_A.040':.14,
+          'KIT00_BODY_A.027':.22,
+          'KIT00_BODY_A.030':.20,
+          'KIT00_BODY_A.012':.15,
+          'KIT00_BODY_A.050':.20,
+          'KIT00_LEFT_HEADLIGHT_A':.30,
+          'KIT00_LEFT_BRAKELIGHT_A':.30}
+
+def facet_panels(obj):
+    # Merge nearly coplanar triangles into broad panels before flat shading.
+    # UV/material boundaries retain the livery and structural trim divisions.
+    if obj.name=='KIT00_BODY_A.040':
+        bm=bmesh.new(); bm.from_mesh(obj.data)
+        bmesh.ops.dissolve_limit(bm,angle_limit=math.radians(1),
+            use_dissolve_boundaries=False,verts=list(bm.verts),edges=list(bm.edges),
+            delimit={'UV','MATERIAL','SHARP'})
+        bm.to_mesh(obj.data); bm.free()
+    for face in obj.data.polygons: face.use_smooth=False
+    if obj.data.has_custom_normals:
+        # Zero vectors request the computed polygon normals instead of the
+        # imported smooth normals, which otherwise hide the reduced geometry.
+        obj.data.normals_split_custom_set([(0,0,0)]*len(obj.data.loops))
 
 def family(obj, material):
     name = material.name if material else ''
@@ -116,7 +132,8 @@ def main():
     report={'sourceTriangles':sum(triangles(o) for o in meshes),'parts':[],
             'sourceZipSha256':ZIP_SHA256,
             'forward':'-Y','up':'+Z','license':'CC-BY-4.0 as declared in supplied GLB',
-            'creator':'memoov','style':'docs/art-direction/2026-10-02-nfsmw/balanced/'}
+            'creator':'memoov','style':'docs/art-direction/2026-10-02-nfsmw/balanced/',
+            'geometryRevision':2,'shading':'flat panels with 1 degree planar dissolve'}
     materials={}
     contract=[]
     for name,(color,metal,rough,texture) in MATERIALS.items():
@@ -177,12 +194,15 @@ def main():
         for p,i in zip(source.data.polygons,indices): p.material_index=min(i,len(mapped)-1)
         ratio=REDUCE.get(source.name)
         if ratio is None and source.name.startswith('KIT00_INTERIOR') and before>=100:
-            ratio=.55
+            ratio=.18
+        elif ratio is None and before>=100:
+            ratio=.35
         if ratio is not None:
             bpy.context.view_layer.objects.active=source
-            mod=source.modifiers.new('Supporting detail reduction','DECIMATE')
+            mod=source.modifiers.new('Silhouette and panel reduction','DECIMATE')
             mod.ratio=ratio
             bpy.ops.object.modifier_apply(modifier=mod.name)
+        facet_panels(source)
         report['parts'].append(dict(name=source.name,before=before,after=triangles(source),materialFamilies=list(set(m.name for m in mapped))))
         if source.name in WHEEL_PARTS:
             for name,group in groups.items():
@@ -220,8 +240,27 @@ def main():
         if hasattr(triangulate,'keep_custom_normals'):
             triangulate.keep_custom_normals=True
         bpy.ops.object.modifier_apply(modifier=triangulate.name)
+        bm=bmesh.new(); bm.from_mesh(bpy.context.object.data)
+        degenerate=[f for f in bm.faces if f.calc_area()<1e-8]
+        bmesh.ops.delete(bm,geom=degenerate,context='FACES')
+        bm.to_mesh(bpy.context.object.data); bm.free()
+        mesh=bpy.context.object.data
+        mesh.update()
+        normals=[(0,0,0)]*len(mesh.loops)
+        for face in mesh.polygons:
+            face.use_smooth=False
+            a,b,c=(mesh.vertices[i].co for i in face.vertices)
+            normal=tuple((b-a).cross(c-a).normalized())
+            for i in face.loop_indices: normals[i]=normal
+        # Assign normals after final tessellation; inherited n-gon normals can
+        # point away from the exported triangles and obscure the new facets.
+        mesh.normals_split_custom_set(normals)
     empty('FrontMarker',root,(0,-2.5,.4))
     report['triangles']=sum(triangles(o) for o in root.children_recursive if o.type=='MESH')
+    report['bodyTriangles']=triangles(bpy.data.objects['Body_Mesh'])
+    body=bpy.data.objects['Body_Mesh'].data
+    report['paintTriangles']=sum(len(p.vertices)-2 for p in body.polygons
+        if body.materials[p.material_index].name=='E46_Paint')
     report['wheelPivotsBlender']={n:list(o.location) for n,o in groups.items() if n!='Body'}
     report['wheelRadius']=.321*scale
     bpy.context.scene.unit_settings.system='METRIC'
@@ -244,7 +283,8 @@ The supplied GLB declares CC-BY-4.0: https://creativecommons.org/licenses/by/4.0
 This records the embedded declaration; it does not independently establish rights
 to underlying game content or BMW branding. Keep source and runtime assets private.
 
-Adapted by Project Alabama contributors: selective body, rim, tyre, grille,
+Adapted by Project Alabama contributors: strongly simplified, faceted body panels;
+selective rim, tyre, grille,
 lamp, trim and brake reduction,
 metre scale, four independent wheel pivots, repaired texture references and
 restrained URP material families matching the balanced art direction.

@@ -120,7 +120,7 @@ namespace Alabama.Editor
                 var meshes = instance.GetComponentsInChildren<MeshFilter>();
                 int triangles = meshes.Sum(m => m.sharedMesh.triangles.Length / 3);
                 Require(meshes.Length == 5, "Expected a body and four independently movable wheel meshes.");
-                Require(triangles > 10000 && triangles <= 65000, "Vehicle triangle budget exceeded.");
+                Require(triangles > 5000 && triangles <= 16000, "Vehicle triangle budget exceeded.");
                 var renderers = instance.GetComponentsInChildren<Renderer>();
                 foreach (var filter in meshes)
                 {

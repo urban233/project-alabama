@@ -9,20 +9,27 @@ and driving-prefab identities. Authored map scenes and lighting are preserved.
 
 The [art style guide](art-direction/2026-10-02-nfsmw/ART-STYLE-GUIDE.md) and
 three primary `balanced/` references define grounded, medium-detail low-poly
-art: realistic proportions, smooth main car surfaces, simplified supporting
+art: realistic proportions, broad faceted car surfaces, simplified supporting
 detail, restrained texture noise and modest reflections in warm autumn light
 with cool shadows.
 
-Selective decimation reduces the supplied FBX from **80,757 triangles to
-40,696 in Blender and 40,404 after Unity import** (50% fewer than the source;
-33% fewer than the earlier 60,311-triangle player car). The main body loses
-28% of its geometry; rims, tyres, grilles, lamps, trim, interior and brakes
-receive separate reductions. The recognizable silhouette, UVs and wheel spokes
-remain. Export triangulation resolves the source n-gon import warning.
+The first 40,404-triangle adaptation was rejected as too smooth. The revised
+chassis uses much stronger decimation, restrained planar merging and explicit
+flat normals after final triangulation. It preserves the BMW M3 GTR E46 roofline,
+kidney grille, hood vents, wide arches, sill profile and rear wing while making
+the body visibly angular. This review correction is also recorded in the art guide.
+
+The revised export has **14,166 triangles**, including **9,396 in the complete
+body mesh and 2,837 in the painted chassis**. That is 81.5% fewer painted-body
+triangles than the first adaptation's 15,325, and 65% fewer triangles overall
+than its 40,404 Unity mesh. Rims, tyres, grilles, lamps, trim, interior and brakes
+receive separate reductions. Near-coplanar painted faces are merged at one degree;
+UV/material boundaries are retained, and submillimetre degenerate faces removed.
+All 2,837 painted triangles round-trip through FBX with matching flat face normals.
 
 Thirteen material families replace the supplied material bindings. Paint and
 alloy use restrained metallic values and 0.28 smoothness; rubber and trim are
-rough, and glass remains tinted and transparent. The paint atlas was cleaned
+rough, and glass uses a stronger tint to reduce interior clutter. The paint atlas was cleaned
 with the imagegen skill/tool, retaining the blue-and-silver layout while reducing
 scratch noise. The reviewed atlas and exact prompt are private source assets at
 `source-art/vehicles/supplied-e46/style/E46_Paint.png` and `prompt.json`.
@@ -72,6 +79,9 @@ recipe recreates the superseded car.
 
 - Main-project import verification: five meshes, dimensions, axes, external URP
   materials, paint/lamp maps, wheel pivots and measured physics radius pass.
+  The current contract caps the complete car at 16,000 triangles, complete body
+  at 10,000 and painted chassis at 3,500; it requires flat normals on at least
+  98% of painted faces. Unity reports 2,802/2,837 passing the panel-normal check.
 - Main-project Edit Mode suite: **17 passed, 0 failed**.
 - Main-project handling Play Mode tests: **3 passed, 0 failed**, including live
   wheel orientation/axle rotation, acceleration, braking, reverse, steering,
@@ -83,9 +93,11 @@ recipe recreates the superseded car.
   The runtime contains exactly one player car. Review transforms are unsaved;
   source scenes and their authored lighting remain unchanged. Accepted images
   accompany the private source under `source-art/vehicles/supplied-e46/review/`.
+  Two additional Unity studio views and three Blender views show the chassis
+  facets more clearly under direct light and accompany the same private review.
 
 Local test evidence is in `artifacts/EditTests/results.xml` and
-`artifacts/CarReplacement/final-handling-results.xml`. Geometry reduction is
+`artifacts/CarReplacement/faceted-handling-results.xml`. Geometry reduction is
 measured against the earlier car; a new rendered-player FPS qualification has
 not been performed by this art change.
 
@@ -97,12 +109,12 @@ and runtime assets. It excludes unchanged original upload archives and Blender
 backups. Runtime artwork remains ignored; Git carries recipes, provenance,
 tests and release locks only. The user authorized this checkout to publish base.
 
-Published **base 1.0.1** contains 245 files (105,357,653 uncompressed bytes).
+Published **base 1.0.2** contains 250 files (108,731,506 uncompressed bytes).
 Verification reports zero missing or modified files and preserved GUIDs.
-Privately send `project-alabama-base-1.0.1.zip` (90,362,358 bytes) and
-`project-alabama-base-1.0.1.zip.sha256` with this PR's code revision.
+Privately send `project-alabama-base-1.0.2.zip` (95,786,658 bytes) and
+`project-alabama-base-1.0.2.zip.sha256` with this PR's code revision.
 ZIP SHA-256:
-`af87dcfc730ca7e8525673e908d957ed26a7e6fa43d4db3d295354574f149856`.
+`b7c5b1eaa27bb362b72204603e4183427500e727667b85bf129ec1c4d0a2e193`.
 The receiver also retains `project-alabama-nfs-world-0.2.0.zip` and runs
 `python tools/asset_handoff.py receive` from the project root with editors closed.
 Local publication does not transfer files to the other developer.

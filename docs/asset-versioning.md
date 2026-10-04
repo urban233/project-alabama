@@ -19,9 +19,9 @@ ignored by Git. No private storage service or GitHub asset upload is configured.
 
 The original base 1.0.0 lock pins the curated manifest without changing it.
 `project-alabama-assets.zip` and legacy commands remain available for older code revisions.
-The supplied-car replacement advances base to `1.0.1` through
+The supplied-car replacement and faceted-chassis revision advance base to `1.0.2` through
 `base.profile.json`, which extends that curated selection. Current code requires
-`project-alabama-base-1.0.1.zip`; the original ZIP is retained for older revisions.
+`project-alabama-base-1.0.2.zip`; earlier ZIPs are retained for older revisions.
 The unchanged `nfs-world` 0.2.0 payload uses a compatible dependency pin to this
 base revision. Its ZIP, file identity and version stay unchanged.
 The NFS pack is a separate private prototype handoff; conversion does not establish

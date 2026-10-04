@@ -12,8 +12,8 @@
     {
       "lockPath": "docs/asset-packs/base.lock.json",
       "name": "base",
-      "version": "1.0.1",
-      "packId": "bcadd9e4e2b9cb3dc996451a7b02871e5ddf0e055cd1e13580bc7eb60908abf3"
+      "version": "1.0.2",
+      "packId": "55472cb30d258ebfeab9c80be26a07d0d270ee97facbf065c95c37a5a12a3fb6"
     }
   ]
 }
