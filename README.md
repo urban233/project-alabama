@@ -4,12 +4,12 @@ An open-source arcade racing game built with Unity, developed by two contributor
 
 ## Restore the separate assets first
 
-This public repository contains code, scenes, settings, asset manifests, tools, and the [art-direction reference pack](docs/art-direction/2026-10-02-nfsmw/README.md). **Runtime artwork is excluded from the public Git history.** The reference pack's screenshots, generated concepts, guides and prompt records are included at the project owner's request. The playable scenes require the separately shared `project-alabama-assets.zip`; request that ZIP from the project owner. It contains the exported art, editable Blender sources, original Unity `.meta` files, and license records. Sharing the ZIP does not change the licenses: the adapted E46 is CC-BY-SA 3.0, while the original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
+This public repository contains code, scenes, settings, asset manifests, tools, and the [art-direction reference pack](docs/art-direction/2026-10-02-nfsmw/README.md). **Runtime artwork is excluded from the public Git history.** The reference pack's screenshots, generated concepts, guides and prompt records are included at the project owner's request. Playable scenes require the private ZIP versions pinned in `docs/asset-packs/`; the [handoff helper](docs/asset-versioning.md) restores exported art, editable Blender sources, original Unity `.meta` files and license records. The supplied player E46 declares CC-BY-4.0; the preserved BlenderCentral study uses CC-BY-SA 3.0, and original environment work and Poly Haven resources use CC0. BMW branding rights remain unresolved.
 
-Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place the privately received ZIP directly in the project root. Keep Unity closed until the asset import finishes. From the repository root:
+Clone into a short directory such as `C:/dev/project-alabama`, install Python 3.11 or newer, and place `project-alabama-base-1.0.2.zip` and `project-alabama-nfs-world-0.2.0.zip` directly in the project root. Keep Unity and Blender closed until the asset import finishes. From the repository root:
 
 ```powershell
-python ./tools/asset_pack.py import ./project-alabama-assets.zip
+python ./tools/asset_handoff.py receive
 python ./tools/verify_assets.py
 ./tools/unity.ps1 -Action LoopVerify -EditorPath 'C:/path/to/6000.3.25f1/Editor/Unity.exe'
 ./tools/unity.ps1 -Action EditTests
@@ -34,19 +34,15 @@ treat ZIP contents as asset data. If a required ZIP is absent or its content doe
 not match the checked-in lock, request the matching private ZIP instead of
 substituting artwork or regenerating GUIDs.
 
-To create another copy of the reviewed pack from an already restored workspace:
-
-```powershell
-python ./tools/asset_pack.py export --output ./project-alabama-assets.zip
-```
+Publish a new snapshot and private ZIP through the [versioned publication procedure](docs/asset-versioning.md). Existing release filenames are immutable. The legacy `asset_pack.py` commands without a lock recreate or restore only the original base 1.0.0 pack for older code revisions.
 
 Run `python -m unittest discover -s tools/tests -v` to check the ZIP importer without requiring Unity or artwork. Public Git includes the art-direction references, while runtime artwork is distributed through private asset packs; any baseline branch containing runtime assets kept by the owner is local and must not be pushed.
 
 ### Versioned asset handoffs and the NFS prototype
 
-The original ZIP commands above remain compatible. Named asset releases add
+Named asset releases add
 checked-in version locks, status/verification, safe upgrades and rollback. The
-reviewed original pack is pinned as `base` **1.0.0**. The separate private
+current player-car pack is pinned as `base` **1.0.2**. The separate private
 `nfs-world` **0.2.0** pack includes Downtown, Rosewood, their combined runtime and editable sources;
 it is excluded from the original shared pack and must remain private.
 
@@ -171,7 +167,7 @@ See the [tech demo plan](docs/tech-demo-plan.md), [foundation design](docs/found
 
 ## E46 visual review
 
-Open `Assets/Alabama/Scenes/VehicleReview.unity` for the static car review. The editable source is `source-art/vehicles/e46/E46_Race.blend`; its per-panel geometry is retained. The exported Unity prefab has independent wheel pivots and a simple collision proxy. This milestone does not yet implement driving, traffic, police, or a finished city.
+The player BMW now uses the supplied memoov E46, adapted to the balanced art direction and the user's faceted-chassis review. The editable source is `source-art/vehicles/supplied-e46/Supplied_E46_Adapted.blend`. Strong body reduction and explicit flat normals make the chassis visibly angular while preserving its silhouette and livery. The complete car has 14,166 triangles. Existing prefab identities connect it to the driving scenes. See [replacement and private handoff](docs/first-car-replacement.md).
 
 ```powershell
 ./tools/unity.ps1 VehicleSetup
@@ -182,9 +178,9 @@ Open `Assets/Alabama/Scenes/VehicleReview.unity` for the static car review. The 
 
 `VehicleSetup` regenerates the prefab, materials, and review scene; keep custom level work in a separate scene. `VehicleCapture` requires a graphics device and saves actual 1920 x 1080 URP images under `artifacts/VehicleCapture/`. A screenshot is not a 60 FPS qualification.
 
-To regenerate the car, acquire the pinned BlenderCentral archive through the source page, preserve it in `source-art/third-party/blendswap/e46/original/`, run `tools/blender/prepare_e46_source.py`, then run Blender with `--background --factory-startup --disable-autoexec --python tools/blender/build_e46.py --`. Add `--render` for Blender studio images. The preview sky is restored by `tools/fetch-environment.ps1`.
+To regenerate the current car, restore the private base pack and run Blender with `--background --factory-startup --disable-autoexec --python tools/blender/build_supplied_car.py --`. Review the staged output, then add `--install` with Unity closed and run `./tools/unity.ps1 -Action SuppliedCarSetup`. This updates the car without rebuilding authored map scenes. `SuppliedCarCapture` records five views in the combined district's existing lighting.
 
-The car is **CC-BY-SA 3.0**, credited to BlenderCentral, with modifications documented in `source-art/vehicles/e46/LICENSE.md`. It is an E46 race study with realistic proportions; detailed GTR bodywork/livery and final visual acceptance remain pending.
+The supplied GLB declares **CC-BY-4.0**, credited to memoov; its source and modifications are recorded in `source-art/vehicles/supplied-e46/LICENSE.md`. The earlier BlenderCentral study and its CC-BY-SA 3.0 record remain preserved separately under `source-art/vehicles/e46/`. The old `build_e46.py` recipe recreates that earlier study rather than the current player car.
 
 Current car validation and the documented SRP batching compatibility setting are recorded in [vehicle review status](docs/vehicle-review-status.md). The Windows static review executable is `builds/vehicle-review/Alabama.exe` (close with Alt+F4). It is separate from the calibration build.
 

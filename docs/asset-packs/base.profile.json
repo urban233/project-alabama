@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "base",
+  "includeManifest": "docs/asset-pack.json",
+  "include": [
+    "source-art/vehicles/supplied-e46",
+    "unity/Assets/Alabama/Art/Vehicles/E46"
+  ],
+  "exclude": [
+    "source-art/vehicles/supplied-e46/original/**"
+  ],
+  "dependencies": []
+}

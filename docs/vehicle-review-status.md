@@ -1,5 +1,8 @@
 # Vehicle review — 1 October 2026
 
+Historical record of the earlier BlenderCentral study. The current player car
+is the supplied memoov replacement; see [current adaptation and validation](first-car-replacement.md).
+
 ## Delivered scope
 
 BlenderCentral's BMW M3 E46 has been adapted into a grounded racing-car study. The original archive is preserved locally. The cleaned editable Blender source retains separate panels; the Unity FBX merges them into one body and four wheel meshes. Generated race details include wider arches, a splitter, wing, diffuser, and exhaust tips. Original packed reference images/logo textures are removed.
