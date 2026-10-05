@@ -11,9 +11,11 @@ namespace Alabama.Driving
         private Bounds[] cachedBounds;
         private bool[] hidden;
         private readonly NfsWorldCameraMotion motion = new NfsWorldCameraMotion();
+        private static readonly Unity.Profiling.ProfilerMarker Visibility = new Unity.Profiling.ProfilerMarker("Alabama.Rendering.Visibility");
         private System.Collections.Generic.Dictionary<Renderer, float> distanceLookup;
 
         public int TargetCount => renderers == null ? 0 : System.Array.FindAll(renderers, r => r != null).Length;
+        public Renderer[] Targets => renderers == null ? System.Array.Empty<Renderer>() : (Renderer[])renderers.Clone();
 
         public bool TargetsBelongTo(UnityEngine.SceneManagement.Scene scene)
         {
@@ -77,7 +79,7 @@ namespace Alabama.Driving
         {
             if (Time.unscaledTime < nextUpdate || Camera.main == null) return;
             nextUpdate = Time.unscaledTime + .05f;
-            Refresh();
+            using (Visibility.Auto()) Refresh();
         }
 
         public void Refresh()

@@ -66,7 +66,7 @@ namespace Alabama.Driving
             if (reset.WasPressedThisFrame())
             {
                 var runtime = Alabama.Districts.DistrictRuntime.Instance;
-                if (runtime != null && runtime.Player == controller) runtime.RecoverNearby();
+                if (runtime != null && runtime.Player == controller) runtime.ResetToNearestRoad();
                 else
                 {
                     controller.ResetToSpawn();

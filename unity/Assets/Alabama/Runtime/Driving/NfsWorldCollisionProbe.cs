@@ -34,6 +34,7 @@ namespace Alabama.Driving
             public string wheelContacts;
             public bool escaped;
             public int airborneFrames;
+            public bool resetOnDesignatedRoad;
         }
         [Serializable] private sealed class Report { public Result[] results; public bool passed; }
         private int contacts;
@@ -72,9 +73,15 @@ namespace Alabama.Driving
             var results = new System.Collections.Generic.List<Result>();
             foreach (var route in plan.routes)
             {
+                while (!runtime.Ready && runtime.LastFailure == null) yield return null;
+                if (runtime.LastFailure != null) throw new InvalidOperationException(runtime.LastFailure);
+                // Preloading must not settle/drive the car before the fixed collision setup.
+                car.Body.isKinematic = true;
                 car.Body.position = route.position; car.Body.rotation = Quaternion.LookRotation(route.reverse ? -route.direction : route.direction);
                 car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
                 guard.ResetHistory(); Physics.SyncTransforms(); runtime.Chase.SnapToTarget();
+                yield return runtime.PrepareVisuals(route.position);
+                car.Body.isKinematic = false;
                 // Remove wheel RPM/suspension state left by the previous escape drive.
                 car.enabled = false;
                 foreach (var wheel in wheels) { wheel.motorTorque = 0; wheel.brakeTorque = 10000; }
@@ -150,9 +157,10 @@ namespace Alabama.Driving
                         guard.ContainsFootprint(car.Body.position, car.Body.rotation,
                             scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene));
                     var beforeReset = car.Body.position;
-                    bool reset = runtime.RecoverNearby();
+                    bool reset = runtime.ResetToNearestRoad();
                     result.localResetDistance = Vector3.Distance(beforeReset, car.Body.position);
-                    result.escaped &= reset && result.localResetDistance < 10;
+                    result.resetOnDesignatedRoad = runtime.IsOnDesignatedRoad(car.Body.position);
+                    result.escaped &= reset && (runtime.HasDesignatedRoads ? result.resetOnDesignatedRoad : result.localResetDistance < 10);
                     result.passed &= result.escaped;
                 }
                 results.Add(result);

@@ -463,3 +463,26 @@ after a post-prediction suspension impulse.
 The strict Windows build passed in `artifacts/AutoBuildFinal/editor.log`, updating
 `builds/windows/Alabama_Data/Managed/Alabama.Runtime.dll` at 03:42:17 Berlin time
 on 5 October. Run `builds/windows/Alabama.exe` with its accompanying data folders.
+
+## Startup, scenery streaming and road-only resets — 5 October
+
+The next systems implementation is documented in
+[the phased engine plan](../engine-startup-streaming-reset-plan.md), including
+code entry points, profiling methods and preserved intermediate failures.
+The generated player now uses an asynchronous bootstrap, no optional splash,
+build-time collision cooking, and 119 visual scenery cells. Road/terrain support,
+exit closures and collision stay resident. Explicit R resets use road-only
+navigation, physical footprint/clearance validation and road alignment; automatic
+unwedging stays close to the crash, including on supported plazas.
+
+The final systems review reached ready in 7.43 seconds on the local device and
+passed six first/repeat 35 m/s drives, with p95 frames of 16.69–20.08 ms and no
+missing required visible cells or support failures. The final comparable
+launch-plus-route run took 18.68 seconds versus the 22.10-second baseline,
+including the new destination preload. All 20 native crash/escape/reset cases
+passed; maximum automatic recovery hop was 3.07 metres. The plan records cache
+state, explicit-reset distance limits and the distinction between engine-ready
+time and full process launch time.
+
+The latest strict player build updated the runtime assembly at 23:28:58 Berlin
+time on 5 October 2026. The executable remains `builds/windows/Alabama.exe`.

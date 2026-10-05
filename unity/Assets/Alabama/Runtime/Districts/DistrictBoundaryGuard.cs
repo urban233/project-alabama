@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Alabama.Driving;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Unity.Profiling;
 
 namespace Alabama.Districts
 {
@@ -30,6 +31,7 @@ namespace Alabama.Districts
         public int BlockedMoves { get; private set; }
         public int LocalRecoveries { get; private set; }
         public int RecoveryPoseCount => roadHistory.Count;
+        private static readonly ProfilerMarker RoadReset = new ProfilerMarker("Alabama.Reset.NearestRoad");
 
         private void OnEnable() { if (Application.isPlaying) StartCoroutine(CheckAfterPhysics()); }
         private void OnDisable() => StopAllCoroutines();
@@ -90,7 +92,8 @@ namespace Alabama.Districts
                 overlaps, rotation, ~0, QueryTriggerInteraction.Ignore);
             if (count == overlaps.Length) return false;
             for (int i = 0; i < count; i++)
-                if (overlaps[i].attachedRigidbody == null && runtime.OwnsCollision(overlaps[i].gameObject.scene) &&
+                if (overlaps[i].attachedRigidbody != car.Body &&
+                    (runtime.OwnsCollision(overlaps[i].gameObject.scene) || overlaps[i].gameObject.scene == car.gameObject.scene) &&
                     overlaps[i].GetComponentInParent<DistrictGroundCoverage>() == null) return false;
             return true;
         }
@@ -98,6 +101,8 @@ namespace Alabama.Districts
         public bool TryRestoreNearby(float minimumDistance = 0)
         {
             if (runtime == null || car == null) return false;
+            // Automatic unwedging keeps a crash local, including supported plazas.
+            // Explicit player resets go through TryRestoreDesignatedRoad in the runtime.
             for (int i = roadHistory.Count - 1; i >= 0; i--)
             {
                 var pose = roadHistory[i]; var delta = pose.position - car.Body.position; delta.y = 0;
@@ -123,11 +128,62 @@ namespace Alabama.Districts
             return false;
         }
 
+        public bool TryRestoreDesignatedRoad(float minimumDistance = 0)
+        {
+            if (runtime == null || car == null) return false;
+            using var scope = RoadReset.Auto();
+            var origin = car.Body.position; var preferred = car.Body.rotation*Vector3.forward;
+            var bestPosition = Vector3.zero; var bestRotation = Quaternion.identity;
+            float best = float.PositiveInfinity;
+            bool Consider(DrivableRoadMap map, Vector3 query, float radius)
+            {
+                if (!map.Sample(query,radius,out var road)) return false;
+                var delta = road.position-origin; var horizontal = new Vector3(delta.x,0,delta.z);
+                if (horizontal.sqrMagnitude < minimumDistance*minimumDistance-.01f) return false;
+                int count = Physics.RaycastNonAlloc(road.position+Vector3.up*2,Vector3.down,hits,4,~0,QueryTriggerInteraction.Ignore);
+                var ground = default(RaycastHit); float closest = float.PositiveInfinity;
+                for (int i = 0; i < count; i++)
+                {
+                    var hit = hits[i]; float distance = Mathf.Abs(hit.point.y-road.position.y);
+                    if (hit.collider.attachedRigidbody != null || hit.normal.y < .8f || distance > .6f ||
+                        hit.collider.gameObject.scene != map.gameObject.scene ||
+                        hit.collider.GetComponentInParent<DistrictGroundCoverage>() != null || distance >= closest) continue;
+                    ground = hit; closest = distance;
+                }
+                if (ground.collider == null) return false;
+                var position = ground.point+Vector3.up*.24f;
+                var forward = Vector3.ProjectOnPlane(map.Heading(position,preferred),ground.normal);
+                if (forward.sqrMagnitude < .01f) return false;
+                var rotation = Quaternion.LookRotation(forward,ground.normal);
+                float score = (position-origin).sqrMagnitude;
+                if (score >= best || !ContainsFootprint(position,rotation,runtime.OwnsCollision,edgeInset:.15f) ||
+                    !ClearBody(position,rotation,.35f)) return false;
+                best = score; bestPosition = position; bestRotation = rotation; return true;
+            }
+            // SamplePosition is a 3D nearest-point query, retaining bridge/road elevation.
+            foreach (var map in runtime.RoadMaps)
+                foreach (float radius in new[] { 8f,32,128,512,2048,8192 })
+                    if (map.Sample(origin,radius,out _)) { Consider(map,origin,radius); break; }
+            if (float.IsFinite(best) && minimumDistance <= 0) { RestorePose(bestPosition,bestRotation); return true; }
+            // A transient obstacle can occupy the closest road point. Rank valid alternatives
+            // by distance instead of using the first radial ray or an arbitrary grounded history.
+            foreach (float radius in new[] { 2f,4,8,16,32,64,128 })
+            {
+                foreach (var map in runtime.RoadMaps)
+                    for (int direction = 0; direction < 8; direction++)
+                        Consider(map,origin+Quaternion.Euler(0,direction*45,0)*Vector3.forward*radius,radius*.5f+1);
+                if (best <= radius*radius) break;
+            }
+            if (!float.IsFinite(best)) return false;
+            RestorePose(bestPosition,bestRotation); return true;
+        }
+
         private void RestorePose(Vector3 position, Quaternion rotation)
         {
             car.Body.position = position; car.Body.rotation = rotation;
             car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
             car.SetCommand(default); car.Body.WakeUp(); Physics.SyncTransforms();
+            foreach (var wheel in wheels) { wheel.motorTorque = 0; wheel.brakeTorque = 0; wheel.steerAngle = 0; }
             safePosition = position; safeRotation = rotation; hasSafePosition = true;
             lastGroundHeight = position.y;
             wedgedSeconds = 0; LocalRecoveries++;

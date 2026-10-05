@@ -170,6 +170,50 @@ namespace Alabama.Tests
         }
 
         [UnityTest]
+        public IEnumerator ResetRejectsSupportedSidewalkAndAlignsWithTheNearestDesignatedRoad()
+        {
+            input.enabled = false;
+            var content = runtime.LoadedDistricts.Single(); var centre = content.RecoveryPoses[0].position-Vector3.up*.24f;
+            var mesh = new Mesh { vertices = new[] { new Vector3(-6,0,-45),new Vector3(-6,0,45),new Vector3(6,0,-45),new Vector3(6,0,45) },
+                triangles = new[] { 0,1,2,2,1,3 } }; mesh.RecalculateBounds();
+            var settings = UnityEngine.AI.NavMesh.GetSettingsByIndex(0);
+            settings.agentRadius = 2.45f; settings.agentHeight = 1.6f; settings.overrideVoxelSize = true; settings.voxelSize = .2f;
+            var sources = new System.Collections.Generic.List<UnityEngine.AI.NavMeshBuildSource> {
+                new UnityEngine.AI.NavMeshBuildSource { shape = UnityEngine.AI.NavMeshBuildSourceShape.Mesh,
+                    sourceObject = mesh,transform = Matrix4x4.Translate(centre),area = 3 } };
+            var data = UnityEngine.AI.NavMeshBuilder.BuildNavMeshData(settings,sources,
+                new Bounds(centre,new Vector3(100,20,100)),Vector3.zero,Quaternion.identity);
+            Assert.That(data,Is.Not.Null);
+            var owner = new GameObject("Designated fixture road"); SceneManager.MoveGameObjectToScene(owner,content.gameObject.scene);
+            var roads = owner.AddComponent<DrivableRoadMap>();
+            roads.Configure(data,3,new[] { new DrivableRoadMap.Direction { start = centre-Vector3.forward*45,end = centre+Vector3.forward*45 } },settings.agentTypeID);
+            car.Body.position = centre+new Vector3(25,2,10); car.Body.rotation = Quaternion.Euler(0,90,90);
+            Physics.SyncTransforms();
+            Assert.That(runtime.HasDesignatedRoads,Is.True);
+            Assert.That(runtime.ResetToNearestRoad(),Is.True);
+            Assert.That(Mathf.Abs(car.Body.position.x-centre.x),Is.LessThan(4),"Supported ground outside the road is not a reset destination.");
+            Assert.That(runtime.IsOnDesignatedRoad(car.Body.position),Is.True);
+            Assert.That(Mathf.Abs(Vector3.Dot(car.transform.forward,Vector3.forward)),Is.GreaterThan(.99f));
+            Assert.That(Vector3.Dot(car.transform.up,Vector3.up),Is.GreaterThan(.99f));
+            Assert.That(car.Body.linearVelocity.sqrMagnitude,Is.Zero);
+            car.Body.position = centre+new Vector3(35,.24f,10);
+            car.Body.rotation = Quaternion.identity; Physics.SyncTransforms();
+            var guard = car.GetComponent<DistrictBoundaryGuard>(); guard.ResetHistory();
+            var crash = car.Body.position;
+            Assert.That(guard.TryRestoreNearby(4),Is.True,"Automatic unwedging may use clear local ground with road navigation present.");
+            Assert.That(Vector3.Distance(car.Body.position,crash),Is.LessThan(10));
+            Assert.That(runtime.IsOnDesignatedRoad(car.Body.position),Is.False,"A plaza crash must not jump to a distant road automatically.");
+            roads.enabled = false;
+            Assert.That(runtime.HasDesignatedRoads,Is.False,"Unloaded road navigation must not remain queryable.");
+            runtime.ConfigureRoadReset(true);
+            var retained = car.Body.position;
+            Assert.That(runtime.ResetToNearestRoad(),Is.False,"Required road data cannot fall back to arbitrary supported ground.");
+            Assert.That(car.Body.position,Is.EqualTo(retained));
+            runtime.ConfigureRoadReset(false);
+            Object.Destroy(owner); Object.Destroy(data); Object.Destroy(mesh); yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RecoveryWithoutRecordedHistoryFindsNearbyRoadInsteadOfTheStart()
         {
             input.enabled = false;

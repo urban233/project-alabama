@@ -28,10 +28,11 @@ namespace Alabama.Driving
             if (args.Contains("-nfs-fast-review"))
             { yield return ReviewFastDriving(output); yield break; }
             var runtime = Alabama.Districts.DistrictRuntime.Instance;
-            while (runtime != null && !runtime.Ready)
+            while (runtime == null || !runtime.Ready)
             {
-                if (runtime.LastFailure != null) throw new InvalidOperationException(runtime.LastFailure);
+                if (runtime != null && runtime.LastFailure != null) throw new InvalidOperationException(runtime.LastFailure);
                 yield return null;
+                runtime = Alabama.Districts.DistrictRuntime.Instance;
             }
             Application.runInBackground = true;
             Application.targetFrameRate = 30;
@@ -137,6 +138,7 @@ namespace Alabama.Driving
                     car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
                     guard.ResetHistory(); car.SetCommand(new VehicleCommand(0,0,0,true));
                     Physics.SyncTransforms(); runtime.Chase.SnapToTarget();
+                    yield return runtime.PrepareVisuals(car.Body.position);
                     for (int i = 0; i < 12; i++) yield return new WaitForFixedUpdate();
                     var ahead = routes[route] + direction*2;
                     var ray = new Ray(ahead + Vector3.up*3,Vector3.down);

@@ -273,28 +273,47 @@ namespace Alabama.Editor
             NfsWorldSetup.Require(File.Exists(RuntimeScene) && File.Exists(ContentScene),
                 "Receive or generate Developer B's styled Downtown assets first.");
             VerifyRuntime();
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(RuntimeScene, true),
-                new EditorBuildSettingsScene(ContentScene, true) }.Concat(EditorBuildSettings.scenes
-                .Where(s => s.path != RuntimeScene && s.path != ContentScene)
+            var scenes = NfsWorldSystemsBuild.Prepare();
+            EditorBuildSettings.scenes = scenes.Select(s => new EditorBuildSettingsScene(s,true)).Concat(EditorBuildSettings.scenes
+                .Where(s => !scenes.Contains(s.path))
                 .Select(s => new EditorBuildSettingsScene(s.path, false))).ToArray();
-            EditorSceneManager.OpenScene(RuntimeScene);
-            Debug.Log("Styled Downtown is the game entry scene; review courses remain available separately.");
+            EditorSceneManager.OpenScene(NfsWorldSystemsBuild.Boot);
+            Debug.Log("Asynchronous styled Downtown is the game entry scene; review courses remain available separately.");
         }
 
         public static void BuildRuntime() => BuildRuntimeAt("nfs-world-art-direction-runtime");
         public static void BuildGame() => BuildRuntimeAt("windows");
         public static void BuildStabilityCandidate() => BuildRuntimeAt("windows-stability");
 
+        // Runtime-only repairs can reuse the validated generated scene layout.
+        // Re-run BuildGame after geometry, settings or generator changes.
+        public static void RebuildPreparedGame()
+        {
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath,"../../artifacts/Systems/generated-scenes.json"));
+            var layout = JsonUtility.FromJson<PreparedLayout>(File.ReadAllText(path));
+            NfsWorldSetup.Require(layout.scenes != null && layout.scenes.Length > 3 && layout.scenes[0] == NfsWorldSystemsBuild.Boot &&
+                layout.scenes.All(p => p.StartsWith(NfsWorldSystemsBuild.Root+"/",System.StringComparison.Ordinal) && File.Exists(p)),
+                "Generate and validate the systems layout with BuildGame first.");
+            BuildScenes("windows",layout.scenes);
+        }
+        [System.Serializable] private sealed class PreparedLayout { public string[] scenes; }
+
         private static void BuildRuntimeAt(string directory)
         {
             Verify();
             VerifyRuntime();
+            var scenes = NfsWorldSystemsBuild.Prepare();
+            BuildScenes(directory,scenes);
+        }
+
+        private static void BuildScenes(string directory,string[] scenes)
+        {
             PlayerSettings.enableFrameTimingStats = true;
             string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../builds/" + directory + "/Alabama.exe"));
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
-                scenes = new[] { RuntimeScene, ContentScene }, locationPathName = output,
+                scenes = scenes, locationPathName = output,
                 target = BuildTarget.StandaloneWindows64, options = BuildOptions.StrictMode
             });
             NfsWorldSetup.Require(report.summary.result == BuildResult.Succeeded && report.summary.totalErrors == 0,

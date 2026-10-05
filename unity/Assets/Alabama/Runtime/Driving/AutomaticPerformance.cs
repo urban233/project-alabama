@@ -38,7 +38,7 @@ namespace Alabama.Driving
             instance = Instantiate(original); instance.name = original.name + " (automatic runtime)";
             previousCap = Application.targetFrameRate;
             policy = new AutomaticPerformancePolicy(SystemInfo.graphicsMemorySize,SystemInfo.systemMemorySize);
-            allowBackgroundSampling = Environment.GetCommandLineArgs().Contains("-nfs-auto-review");
+            allowBackgroundSampling = Environment.GetCommandLineArgs().Any(a => a == "-nfs-auto-review" || a == "-systems-review");
             QualitySettings.renderPipeline = instance;
             ApplyDecision(); DiscardSamples(5);
             Debug.Log($"Automatic graphics: {SystemInfo.graphicsDeviceName}, {SystemInfo.graphicsMemorySize} MB graphics memory, " +

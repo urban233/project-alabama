@@ -15,23 +15,33 @@ namespace Alabama.Districts
         [SerializeField] private ArcadeCarController player;
         [SerializeField] private ChaseCamera chase;
         [SerializeField] private string[] initialDistrictScenes = Array.Empty<string>();
+        [SerializeField] private bool requireDesignatedRoads;
         private readonly Dictionary<string, DistrictContent> districts = new Dictionary<string, DistrictContent>();
         private readonly HashSet<int> visibleGroundScenes = new HashSet<int>();
         private DistrictContent recoveryOwner;
         private float nextRecoveryUpdate;
         private bool busy;
+        private int visualPreparations;
         private DistrictBoundaryGuard boundary;
         public static DistrictRuntime Instance { get; private set; }
         public ArcadeCarController Player => player;
         public ChaseCamera Chase => chase;
         public bool Ready { get; private set; }
-        public bool Busy => busy;
+        public bool Busy => busy || visualPreparations != 0;
         public string LastFailure { get; private set; }
         public int DistrictCount => districts.Count;
         public float MinimumRecoveryHeight => recoveryOwner != null ? recoveryOwner.MinimumRecoveryHeight : -80;
         public IReadOnlyCollection<DistrictContent> LoadedDistricts => districts.Values.ToArray();
         public event Action<DistrictContent> DistrictRegistered;
         public event Action<DistrictContent> DistrictUnregistered;
+        internal IEnumerable<DrivableRoadMap> RoadMaps => FindObjectsByType<DrivableRoadMap>(FindObjectsSortMode.None)
+            .Where(map => map.Available && OwnsCollision(map.gameObject.scene));
+        public bool HasDesignatedRoads => RoadMaps.Any();
+        internal bool RoadResetRequired => requireDesignatedRoads || HasDesignatedRoads;
+        public void ConfigureRoadReset(bool required) => requireDesignatedRoads = required;
+        public double InitialContentSeconds { get; private set; }
+        public double InitialSceneSeconds { get; private set; }
+        public double InitialVisualsSeconds { get; private set; }
 
         public void Configure(ArcadeCarController car, ChaseCamera camera, params string[] initialScenes)
         { player = car; chase = camera; initialDistrictScenes = initialScenes; }
@@ -53,12 +63,39 @@ namespace Alabama.Districts
         {
             SceneManager.SetActiveScene(gameObject.scene);
             player.Body.isKinematic = true;
+            double began = Time.realtimeSinceStartupAsDouble;
             foreach (string path in initialDistrictScenes)
             {
                 yield return LoadDistrict(path);
                 if (LastFailure != null) { Debug.LogError(LastFailure); yield break; }
             }
-            if (districts.Count != 0) Recover();
+            InitialSceneSeconds = Time.realtimeSinceStartupAsDouble-began;
+            if (districts.Count != 0 && Recover())
+            {
+                Ready = false; player.Body.isKinematic = true;
+                double visualsBegan = Time.realtimeSinceStartupAsDouble;
+                yield return PrepareVisuals(player.Body.position);
+                InitialVisualsSeconds = Time.realtimeSinceStartupAsDouble-visualsBegan;
+                if (LastFailure != null) yield break;
+                player.Body.isKinematic = false; Ready = true;
+                InitialContentSeconds = Time.realtimeSinceStartupAsDouble-began;
+            }
+        }
+
+        public IEnumerator PrepareVisuals(Vector3 position)
+        {
+            visualPreparations++;
+            try
+            {
+                foreach (var content in districts.Values.ToArray())
+                    foreach (var streamer in content.gameObject.scene.GetRootGameObjects()
+                        .SelectMany(root => root.GetComponentsInChildren<DistrictVisualStreamer>()))
+                    {
+                        yield return streamer.Prepare(position);
+                        if (streamer.FailedCount != 0) LastFailure = "A required scenery cell failed to load.";
+                    }
+            }
+            finally { visualPreparations--; }
         }
 
         public void Register(DistrictContent content)
@@ -103,7 +140,7 @@ namespace Alabama.Districts
         public IEnumerator LoadDistrict(string scenePath)
         {
             LastFailure = null;
-            if (busy) { LastFailure = "Another district operation is in progress."; yield break; }
+            if (Busy) { LastFailure = "Another district operation is in progress."; yield break; }
             if (string.IsNullOrWhiteSpace(scenePath) || scenePath == gameObject.scene.path)
             { LastFailure = "Load requires a content scene path."; yield break; }
             if (SceneManager.GetSceneByPath(scenePath).isLoaded)
@@ -131,7 +168,7 @@ namespace Alabama.Districts
         public IEnumerator UnloadDistrict(string id, string recoverIntoDistrict = null)
         {
             LastFailure = null;
-            if (busy) { LastFailure = "Another district operation is in progress."; yield break; }
+            if (Busy) { LastFailure = "Another district operation is in progress."; yield break; }
             if (!districts.TryGetValue(id, out var content)) { LastFailure = "District is not loaded: " + id; yield break; }
             if (districts.Count <= 1) { LastFailure = "The last supporting district must remain loaded."; yield break; }
             // An airborne car can still depend on the road beneath it. Use the
@@ -166,6 +203,8 @@ namespace Alabama.Districts
                     boundary.ResetHistory();
                     player.Body.isKinematic = false;
                 }
+                foreach (var streamer in content.gameObject.scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<DistrictVisualStreamer>())) yield return streamer.Release();
                 Unregister(content);
                 yield return SceneManager.UnloadSceneAsync(content.gameObject.scene);
             }
@@ -182,15 +221,41 @@ namespace Alabama.Districts
             if (recoveryOwner == null) { Ready = false; player.Body.isKinematic = true; return false; }
             player.Body.isKinematic = false; player.ResetToSpawn(); chase.SnapToTarget();
             boundary.ResetHistory();
+            if (RoadResetRequired && !boundary.TryRestoreDesignatedRoad())
+            { Ready = false; player.Body.isKinematic = true; LastFailure = "No validated drivable road is available for recovery."; return false; }
+            chase.SnapToTarget();
             Ready = true; return true;
         }
 
         public bool RecoverNearby()
         {
+            if (RoadResetRequired)
+            {
+                if (Busy || !boundary.TryRestoreDesignatedRoad()) return false;
+                chase.SnapToTarget(); return true;
+            }
             if (Ready && !busy && boundary.TryRestoreNearby())
             { chase.SnapToTarget(); return true; }
             return Recover();
         }
+
+        public bool ResetToNearestRoad()
+        {
+            if (!Ready || Busy || !RecoverNearby()) return false;
+            if (FindObjectsByType<DistrictVisualStreamer>(FindObjectsSortMode.None)
+                .Any(s => OwnsCollision(s.gameObject.scene) && s.MissingVisibleCells(chase.transform.position) != 0))
+                StartCoroutine(PrepareResetVisuals());
+            return true;
+        }
+        private IEnumerator PrepareResetVisuals()
+        {
+            Ready = false; player.Body.isKinematic = true;
+            yield return PrepareVisuals(player.Body.position);
+            if (LastFailure != null) yield break;
+            player.Body.isKinematic = false; Ready = true; chase.SnapToTarget();
+        }
+        public bool IsOnDesignatedRoad(Vector3 position)
+            => RoadMaps.Any(map => map.Sample(position-Vector3.up*.24f,.7f,out _));
 
         private bool SetRecovery(DistrictContent content)
         {

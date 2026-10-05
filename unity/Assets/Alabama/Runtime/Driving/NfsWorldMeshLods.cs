@@ -16,7 +16,9 @@ namespace Alabama.Driving
         [SerializeField] private float middleDistance = 80;
         [SerializeField] private float farDistance = 200;
         private readonly NfsWorldCameraMotion motion = new NfsWorldCameraMotion();
+        private static readonly Unity.Profiling.ProfilerMarker LodUpdate = new Unity.Profiling.ProfilerMarker("Alabama.Rendering.LOD");
         public int TargetCount => entries.Length;
+        public Entry[] Entries => (Entry[])entries.Clone();
         public int StaticBatchTargetCount
         {
             get
@@ -90,7 +92,7 @@ namespace Alabama.Driving
         private void LateUpdate()
         {
             if (Camera.main == null) return;
-            Refresh(Camera.main.transform.position);
+            using (LodUpdate.Auto()) Refresh(Camera.main.transform.position);
         }
 
         public void Restore()
@@ -119,7 +121,7 @@ namespace Alabama.Driving
                 velocity = Vector3.Lerp(velocity, Vector3.ClampMagnitude(delta / elapsed, 90), .5f);
                 previous = position; previousTime = now;
             }
-            return position + Vector3.ClampMagnitude(velocity * .35f, 30);
+            return position + Vector3.ClampMagnitude(velocity * 2, 160);
         }
         public void Reset() { initialized = false; velocity = Vector3.zero; }
     }
