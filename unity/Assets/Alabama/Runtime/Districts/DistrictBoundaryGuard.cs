@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Alabama.Driving;
 using UnityEngine;
@@ -20,6 +21,7 @@ namespace Alabama.Districts
         private readonly List<(Vector3 position, Quaternion rotation)> roadHistory = new List<(Vector3, Quaternion)>();
         private WheelCollider[] wheels;
         private float nextRoadPose, wedgedSeconds;
+        private float lastGroundHeight;
         private float lastObstacleContact = float.NegativeInfinity;
         private float lastBoundaryBlock = float.NegativeInfinity;
         // Match the E46's 1.9 x 4.45 metre chassis collider, including overhangs.
@@ -29,11 +31,48 @@ namespace Alabama.Districts
         public int LocalRecoveries { get; private set; }
         public int RecoveryPoseCount => roadHistory.Count;
 
+        private void OnEnable() { if (Application.isPlaying) StartCoroutine(CheckAfterPhysics()); }
+        private void OnDisable() => StopAllCoroutines();
+
+        private IEnumerator CheckAfterPhysics()
+        {
+            var step = new WaitForFixedUpdate();
+            while (true)
+            {
+                yield return step;
+                if (runtime == null || !runtime.Ready || runtime.Busy || car.Body.isKinematic || !hasSafePosition) continue;
+                var body = car.Body;
+                if (BoundarySupported(body.position,body.rotation,0))
+                { safePosition = body.position; safeRotation = body.rotation; continue; }
+                // Suspension/contact impulses happen after FixedUpdate's prediction. Resolve
+                // an actual edge crossing before the render/input frame, retaining safe motion.
+                if (!BoundarySupported(safePosition,safeRotation,0))
+                { runtime.RecoverNearby(); continue; }
+                var travelled = body.position-safePosition;
+                var rotation = body.rotation;
+                body.position = safePosition; body.rotation = safeRotation;
+                // Preserve the supported part of the completed step as well as its velocity.
+                // Rolling back all translation would trap a car repeatedly pushed toward an edge.
+                body.position += SupportedSlide(travelled,0);
+                if (BoundarySupported(body.position,rotation,0)) body.rotation = rotation;
+                var velocity = body.linearVelocity;
+                var allowed = SupportedSlide(velocity*Time.fixedDeltaTime,0);
+                body.linearVelocity = new Vector3(allowed.x/Time.fixedDeltaTime,velocity.y,allowed.z/Time.fixedDeltaTime);
+                float turn = body.angularVelocity.y*Time.fixedDeltaTime*Mathf.Rad2Deg;
+                if (!SupportedStep(allowed,turn,0))
+                { var angular = body.angularVelocity; angular.y = 0; body.angularVelocity = angular; }
+                lastBoundaryBlock = Time.fixedTime;
+                body.WakeUp(); Physics.SyncTransforms(); BlockedMoves++;
+                safePosition = body.position; safeRotation = body.rotation;
+            }
+        }
+
         public void Configure(DistrictRuntime owner)
         { runtime = owner; car = owner.Player; wheels = car.GetComponentsInChildren<WheelCollider>(); ResetHistory(); }
 
         public void ResetHistory()
         { hasSafePosition = false; roadHistory.Clear(); nextRoadPose = 0; wedgedSeconds = 0;
+            lastGroundHeight = car == null || car.Body == null ? transform.position.y : car.Body.position.y;
             lastObstacleContact = lastBoundaryBlock = float.NegativeInfinity; }
 
         private void OnCollisionStay(Collision collision)
@@ -90,13 +129,14 @@ namespace Alabama.Districts
             car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
             car.SetCommand(default); car.Body.WakeUp(); Physics.SyncTransforms();
             safePosition = position; safeRotation = rotation; hasSafePosition = true;
+            lastGroundHeight = position.y;
             wedgedSeconds = 0; LocalRecoveries++;
         }
 
         private bool TryRoadPose(Vector3 point, Vector3 forward, out Vector3 position, out Quaternion rotation)
         {
             position = default; rotation = default;
-            int count = Physics.RaycastNonAlloc(point+Vector3.up*3,Vector3.down,hits,6,~0,QueryTriggerInteraction.Ignore);
+            int count = Physics.RaycastNonAlloc(point+Vector3.up*3,Vector3.down,hits,15,~0,QueryTriggerInteraction.Ignore);
             var best = default(RaycastHit); float closest = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
@@ -120,7 +160,7 @@ namespace Alabama.Districts
         }
 
         public bool ContainsFootprint(Vector3 position, Quaternion rotation, Func<Scene, bool> ownsScene,
-            bool requireVisibleGround = false, float edgeInset = 0)
+            bool requireVisibleGround = false, float edgeInset = 0, float maximumDrop = 3)
         {
             // Yaw-only chassis footprint keeps slopes and short crest jumps valid.
             var yaw = Quaternion.Euler(0, rotation.eulerAngles.y, 0);
@@ -130,7 +170,7 @@ namespace Alabama.Districts
                         Mathf.Sign(offset.z) * edgeInset);
                     var point = position + yaw * expanded;
                     int count = Physics.RaycastNonAlloc(point + Vector3.up * 3, Vector3.down,
-                        hits, 6, ~0, QueryTriggerInteraction.Ignore);
+                        hits, 3+Mathf.Clamp(maximumDrop,3,12), ~0, QueryTriggerInteraction.Ignore);
                     bool supported = false, visible = false, needsVisible = requireVisibleGround;
                     for (int i = 0; i < count; i++)
                         if (hits[i].collider.attachedRigidbody == null && hits[i].normal.y > .5f &&
@@ -167,7 +207,6 @@ namespace Alabama.Districts
         private void FixedUpdate()
         {
             if (runtime == null || !runtime.Ready || runtime.Busy || car.Body.isKinematic) return;
-            bool Owned(Scene scene) => runtime.OwnsCollision(scene);
             var body = car.Body;
             // Leave room for forces and contact corrections applied during the next simulation step.
             // Querying the exact body edge alone lets wheel/kerb impulses cross an edge between checks.
@@ -187,7 +226,14 @@ namespace Alabama.Districts
                 { runtime.Chase.SnapToTarget(); return; }
             }
             else wedgedSeconds = 0;
-            bool current = ContainsFootprint(body.position, body.rotation, Owned);
+            bool directlySupported = ContainsFootprint(body.position,body.rotation,runtime.OwnsCollision);
+            // Tyres can touch a tall prop during a roll. Only road-supported poses may
+            // update the height reference; a prop top must not replace the road below.
+            if (directlySupported)
+                foreach (var wheel in wheels)
+                    if (wheel.GetGroundHit(out var ground))
+                    { lastGroundHeight = ground.point.y + .24f; break; }
+            bool current = directlySupported || BoundarySupported(body.position, body.rotation, 0);
             if (!hasSafePosition)
             {
                 if (!current) { runtime.RecoverNearby(); return; }
@@ -196,14 +242,17 @@ namespace Alabama.Districts
             if (!current)
             {
                 lastBoundaryBlock = Time.fixedTime;
-                if (!ContainsFootprint(safePosition, safeRotation, Owned))
+                if (!BoundarySupported(safePosition, safeRotation, 0))
                 { runtime.RecoverNearby(); return; }
                 body.position = safePosition; body.rotation = safeRotation;
                 body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero;
                 body.WakeUp(); Physics.SyncTransforms(); BlockedMoves++; return;
             }
             safePosition = body.position; safeRotation = body.rotation;
-            bool marginSupported = ContainsFootprint(body.position, body.rotation, Owned, edgeInset: inset);
+            bool marginSupported = BoundarySupported(body.position, body.rotation, inset);
+            // Retain a small contact allowance when the full margin no longer fits.
+            // This absorbs suspension/yaw corrections without blocking a car already on the edge.
+            float movementInset = marginSupported ? inset : BoundarySupported(body.position,body.rotation,.03f) ? .03f : 0;
             if (Time.unscaledTime >= nextRoadPose)
             {
                 nextRoadPose = Time.unscaledTime + .25f;
@@ -233,22 +282,62 @@ namespace Alabama.Districts
                 var rotation = Quaternion.Euler(0, turn * fraction, 0) * body.rotation;
                 // A crash can leave the exact chassis supported but its margin over a kerb/edge.
                 // Such a car must still be able to back inward before the full margin becomes valid.
-                next = ContainsFootprint(body.position + movement * fraction, rotation, Owned,
-                    edgeInset: marginSupported ? inset : 0);
+                next = BoundarySupported(body.position + movement * fraction, rotation, movementInset);
             }
             if (next)
             { safePosition = body.position; safeRotation = body.rotation; return; }
             // Cancel an unsafe turn independently, so it cannot cancel a valid reverse movement.
             bool translationSafe = true;
             for (int i = 1; translationSafe && i <= steps; i++)
-                translationSafe = ContainsFootprint(body.position + movement * (i/(float)steps), body.rotation, Owned,
-                    edgeInset: marginSupported ? inset : 0);
+                translationSafe = BoundarySupported(body.position + movement * (i/(float)steps), body.rotation,
+                    movementInset);
             if (translationSafe)
             { var angular = body.angularVelocity; angular.y = 0; body.angularVelocity = angular; return; }
-            body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero;
+            // Keep supported tangential motion and pitch/roll impulses. Only a real map edge
+            // constrains translation; normal collisions are left to PhysX without a speed cap.
+            var allowed = SupportedSlide(movement, movementInset);
+            var velocity = body.linearVelocity;
+            body.linearVelocity = new Vector3(allowed.x/Time.fixedDeltaTime,velocity.y,allowed.z/Time.fixedDeltaTime);
+            // A slide and yaw can each fit separately but cross an edge when combined.
+            if (!SupportedStep(allowed,turn,movementInset))
+            { var angular = body.angularVelocity; angular.y = 0; body.angularVelocity = angular; }
             body.WakeUp();
             lastBoundaryBlock = Time.fixedTime;
             BlockedMoves++;
+        }
+
+        private bool BoundarySupported(Vector3 position, Quaternion rotation, float inset)
+        {
+            if (ContainsFootprint(position,rotation,runtime.OwnsCollision,edgeInset:inset)) return true;
+            // Short airborne crashes/jumps may exceed the ordinary six-metre road ray.
+            // Check the same horizontal footprint at the last grounded height, never empty space.
+            if (!hasSafePosition || position.y <= lastGroundHeight+.5f || position.y > lastGroundHeight+12) return false;
+            position.y = lastGroundHeight;
+            return ContainsFootprint(position,rotation,runtime.OwnsCollision,edgeInset:inset);
+        }
+
+        private bool SupportedStep(Vector3 movement, float turn, float inset)
+        {
+            int steps = Mathf.Max(1,Mathf.CeilToInt((movement.magnitude+Mathf.Abs(turn)*Mathf.Deg2Rad*2.5f)/.5f));
+            for (int i = 1; i <= steps; i++)
+                if (!BoundarySupported(car.Body.position + movement*(i/(float)steps),
+                    Quaternion.Euler(0,turn*(i/(float)steps),0)*car.Body.rotation,inset)) return false;
+            return true;
+        }
+
+        private Vector3 SupportedSlide(Vector3 movement, float inset)
+        {
+            var horizontal = new Vector3(movement.x,0,movement.z);
+            var best = Vector3.zero;
+            // Project rather than redirect momentum. No candidate adds speed or blocks inward travel.
+            for (int direction = 0; direction < 8; direction++)
+            {
+                var axis = Quaternion.Euler(0,direction*22.5f,0)*Vector3.forward;
+                var candidate = Vector3.Project(horizontal,axis); candidate.y = movement.y;
+                if (candidate.x*candidate.x+candidate.z*candidate.z <= best.x*best.x+best.z*best.z+.0000001f) continue;
+                if (SupportedStep(candidate,0,inset)) best = candidate;
+            }
+            return best;
         }
     }
 }

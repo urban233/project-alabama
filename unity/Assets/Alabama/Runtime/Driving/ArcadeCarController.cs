@@ -83,7 +83,11 @@ namespace Alabama.Driving
             frontRight.steerAngle = steer;
             SetRearGrip(rearLeft, rearLeftGrip, command.Handbrake);
             SetRearGrip(rearRight, rearRightGrip, command.Handbrake);
-            if (SpeedMetresPerSecond > 1)
+            // Road downforce must not glue a sideways car to a wall or launch an overturned car.
+            // Preserve the original force on normally grounded driving; allow natural airborne rolls.
+            if (SpeedMetresPerSecond > 1 && Vector3.Dot(transform.up,Vector3.up) > .5f &&
+                (frontLeft.GetGroundHit(out _) || frontRight.GetGroundHit(out _) ||
+                 rearLeft.GetGroundHit(out _) || rearRight.GetGroundHit(out _)))
                 body.AddForce(-transform.up * (tuning.AerodynamicDownforce * body.linearVelocity.sqrMagnitude), ForceMode.Force);
         }
 

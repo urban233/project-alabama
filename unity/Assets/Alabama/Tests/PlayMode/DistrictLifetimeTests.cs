@@ -105,7 +105,8 @@ namespace Alabama.Tests
                         scene => scene == content.gameObject.scene), Is.True, "Escaped in direction " + direction);
                 }
                 Assert.That(guard.BlockedMoves, Is.GreaterThan(blocked));
-                Assert.That(car.SpeedMetresPerSecond, Is.LessThan(2));
+                // A boundary prevents escape, while safe tangential crash motion may continue.
+                // The footprint assertion on every measured step is the relevant contract.
             }
             runtime.Recover(); input.enabled = true;
         }
@@ -174,16 +175,164 @@ namespace Alabama.Tests
             input.enabled = false;
             var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
             var guard = car.GetComponent<DistrictBoundaryGuard>();
-            car.Body.position = centre + new Vector3(20,1,10);
-            car.Body.rotation = Quaternion.Euler(0,0,90);
+            foreach (float height in new[] { 1f,7f })
+            {
+                car.Body.position = centre + new Vector3(20,height,10);
+                car.Body.rotation = Quaternion.Euler(0,0,90);
+                car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+                guard.ResetHistory(); Physics.SyncTransforms();
+                Assert.That(guard.RecoveryPoseCount, Is.Zero);
+                Assert.That(runtime.RecoverNearby(), Is.True);
+                Assert.That(Vector3.Distance(car.Body.position,centre+new Vector3(20,0,10)), Is.LessThan(2));
+                Assert.That(Vector3.Dot(car.transform.up,Vector3.up), Is.GreaterThan(.99f));
+                for (int i = 0; i < 90; i++) yield return new WaitForFixedUpdate();
+                Assert.That(car.GetComponentsInChildren<WheelCollider>().Count(w=>w.GetGroundHit(out _)), Is.EqualTo(4));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator AirborneSupportStillRejectsEmptyAndForeignMapGround()
+        {
+            var content = runtime.LoadedDistricts.Single();
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var above = content.RecoveryPoses[0].position+Vector3.up*5;
+            bool Owned(Scene scene) => scene == content.gameObject.scene;
+            Assert.That(guard.ContainsFootprint(above,Quaternion.identity,Owned), Is.False);
+            Assert.That(guard.ContainsFootprint(above,Quaternion.identity,Owned,maximumDrop:12), Is.True);
+            Assert.That(guard.ContainsFootprint(above+Vector3.right*100,Quaternion.identity,Owned,maximumDrop:12), Is.False);
+            Assert.That(guard.ContainsFootprint(above,Quaternion.identity,scene => !Owned(scene),maximumDrop:12), Is.False);
+            Assert.That(guard.ContainsFootprint(above+Vector3.up*20,Quaternion.identity,Owned,maximumDrop:1000), Is.False);
+            yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator AirborneRollKeepsMomentumAndUprightCameraWithoutPrematureRecovery()
+        {
+            input.enabled = false;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            car.Body.position = centre + Vector3.right*20;
+            car.Body.rotation = Quaternion.identity;
             car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
-            guard.ResetHistory(); Physics.SyncTransforms();
-            Assert.That(guard.RecoveryPoseCount, Is.Zero);
-            Assert.That(runtime.RecoverNearby(), Is.True);
-            Assert.That(Vector3.Distance(car.Body.position,centre+new Vector3(20,0,10)), Is.LessThan(2));
-            Assert.That(Vector3.Dot(car.transform.up,Vector3.up), Is.GreaterThan(.99f));
-            for (int i = 0; i < 90; i++) yield return new WaitForFixedUpdate();
-            Assert.That(car.GetComponentsInChildren<WheelCollider>().Count(w=>w.GetGroundHit(out _)), Is.EqualTo(4));
+            guard.ResetHistory(); car.SetCommand(default); Physics.SyncTransforms();
+            for (int i = 0; i < 30; i++) yield return new WaitForFixedUpdate();
+            int recovered = guard.LocalRecoveries;
+            car.Body.position += Vector3.up*5;
+            car.Body.rotation = Quaternion.Euler(0,0,180);
+            car.Body.linearVelocity = Vector3.forward*30;
+            car.Body.angularVelocity = Vector3.forward*3;
+            Physics.SyncTransforms(); chase.SnapToTarget();
+            Assert.That(chase.transform.position.y, Is.GreaterThan(car.Body.position.y+1));
+            float topSpeed = car.Tuning.MaximumSpeedMetresPerSecond;
+            for (int i = 0; i < 45; i++) yield return new WaitForFixedUpdate();
+            Assert.That(guard.LocalRecoveries, Is.EqualTo(recovered), "An ongoing roll must not be reset prematurely.");
+            Assert.That(car.Body.linearVelocity.z, Is.GreaterThan(28), "Airborne momentum must not be cancelled by road protection.");
+            Assert.That(car.Body.position.y, Is.LessThan(centre.y+5), "An overturned car must not receive upward downforce.");
+            Assert.That(car.Tuning.MaximumSpeedMetresPerSecond, Is.EqualTo(topSpeed));
+        }
+
+        [UnityTest]
+        public IEnumerator AutomaticGraphicsUsePrivatePipelineAndRestoreWithoutChangingTheCar()
+        {
+            var original = (UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset)pipeline;
+            float scale = original.renderScale, shadows = original.shadowDistance;
+            float fixedStep = Time.fixedDeltaTime, topSpeed = car.Tuning.MaximumSpeedMetresPerSecond, torque = car.Tuning.DriveTorque;
+            var host = new GameObject("Automatic graphics ownership fixture");
+            var automatic = host.AddComponent<AutomaticPerformance>();
+            Assert.That(automatic.Initialize(original), Is.True);
+            Assert.That(QualitySettings.renderPipeline, Is.Not.SameAs(original));
+            Assert.That(original.renderScale, Is.EqualTo(scale));
+            Assert.That(original.shadowDistance, Is.EqualTo(shadows));
+            Assert.That(Time.fixedDeltaTime, Is.EqualTo(fixedStep));
+            Assert.That(car.Tuning.MaximumSpeedMetresPerSecond, Is.EqualTo(topSpeed));
+            Assert.That(car.Tuning.DriveTorque, Is.EqualTo(torque));
+            automatic.enabled = false;
+            Assert.That(QualitySettings.renderPipeline, Is.SameAs(original));
+            Assert.That(Application.targetFrameRate, Is.EqualTo(cap));
+            Object.Destroy(host); yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator EdgeStopsOutwardMomentumButPreservesTravelAlongTheRoad()
+        {
+            input.enabled = false;
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            car.Body.position = centre+Vector3.right*47.65f;
+            car.Body.rotation = Quaternion.Euler(0,90,0);
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            guard.ResetHistory(); car.SetCommand(default); Physics.SyncTransforms();
+            for (int i = 0; i < 20; i++) yield return new WaitForFixedUpdate();
+            var start = car.Body.position;
+            int blocked = guard.BlockedMoves;
+            for (int i = 0; i < 90; i++)
+            {
+                car.Body.linearVelocity = new Vector3(8,car.Body.linearVelocity.y,10);
+                yield return new WaitForFixedUpdate();
+            }
+            // Stop the artificial per-step outward impulses, then allow their last contact
+            // correction to be handled just as an actual completed impact would be.
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+            Assert.That(guard.BlockedMoves, Is.GreaterThan(blocked));
+            Assert.That(car.Body.position.z-start.z, Is.GreaterThan(5), "Safe motion along an edge must not be zeroed.");
+            Assert.That(guard.ContainsFootprint(car.Body.position,car.Body.rotation,
+                scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene)), Is.True,
+                $"Edge pose {car.Body.position}, rotation {car.Body.rotation.eulerAngles}, velocity {car.Body.linearVelocity}, blocks {guard.BlockedMoves}, recoveries {guard.LocalRecoveries}");
+            Assert.That(guard.LocalRecoveries, Is.Zero);
+        }
+
+        [UnityTest]
+        public IEnumerator SidewaysAndUpsideDownCrashesRecoverNearTheirRoadPosition()
+        {
+            input.enabled = false;
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            foreach (float roll in new[] { 90f,180f })
+            {
+                car.Body.position = centre+new Vector3(20,0,10); car.Body.rotation = Quaternion.identity;
+                car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+                guard.ResetHistory(); car.SetCommand(new VehicleCommand(0,0,0,true)); Physics.SyncTransforms();
+                for (int i = 0; i < 90; i++) yield return new WaitForFixedUpdate();
+                var road = car.Body.position;
+                car.Body.position = road+Vector3.up; car.Body.rotation = Quaternion.Euler(0,0,roll);
+                car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+                Physics.SyncTransforms(); int recovered = guard.LocalRecoveries;
+                for (float elapsed = 0; elapsed < 4.5f; elapsed += Time.fixedDeltaTime)
+                { car.SetCommand(new VehicleCommand(0,1,.2f,false)); yield return new WaitForFixedUpdate(); }
+                Assert.That(guard.LocalRecoveries, Is.GreaterThan(recovered), $"A {roll} degree crash must not trap the car.");
+                Assert.That(Vector3.Distance(car.Body.position,road), Is.LessThan(12));
+                Assert.That(Vector3.Dot(car.transform.up,Vector3.up), Is.GreaterThan(.9f));
+                Assert.That(guard.ContainsFootprint(car.Body.position,car.Body.rotation,
+                    scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene)), Is.True);
+                car.SetCommand(default);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ContactImpulseAfterPredictionCannotPushAChassisCornerOffTheMap()
+        {
+            input.enabled = false;
+            var centre = runtime.LoadedDistricts.Single().RecoveryPoses[0].position;
+            var guard = car.GetComponent<DistrictBoundaryGuard>();
+            car.Body.position = centre+Vector3.right*47.3f;
+            car.Body.rotation = Quaternion.Euler(0,90,0);
+            car.Body.linearVelocity = Vector3.zero; car.Body.angularVelocity = Vector3.zero;
+            guard.ResetHistory(); car.SetCommand(default); Physics.SyncTransforms();
+            for (int i = 0; i < 20; i++) yield return new WaitForFixedUpdate();
+            var start = car.Body.position; int blocked = guard.BlockedMoves;
+            var impulse = car.gameObject.AddComponent<LateBoundaryImpulse>(); impulse.Body = car.Body;
+            for (int i = 0; i < 90; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                Assert.That(guard.ContainsFootprint(car.Body.position,car.Body.rotation,
+                    scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene)), Is.True,
+                    $"A post-prediction impulse crossed the map at step {i}.");
+            }
+            Object.Destroy(impulse);
+            Assert.That(guard.BlockedMoves, Is.GreaterThan(blocked));
+            Assert.That(car.Body.position.z-start.z, Is.GreaterThan(5));
+            Assert.That(guard.LocalRecoveries, Is.Zero);
         }
 
         [UnityTest]
@@ -412,6 +561,15 @@ namespace Alabama.Tests
                 Assert.That(runtime.DistrictCount, Is.EqualTo(1)); AssertOwners();
             }
         }
+    }
+
+    // Apply a collision-like velocity change after the guard's predictive FixedUpdate.
+    [DefaultExecutionOrder(200)]
+    public sealed class LateBoundaryImpulse : MonoBehaviour
+    {
+        public Rigidbody Body;
+        private void FixedUpdate()
+        { if (Body != null) Body.linearVelocity = new Vector3(18,Body.linearVelocity.y,10); }
     }
 }
 #endif

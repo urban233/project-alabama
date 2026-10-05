@@ -25,12 +25,15 @@ namespace Alabama.Driving
             public int blockedMoves, contacts;
             public bool supported, passed;
             public Vector3 finalPosition, firstUnsupportedPosition;
+            public Vector3 firstUnsupportedRotation, firstUnsupportedVelocity;
+            public string unsupportedGround;
             public float escapeProgress, escapeDrivenMetres, escapeTurnDegrees, localResetDistance;
             public float escapeDisplacement;
             public float maximumRecoveryStep;
             public int localRecoveries, recoveryPoses;
             public string wheelContacts;
             public bool escaped;
+            public int airborneFrames;
         }
         [Serializable] private sealed class Report { public Result[] results; public bool passed; }
         private int contacts;
@@ -88,16 +91,34 @@ namespace Alabama.Driving
                     yield return new WaitForFixedUpdate();
                     float progress = Vector3.Dot(car.Body.position - start, route.direction);
                     result.maximumProgress = Mathf.Max(result.maximumProgress, progress);
+                    bool airborne = !wheels.Any(w => w.GetGroundHit(out _));
+                    if (airborne) result.airborneFrames++;
                     bool supported = guard.ContainsFootprint(car.Body.position, car.Body.rotation,
-                        scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene));
-                    if (result.supported && !supported) result.firstUnsupportedPosition = car.Body.position;
+                        scene => runtime.LoadedDistricts.Any(d => d.gameObject.scene == scene),
+                        maximumDrop: airborne ? 12 : 3);
+                    if (result.supported && !supported)
+                    {
+                        result.firstUnsupportedPosition = car.Body.position;
+                        result.firstUnsupportedRotation = car.Body.rotation.eulerAngles;
+                        result.firstUnsupportedVelocity = car.Body.linearVelocity;
+                        var ground = new System.Text.StringBuilder();
+                        var yaw = Quaternion.Euler(0,car.Body.rotation.eulerAngles.y,0);
+                        foreach (float x in new[] { -.95f,.95f }) foreach (float z in new[] { -2.225f,2.225f })
+                        {
+                            var point = car.Body.position+yaw*new Vector3(x,0,z);
+                            ground.AppendLine($"Corner {point}");
+                            foreach (var hit in Physics.RaycastAll(point+Vector3.up*3,Vector3.down,15))
+                                ground.AppendLine($"{hit.collider.name}: {hit.point}, normal {hit.normal}, coverage {hit.collider.GetComponentInParent<DistrictGroundCoverage>() != null}");
+                        }
+                        result.unsupportedGround = ground.ToString();
+                    }
                     result.supported &= supported;
                 }
                 probeActive = false; result.contacts = contacts; result.blockedMoves = guard.BlockedMoves-blocked;
                 result.finalProgress = Vector3.Dot(car.Body.position-start, route.direction);
                 result.finalPosition = car.Body.position;
                 result.passed = result.supported && result.maximumProgress > .5f &&
-                    result.maximumProgress < route.maximumProgress &&
+                    (route.boundary || result.maximumProgress < route.maximumProgress) &&
                     (route.boundary ? result.blockedMoves > 0 : result.contacts > 0);
                 if (checkRecovery)
                 {

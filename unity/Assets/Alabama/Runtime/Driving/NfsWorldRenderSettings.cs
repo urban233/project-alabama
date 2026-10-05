@@ -20,6 +20,7 @@ namespace Alabama.Driving
         private int previousFrameRate;
         private bool frameRateApplied;
         private bool applied;
+        private AutomaticPerformance automaticPerformance;
 
         public void Configure(RenderPipelineAsset value, int frameRate = 0)
         { pipeline = value; targetFrameRate = frameRate; }
@@ -33,10 +34,18 @@ namespace Alabama.Driving
         {
             // Bootstrap finishes Awake first. Benchmarks can then override the
             // map's cap in their ordinary-order Start without changing assets.
-            if (targetFrameRate <= 0) return;
-            previousFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = targetFrameRate;
-            frameRateApplied = true;
+            if (targetFrameRate > 0)
+            {
+                previousFrameRate = Application.targetFrameRate;
+                Application.targetFrameRate = targetFrameRate;
+                frameRateApplied = true;
+            }
+            if (!Application.isEditor && AutomaticPerformance.AllowsAutomatic(System.Environment.GetCommandLineArgs()) &&
+                pipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset urp)
+            {
+                automaticPerformance = gameObject.AddComponent<AutomaticPerformance>();
+                automaticPerformance.Initialize(urp);
+            }
         }
 
         public void Apply()
@@ -73,6 +82,7 @@ namespace Alabama.Driving
 
         public void Restore()
         {
+            if (automaticPerformance != null) automaticPerformance.Restore();
             if (probeApplied)
             {
                 SceneManager.sceneLoaded -= SceneLoaded;

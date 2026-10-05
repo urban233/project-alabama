@@ -369,3 +369,97 @@ Reports are `performance-motion-camera-final-cap30.json` and
 `artifacts/NfsWorld/Stability/`. The strict Windows build passed; the final
 `builds/windows/Alabama_Data/Managed/Alabama.Runtime.dll` was updated at
 01:38:34 Berlin time on 5 October.
+
+## Automatic performance and free crash motion (5 October)
+
+Ordinary native gameplay now starts automatic graphics control from the map's
+render-settings owner. GPU/RAM information only selects a starting quality
+level; sustained measured frame times determine later changes. The controller
+owns a private runtime copy of the URP pipeline, restores it and the prior FPS
+cap on exit, and never writes quality changes to the imported art assets.
+Fixed-setting benchmarks and collision/lifetime/capture probes retain their
+explicit settings. Editor sessions do not start the controller automatically.
+
+The target starts at 60 FPS. Two slow two-second windows lower graphics quality
+before selecting 30 FPS at the lowest level. Render scale stays between 0.55
+and 1.0; shadow distance stays between 60 and the reviewed 150 metres. Existing
+FSR, sign materials, visibility lookahead and collision meshes remain available.
+Strong sustained headroom increases quality and can return from 30 to 60 FPS.
+Decisions have cooldowns; loading, pause and unfocused play discard samples.
+Devices without reliable work timings periodically make a bounded 60 FPS retry.
+No setting changes simulation time, the 120 Hz physics step, engine torque,
+brakes or top speed. Extremely slow hardware can still miss the minimum target.
+Active CPU/GPU work counters are used for headroom, rather than treating
+FPS-cap waits as spare processing time; see the
+[Unity 6.3 frame timing counter reference](https://docs.unity3d.com/6000.3/Documentation/Manual/frame-timing-manager-counter-reference.html).
+
+Crashes retain pitch/roll impulses and supported motion along a map edge.
+Only unsupported outward translation or yaw is constrained; projection never
+adds momentum. A small 3 cm prediction allowance absorbs contact corrections
+when the full 15 cm edge margin no longer fits. Short airborne rolls and jumps
+can check their horizontal footprint at the last grounded road height, up to
+12 metres above it, while retaining visible/physical map support requirements.
+Grounded driving keeps its original downforce. Airborne, sideways or overturned
+cars receive no aerodynamic force that could glue them to scenery or launch
+them upward. The chase camera follows an upright heading through rolls. Local
+recovery still releases a stopped trapped car when the player tries to drive;
+it does not reset an ongoing fast roll.
+Combined slide/turn predictions must fit together, so two individually safe
+motions cannot push a corner off the map. A tyre on a tall prop cannot replace
+the verified road-height reference. Recovery searches extend down to the road
+below a high crash, with the same visible-ground and obstacle-clearance checks.
+Support is checked again immediately after physics: suspension/contact impulses
+can cross an edge after the prediction has run. The correction projects the
+completed displacement and remaining velocity onto supported directions, rather
+than cancelling every part of a step. A repeated late-impulse regression checks
+every chassis footprint while requiring continued travel along the road.
+
+`-nfs-auto-review -nfs-stability-output <absolute-directory>` qualifies the
+controller in a visible native player: 20 seconds of actual high-speed driving,
+45 seconds with an explicitly injected 28 ms CPU delay, then 40 seconds after
+removing that delay. It checks selection of 30 FPS under sustained load,
+return to 60 FPS, source-ground support, and unchanged tuning/physics time.
+The injected phase tests decisions; it is not a hardware performance benchmark
+and never runs in ordinary gameplay.
+
+The native automatic test passed on the local Ryzen 7 5700U / AMD Radeon
+integrated GPU. The final rebuilt player selected a 30 FPS target at 42.26
+seconds under the injected load and returned to 60 at 72.98 seconds, eight
+seconds after that load ended. The subsequent 1,711 frames averaged 59.94 FPS.
+The injected phase actually averaged 25.06 FPS; selecting a target does not guarantee it under an artificial
+CPU stall. Mean driving speed stayed between 34.91 and 34.94 m/s across the
+three phases, with unchanged engine torque, maximum speed and physics step.
+All sampled frames retained ground support. Evidence is
+`artifacts/NfsWorld/Stability/automatic-native-verified/automatic-results.json`.
+The earlier `automatic-native-final` report also passed before the added
+post-physics support check; the repeated final run validates that extra work.
+
+All 27 EditMode tests passed. PlayMode qualification covers 40 distinct tests:
+the full run passed 37 of the then-38 tests, with the old assertion that every
+edge impact must stop all motion subsequently corrected to require continuous
+ground support and boundary intervention while allowing tangent travel. That
+case and the new regressions passed focused reruns. After the final post-physics
+change, all 11 affected crash/edge/airborne/automatic-pipeline tests passed in
+`artifacts/AutoPostPhysicsFinalTests/results.xml`. Earlier failing results are
+retained, including the late-impulse test that caught lost tangent displacement.
+The attempted standalone real-map editor regression was stopped during an
+unusually long scene load (`AutoRealEdgeTests/editor.log`); native qualification
+uses the saved exact map route instead.
+
+The final native collision review passed all 20 saved routes, including signs,
+buildings, trees, props, six map edges and reverse impacts. Every 120-step impact
+sample retained verified map support, allowing the bounded ground column during
+airborne rolls. Boundary qualification requires support and intervention, while
+scenery qualification also checks impact contacts and limited penetration; safe
+travel along a boundary is not an escape simply because approach progress grows.
+All 20 escape drives succeeded, with 3.25–38.33 metres of actual movement
+excluding recovery teleports. All local resets stayed within 3.46 metres. The
+formerly failing `edge-4` passed with three boundary interventions and 23.89
+metres of subsequent driving. Evidence is `automatic-crashes-verified` under
+`artifacts/NfsWorld/Stability/`; its predecessor and isolated
+`automatic-edge-diagnostic` preserve the corner raycast that found empty ground
+after a post-prediction suspension impulse.
+
+The strict Windows build passed in `artifacts/AutoBuildFinal/editor.log`, updating
+`builds/windows/Alabama_Data/Managed/Alabama.Runtime.dll` at 03:42:17 Berlin time
+on 5 October. Run `builds/windows/Alabama.exe` with its accompanying data folders.
